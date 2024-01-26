@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to SpendWise</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
     <style>
         body {
             background-color: #1d2127;
@@ -34,14 +34,16 @@
             color: #d1d7e0;
         }
 
-        p {
-            text-align: center;
-            color: #aaaeb6;
-        }
-
         #chart-container {
             text-align: center;
             margin: 10px;
+            width: 70%;
+            height: 50%;
+        }
+
+        p {
+            text-align: center;
+            color: #aaaeb6;
         }
 
         button {
@@ -107,31 +109,104 @@
     <p>Already have an account?<a href="#"> Log In </a></p>
   </div>
 
-    <script>
-        // JavaScript code to create a pie chart with random colors
-        function generateRandomColor() {
-            return '#' + Math.floor(Math.random()*16777215).toString(16);
+  <script>
+    // setup 
+    const data = {
+      labels: ['Food', 'Travel', 'Groceries', 'Shopping', 'Entertainment', 'Miscellenious', 'Others'],
+      datasets: [{
+        label: '',
+        data: [18, 12, 6, 9, 12, 3, 9],
+        backgroundColor: [
+          'rgba(255, 26, 104, 0.2)',
+          'rgba(54, 162, 235, 0.2)',
+          'rgba(255, 206, 86, 0.2)',
+          'rgba(75, 192, 192, 0.2)',
+          'rgba(153, 102, 255, 0.2)',
+          'rgba(255, 159, 64, 0.2)',
+          'rgba(0, 0, 0, 0.2)'
+        ],
+        borderColor: [
+          'rgba(255, 26, 104, 1)',
+          'rgba(54, 162, 235, 1)',
+          'rgba(255, 206, 86, 1)',
+          'rgba(75, 192, 192, 1)',
+          'rgba(153, 102, 255, 1)',
+          'rgba(255, 159, 64, 1)',
+          'rgba(0, 0, 0, 1)'
+        ],
+        borderWidth: 2
+      }]
+    };
+    
+// pieLebalLine plugin
+const pieLebalLine = {
+  id: 'pieLebalLine',
+  afterDraw(chart, args, options) {
+    const { ctx, chartArea: { top, bottom, left, right, width, height } } = chart;
+
+    chart.data.datasets.forEach((dataset, i) => {
+      chart.getDatasetMeta(i).data.forEach((datapoint, index) => {
+        const { x, y } = datapoint.tooltipPosition({ x: 0, y: 0 });
+
+        const halfwidth = width / 2;
+        const halfheight = height / 2;
+
+        const xLine = x >= halfwidth ? x + 70 : x - 70;
+        const yLine = y >= halfheight ? y + 70 : y - 70;
+        const extraLine = x >= halfwidth ? 15 : -15;
+
+        // Line
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(xLine, yLine);
+        ctx.lineTo(xLine + extraLine, yLine);
+        ctx.strokeStyle = dataset.borderColor[index];
+        ctx.stroke();
+
+        // Texts
+        ctx.font = '10px Arial'; // Set the font before measuring the text width
+        const textWidth = ctx.measureText(chart.data.labels[index]).width;
+
+        // Control the position
+        const textPosition = x >= halfwidth ? 'left' : 'right';
+        const plusFivePx = x >= halfwidth ? 5 : -5 ;
+        ctx.textAlign = textPosition;
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = dataset.borderColor[index];
+        ctx.fillText(chart.data.labels[index], xLine + extraLine + plusFivePx , yLine);
+      });
+    });
+  }
+};
+
+    // config 
+    const config = {
+      type: 'pie',
+      data,
+      options: {
+        layout: {
+          padding: 20
+        },
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
         }
+      },
+      plugins: [pieLebalLine]
+    };
 
-        var ctx = document.getElementById('myPieChart').getContext('2d');
-        var randomColors = Array.from({ length: 5 }, generateRandomColor);
 
-        var myPieChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                datasets: [{
-                    data: [10, 20, 35, 40, 30],
-                    backgroundColor: randomColors,
-                }]
-            },
-            options: {
-                responsive: false, // Set to true if you want the chart to be responsive
-                legend: {
-                    display: true,
-                    position: 'bottom'
-                }
-            }
-        });
-    </script>
+    // render init block
+    const myChart = new Chart(
+      document.getElementById('myPieChart'),
+      config
+    );
+
+    // Instantly assign Chart.js version
+    const chartVersion = document.getElementById('chartVersion');
+    chartVersion.innerText = Chart.version;
+  </script>
 </body>
 </html>
