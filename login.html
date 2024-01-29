@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log In to Wisely</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #1d2127;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .login-container {
+            width: 60%;
+            height: 80%;
+            background-color: #1d2127;
+            border-radius: 20px;
+            display: grid;
+            padding: 10px;
+            grid-template-rows: .5fr 10fr;
+            grid-template-areas: 
+            "header header"
+            "chart form";
+        }
+
+        .header {
+            text-align: center;
+            align-items: center;
+            color: antiquewhite;
+            grid-area: header;
+        }
+
+        .chart {
+            align-items: center;
+            grid-area: chart;
+            color: #fff;
+            text-align: center;
+            border-right: 1px solid #ccc; /* Vertical line using border */
+        }
+
+        #chart-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 70%;
+        }
+
+        .form {
+            grid-area: form;
+            color: #fff;
+            text-align: center;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            color: #fff;
+        }
+
+        .login-form label,
+        .login-form input {
+            margin-bottom: 10px;
+        }
+
+        .login-form input {
+            padding: 8px;
+            border-radius: 10px;
+            margin-left: 10px;
+        }
+
+        .login-form button {
+            margin: 20px auto; /* Center the button */
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #26aabb;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 50%; /* Adjusted width for better responsiveness */
+        }
+
+        .login-form button:hover {
+            background-color: #45a049;
+        }
+
+        .options {
+            margin-top: 20px;
+        }
+
+        .options a {
+            margin-right: 15px;
+            text-decoration: none;
+            color: #fff;
+        }
+
+        @media only screen and (max-width: 480px) {
+            .container {
+                width: 100%; /* Adjusted max-width for mobile */
+                height: 100%;
+            }
+
+            .chart {
+                display: none;
+            }
+
+            .form {
+                color: #fff;
+                text-align: center;
+            }
+
+            .login-form {
+                display: flex;
+                flex-direction: column;
+                color: #fff;
+            }
+    
+            .login-form label,
+            .login-form input {
+                margin-bottom: 10px;
+            }
+    
+            .login-form input {
+                padding: 8px;
+                border-radius: 10px;
+                margin-left: 10px;
+            }
+    
+            .login-form button {
+                margin: 20px auto; /* Center the button */
+                padding: 10px 20px;
+                font-size: 16px;
+                background-color: #26aabb;
+                color: #fff;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+                width: 50%; /* Adjusted width for better responsiveness */
+            }
+    
+            .login-form button:hover {
+                background-color: #45a049;
+            }
+    
+            .options {
+                margin-top: 20px;
+            }
+    
+            .options a {
+                margin-right: 15px;
+                text-decoration: none;
+                color: #fff;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="header">
+            <h1>Wisely</h1>
+            <hr>
+        </div>
+        <div class="chart">
+            <h2>Category Wise Analysis</h2>
+            <div id="chart-container">
+                <canvas id="myPieChart"></canvas>
+            </div>
+            <p>Track down your expenses category wise and analyze.</p>
+        </div>
+        
+        <div class="form">
+            <h2>Log In Now</h2>
+            <form class="login-form">
+                <label for="username">Username:<input type="text" id="username" name="username" required></label>
+                <label for="password">Password:<input type="password" id="password" name="password" required></label>
+                <button type="submit">Log In</button>
+            </form>
+            <div class="options">
+                <a href="#">Forgot Password?</a>
+                <a href="#">Sign Up</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Define the data variable
+        const data = {
+            labels: ['Food', 'Travel', 'Groceries'],
+            datasets: [{
+                label: '',
+                data: [300, 50, 100],
+                backgroundColor: ['rgb(255, 99, 132)', 'rgb(54, 162, 235)', 'rgb(255, 205, 86)'],
+                hoverOffset: 4
+            }]
+        };
+
+        // Create the chart after defining data
+    // Create the chart after defining data
+    const config = {
+        type: 'pie',
+        data: data,
+        options: {
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom', // Set legend position to the right
+                    labels: {
+                        padding: 10, // Add padding between legend items
+                        boxWidth: 20 // Set the width of the colored box in the legend
+                    }
+                }
+            }
+        }
+    };
+
+        const myChart = new Chart(document.getElementById('myPieChart'), config);
+    </script>
+</body>
+</html>
