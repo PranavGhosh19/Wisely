@@ -97,13 +97,21 @@
 </head>
 <body>
   <div class="container">
-    <h1><a href="index.html" style="text-decoration: none; color: inherit;">Wisely</a></h1>
+    <h1>Wisely</h1>
     <hr>
     <p>Now you can <span>record both, personal and group expenses</span> in one application.</p>
     <p>Analyse which areas do you spend the most using the <span>Pie Chart</span>.</p>
     <p>Limit your eveyday spends and see if you're exceeding or not with the help of the <span>Line Chart.</span></p>
     <p><span>Record, Manage and Analyze</span></p>
-    <button><a href="index.html" style="text-decoration: none; color: #fff;"> Logout Now </a></button>
+    <button onclick="logout()"> Logout Now</button>
   </div>
+
+<script>
+    function logout() {
+      // You can add session-clearing logic here if needed
+      // For simplicity, let's just redirect to "index.html"
+      window.location.href = "index.html";
+    }
+</script>
 </body>
 </html>
