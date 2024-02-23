@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Wisely</title>
+    <link rel="shortcut icon" href="walletlogo.png" type="image/x-icon">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            background-color: #1d2127;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        .container {
+          background-color: #1d2127;
+          width: 100%;
+          height: 100%;  
+          padding: 20px;
+          border-radius: 15px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+
+        h1 {
+            text-align: center;
+            color: #d1d7e0;
+        }
+
+        #chart-container {
+            text-align: center;
+            margin: 10px;
+            width: 100%;
+            height: 50%;
+        }
+
+        p {
+            text-align: center;
+            color: #aaaeb6;
+        }
+
+        button {
+            margin: 20px; /* Adjusted margin for better spacing */
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #26aabb;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 20%;
+        }
+      
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        p a {
+            color: #2980b9;
+            text-decoration: none;
+        }
+
+        /* Styling for the specific text in the paragraph */
+        p span {
+            color: #4caf50; /* Green color */
+        }
+
+        /* Media Query for Tablet */
+        @media only screen and (max-width: 768px) {
+            .container {
+                width: 100%; /* Adjusted max-width for tablets */
+                height: 100%
+            }
+
+            #chart-container {
+                text-align: center;
+                margin: 10px;
+                width: 50%;
+                height: 50%;
+            }
+
+            button {
+                width: 50%;
+            }
+        }
+
+        /* Media Query for Mobile */
+        @media only screen and (max-width: 480px) {
+            .container {
+                width: 100%; /* Adjusted max-width for mobile */
+                height: 100%;
+            }
+
+            button {
+                width: 50%;
+            }
+        }
+    </style>
+</head>
+<body>
+  <div class="container">
+    <h1><a href="index.html" style="text-decoration: none; color: inherit;">Wisely</a></h1>
+    <div id="chart-container">
+        <canvas id="myPieChart" width="200" height="200"></canvas>
+    </div>
+    <p>Want to know your everyday expenses?<br><span>Record, Manage and Analyze</span></p>
+    <button><a href="signup.html" style="text-decoration: none; color: #fff;"> Sign Up </a></button>
+    <p>Already have an account?<a href="login.html"> Log In </a></p>
+  </div>
+
+  <script>
+        // setup 
+        const data = {
+          labels: ['Food', 'Travel', 'Groceries', 'Shopping', 'Entertainment', 'Miscellaneous', 'Others'],
+          datasets: [{
+            label: '',
+            data: [18, 12, 6, 9, 12, 3, 9],
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.2)',  // Red
+              'rgba(54, 162, 235, 0.2)',  // Blue
+              'rgba(255, 205, 86, 0.2)',  // Yellow
+              'rgba(75, 192, 192, 0.2)',  // Teal
+              'rgba(153, 102, 255, 0.2)', // Purple
+              'rgba(255, 159, 64, 0.2)',  // Orange
+              'rgba(0, 128, 0, 0.2)'      // Green
+            ],
+            borderColor: [
+              'rgba(255, 99, 132, 1)',    // Red
+              'rgba(54, 162, 235, 1)',    // Blue
+              'rgba(255, 205, 86, 1)',    // Yellow
+              'rgba(75, 192, 192, 1)',    // Teal
+              'rgba(153, 102, 255, 1)',   // Purple
+              'rgba(255, 159, 64, 1)',    // Orange
+              'rgba(0, 128, 0, 1)'        // Green
+            ],
+            borderWidth: 2
+          }]
+        };
+    
+// pieLebalLine plugin
+const pieLebalLine = {
+  id: 'pieLebalLine',
+  afterDraw(chart, args, options) {
+    const { ctx, chartArea: { top, bottom, left, right, width, height } } = chart;
+
+    chart.data.datasets.forEach((dataset, i) => {
+      chart.getDatasetMeta(i).data.forEach((datapoint, index) => {
+        const { x, y } = datapoint.tooltipPosition({ x: 0, y: 0 });
+
+        const halfwidth = width / 2;
+        const halfheight = height / 2;
+
+        const xLine = x >= halfwidth ? x + 70 : x - 70;
+        const yLine = y >= halfheight ? y + 70 : y - 70;
+        const extraLine = x >= halfwidth ? 15 : -15;
+
+        // Line
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(xLine, yLine);
+        ctx.lineTo(xLine + extraLine, yLine);
+        ctx.strokeStyle = dataset.borderColor[index];
+        ctx.stroke();
+
+        // Texts
+        ctx.font = '15px Arial'; // Set the font before measuring the text width
+        const textWidth = ctx.measureText(chart.data.labels[index]).width;
+
+        // Control the position
+        const textPosition = x >= halfwidth ? 'left' : 'right';
+        const plusFivePx = x >= halfwidth ? 5 : -5 ;
+        ctx.textAlign = textPosition;
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = dataset.borderColor[index];
+        ctx.fillText(chart.data.labels[index], xLine + extraLine + plusFivePx , yLine);
+      });
+    });
+  }
+};
+
+    // config 
+    const config = {
+      type: 'pie',
+      data,
+      options: {
+        layout: {
+          padding: 20
+        },
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      },
+      plugins: [pieLebalLine]
+    };
+
+
+    // render init block
+    const myChart = new Chart(
+      document.getElementById('myPieChart'),
+      config
+    );
+
+    // Instantly assign Chart.js version
+    const chartVersion = document.getElementById('chartVersion');
+    chartVersion.innerText = Chart.version;
+  </script>
+</body>
+</html>
