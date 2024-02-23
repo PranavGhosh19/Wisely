@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up to Wisely</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Welcome to Wisely</title>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
     <style>
         body {
             background-color: #1d2127;
@@ -16,68 +16,38 @@
             flex-direction: column;
             height: 100vh;
         }
-
-        .signup-container {
-            width: 80%;
-            height: 80%;
-            background-color: #1d2127;
-            border-radius: 20px;
-            display: grid;
-            padding: 10px;
-            grid-template-rows: .5fr 10fr;
-            grid-template-areas: 
-            "header header"
-            "chart form";
+        
+        .container {
+          background-color: #1d2127;
+          width: 100%;
+          height: 100%;  
+          padding: 20px;
+          border-radius: 15px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
         }
 
-        .header {
+        h1 {
             text-align: center;
-            align-items: center;
-            color: rgb(255, 255, 255);
-            grid-area: header;
-        }
-
-        .chart {
-            align-items: center;
-            grid-area: chart;
-            color: #fff;
-            text-align: center;
-            border-right: 1px solid #ccc; /* Vertical line using border */
+            color: #d1d7e0;
         }
 
         #chart-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 70%;
-        }
-
-        .form {
-            grid-area: form;
-            color: #fff;
             text-align: center;
+            margin: 10px;
+            width: 100%;
+            height: 50%;
         }
 
-        .signup-form {
-            display: flex;
-            flex-direction: column;
-            color: #fff;
+        p {
+            text-align: center;
+            color: #aaaeb6;
         }
 
-        .signup-form label,
-        .signup-form input {
-            margin-bottom: 10px;
-        }
-
-        .signup-form input {
-            padding: 8px;
-            border-radius: 10px;
-            margin-left: 10px;
-        }
-
-        .signup-form button {
-            margin: 20px auto; /* Center the button */
+        button {
+            margin: 20px; /* Adjusted margin for better spacing */
             padding: 10px 20px;
             font-size: 16px;
             background-color: #26aabb;
@@ -86,222 +56,157 @@
             border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s ease;
-            width: 50%; /* Adjusted width for better responsiveness */
+            width: 20%;
+        }
+      
+        button:hover {
+            background-color: #2980b9;
         }
 
-        .signup-form button:hover {
-            background-color: #45a049;
-        }
-
-        .options {
-            margin-top: 20px;
-        }
-
-        .options {
-            margin-right: 15px;
-            text-decoration: none;
-            color: #fff;
-        }
-
-        .options p a {
+        p a {
             color: #2980b9;
             text-decoration: none;
         }
 
+        /* Styling for the specific text in the paragraph */
+        p span {
+            color: #4caf50; /* Green color */
+        }
+
+        /* Media Query for Tablet */
+        @media only screen and (max-width: 768px) {
+            .container {
+                width: 100%; /* Adjusted max-width for tablets */
+                height: 100%
+            }
+
+            button {
+                width: 50%;
+            }
+        }
+
+        /* Media Query for Mobile */
         @media only screen and (max-width: 480px) {
             .container {
                 width: 100%; /* Adjusted max-width for mobile */
                 height: 100%;
             }
 
-            .chart {
-                display: none;
-            }
-
-            .form {
-                color: #fff;
-                text-align: center;
-            }
-
-            .signup-form {
-                display: flex;
-                flex-direction: column;
-                color: #fff;
-            }
-    
-            .signup-form label,
-            .signup-form input {
-                margin-bottom: 10px;
-            }
-    
-            .signup-form input {
-                padding: 8px;
-                border-radius: 10px;
-                margin-left: 10px;
-            }
-    
-            .signup-form button {
-                margin: 20px auto; /* Center the button */
-                padding: 10px 20px;
-                font-size: 16px;
-                background-color: #26aabb;
-                color: #fff;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                transition: background-color 0.3s ease;
-                width: 50%; /* Adjusted width for better responsiveness */
-            }
-    
-            .signup-form button:hover {
-                background-color: #45a049;
-            }
-    
-            .options {
-                margin-top: 20px;
-            }
-    
-            .options a {
-                margin-right: 15px;
-                text-decoration: none;
-                color: #fff;
+            button {
+                width: 50%;
             }
         }
-
     </style>
 </head>
 <body>
-    <div class="signup-container">
-        <div class="header">
-            <h1><a href="index.html" style="text-decoration: none; color: inherit;">Wisely</a></h1>
-            <hr>
-        </div>
-        <div class="chart">
-            <h2>EveryDay Wise Analysis</h2>
-            <div id="chart-container">
-                <canvas id="myAreaChart"></canvas>
-            </div>
-            <p>Track down your expenses category wise and analyze.</p>
-        </div>
-        
-        <div class="form">
-            <h2>Sign Up Now</h2>
-            <form class="signup-form" id="signupform">
-                <label for="phoneNumber">Mobile Number:<input type="tel" id="phoneNumber" name="phoneNumber" pattern="[0-9]{10}" required></label>
-                <label for="email">Email ID:<input type="email" id="email" name="email" required></label>
-                <label for="password">Password:<input type="password" id="password" name="password" required></label>
-                <button type="submit">Sign Up</button>
-            </form>
-            <div class="options">
-                <p>Already have an account?<a href="login.html" type="submit"> Log In </a></p>
-            </div>
-        </div>
+  <div class="container">
+    <h1><a href="index.html" style="text-decoration: none; color: inherit;">Wisely</a></h1>
+    <div id="chart-container">
+        <canvas id="myPieChart" width="200" height="200"></canvas>
     </div>
+    <p>Want to know your everyday expenses?<br><span>Record, Manage and Analyze</span></p>
+    <button><a href="signup.html" style="text-decoration: none; color: #fff;"> Sign Up </a></button>
+    <p>Already have an account?<a href="login.html"> Log In </a></p>
+  </div>
 
-    <script>
-        // Sample data for demonstration
-        var daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        var amounts = [210, 320, 350, 250, 180, 490, 700];
+  <script>
+        // setup 
+        const data = {
+          labels: ['Food', 'Travel', 'Groceries', 'Shopping', 'Entertainment', 'Miscellaneous', 'Others'],
+          datasets: [{
+            label: '',
+            data: [18, 12, 6, 9, 12, 3, 9],
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.2)',  // Red
+              'rgba(54, 162, 235, 0.2)',  // Blue
+              'rgba(255, 205, 86, 0.2)',  // Yellow
+              'rgba(75, 192, 192, 0.2)',  // Teal
+              'rgba(153, 102, 255, 0.2)', // Purple
+              'rgba(255, 159, 64, 0.2)',  // Orange
+              'rgba(0, 128, 0, 0.2)'      // Green
+            ],
+            borderColor: [
+              'rgba(255, 99, 132, 1)',    // Red
+              'rgba(54, 162, 235, 1)',    // Blue
+              'rgba(255, 205, 86, 1)',    // Yellow
+              'rgba(75, 192, 192, 1)',    // Teal
+              'rgba(153, 102, 255, 1)',   // Purple
+              'rgba(255, 159, 64, 1)',    // Orange
+              'rgba(0, 128, 0, 1)'        // Green
+            ],
+            borderWidth: 2
+          }]
+        };
+    
+// pieLebalLine plugin
+const pieLebalLine = {
+  id: 'pieLebalLine',
+  afterDraw(chart, args, options) {
+    const { ctx, chartArea: { top, bottom, left, right, width, height } } = chart;
 
-        // Get the canvas element
-        var ctx = document.getElementById('myAreaChart').getContext('2d');
+    chart.data.datasets.forEach((dataset, i) => {
+      chart.getDatasetMeta(i).data.forEach((datapoint, index) => {
+        const { x, y } = datapoint.tooltipPosition({ x: 0, y: 0 });
 
-        // Create the smooth area chart
-        var myAreaChart = new Chart(ctx, {
-            type: 'line', // Use 'line' for a smooth line
-            data: {
-                labels: daysOfWeek,
-                datasets: [{
-                    label: 'Amount',
-                    data: amounts,
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)', // Area fill color
-                    borderColor: 'rgba(75, 192, 192, 1)', // Line color
-                    borderWidth: 2,
-                    fill: true, // Enable area fill
-                    tension: 0.4 // Set tension to make the line smooth
-                }]
-            },
-            options: {
-                scales: {
-                    x: {
-                        type: 'category',
-                        labels: daysOfWeek,
-                        title: {
-                            display: true,
-                            text: 'Days',
-                            color: '#fff' // X-axis label color
-                        },
-                        ticks: {
-                            color: '#fff' // X-axis tick color
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Amount',
-                            color: '#fff' // Y-axis label color
-                        },
-                        ticks: {
-                            color: '#fff' // Y-axis tick color
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: '#fff' // Legend label color
-                        }
-                    }
-                }
-            }
-        });
-    </script>
+        const halfwidth = width / 2;
+        const halfheight = height / 2;
 
-    <script type="module">
-            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-            import { getDatabase, set, ref } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-            import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        const xLine = x >= halfwidth ? x + 70 : x - 70;
+        const yLine = y >= halfheight ? y + 70 : y - 70;
+        const extraLine = x >= halfwidth ? 15 : -15;
+
+        // Line
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(xLine, yLine);
+        ctx.lineTo(xLine + extraLine, yLine);
+        ctx.strokeStyle = dataset.borderColor[index];
+        ctx.stroke();
+
+        // Texts
+        ctx.font = '15px Arial'; // Set the font before measuring the text width
+        const textWidth = ctx.measureText(chart.data.labels[index]).width;
+
+        // Control the position
+        const textPosition = x >= halfwidth ? 'left' : 'right';
+        const plusFivePx = x >= halfwidth ? 5 : -5 ;
+        ctx.textAlign = textPosition;
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = dataset.borderColor[index];
+        ctx.fillText(chart.data.labels[index], xLine + extraLine + plusFivePx , yLine);
+      });
+    });
+  }
+};
+
+    // config 
+    const config = {
+      type: 'pie',
+      data,
+      options: {
+        layout: {
+          padding: 20
+        },
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      },
+      plugins: [pieLebalLine]
+    };
 
 
+    // render init block
+    const myChart = new Chart(
+      document.getElementById('myPieChart'),
+      config
+    );
 
-            const firebaseConfig = {
-                apiKey: "AIzaSyB9OFGA1fH-UJ7hfBAeGQiBR0JUWzEwyHY",
-                authDomain: "wisely-d1ff2.firebaseapp.com",
-                projectId: "wisely-d1ff2",
-                storageBucket: "wisely-d1ff2.appspot.com",
-                messagingSenderId: "138894388619",
-                appId: "1:138894388619:web:10017c3f6c29fc2311d38e"
-            };
-            const app = initializeApp(firebaseConfig);
-            const db = getDatabase();
-            const auth = getAuth(app);
-
-            let phoneNumber = document.getElementById('phoneNumber');
-            let email = document.getElementById('email');
-            let password = document.getElementById('password');
-            let signupform = document.getElementById('signupform')
-
-            let RegisterUser = evt => {
-                evt.preventDefault();
-
-                createUserWithEmailAndPassword(auth, email.value, password.value)
-                    .then((userCredential) => {
-                        const user = userCredential.user;
-                        console.log('User registered:', user.uid);
-                        // Display success message
-                        alert('Account Created');
-
-                        // Redirect to introduction.html
-                        window.location.href = 'introduction.html';
-                    })
-                    .catch((error) => {
-                        alert(error.message);
-                        console.error('Error:', error.code, error.message);
-                    });
-            }
-
-            signupform.addEventListener('submit', RegisterUser);
-    </script>
+    // Instantly assign Chart.js version
+    const chartVersion = document.getElementById('chartVersion');
+    chartVersion.innerText = Chart.version;
+  </script>
 </body>
 </html>
