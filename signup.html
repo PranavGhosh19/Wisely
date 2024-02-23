@@ -186,14 +186,14 @@
         
         <div class="form">
             <h2>Sign Up Now</h2>
-            <form class="signup-form">
+            <form class="signup-form" id="signupform">
                 <label for="phoneNumber">Mobile Number:<input type="tel" id="phoneNumber" name="phoneNumber" pattern="[0-9]{10}" required></label>
                 <label for="email">Email ID:<input type="email" id="email" name="email" required></label>
                 <label for="password">Password:<input type="password" id="password" name="password" required></label>
                 <button type="submit">Sign Up</button>
             </form>
             <div class="options">
-                <p>Already have an account?<a href="login.html"> Log In </a></p>
+                <p>Already have an account?<a href="login.html" type="submit"> Log In </a></p>
             </div>
         </div>
     </div>
@@ -256,6 +256,52 @@
                 }
             }
         });
+    </script>
+
+    <script type="module">
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+            import { getDatabase, set, ref } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+            import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+
+
+            const firebaseConfig = {
+                apiKey: "AIzaSyB9OFGA1fH-UJ7hfBAeGQiBR0JUWzEwyHY",
+                authDomain: "wisely-d1ff2.firebaseapp.com",
+                projectId: "wisely-d1ff2",
+                storageBucket: "wisely-d1ff2.appspot.com",
+                messagingSenderId: "138894388619",
+                appId: "1:138894388619:web:10017c3f6c29fc2311d38e"
+            };
+            const app = initializeApp(firebaseConfig);
+            const db = getDatabase();
+            const auth = getAuth(app);
+
+            let phoneNumber = document.getElementById('phoneNumber');
+            let email = document.getElementById('email');
+            let password = document.getElementById('password');
+            let signupform = document.getElementById('signupform')
+
+            let RegisterUser = evt => {
+                evt.preventDefault();
+
+                createUserWithEmailAndPassword(auth, email.value, password.value)
+                    .then((userCredential) => {
+                        const user = userCredential.user;
+                        console.log('User registered:', user.uid);
+                        // Display success message
+                        alert('Account Created');
+
+                        // Redirect to introduction.html
+                        window.location.href = 'introduction.html';
+                    })
+                    .catch((error) => {
+                        alert(error.message);
+                        console.error('Error:', error.code, error.message);
+                    });
+            }
+
+            signupform.addEventListener('submit', RegisterUser);
     </script>
 </body>
 </html>
