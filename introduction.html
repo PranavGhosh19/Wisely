@@ -40,12 +40,14 @@
         h1 {
             text-align: center;
             color: #d1d7e0;
+            font-size: 50px;
         }
 
         p {
             text-align: center;
             color: #aaaeb6;
             margin: 10px;
+            font-size: 25px;
         }
 
         button {
@@ -97,21 +99,57 @@
 </head>
 <body>
   <div class="container">
-    <h1>Wisely</h1>
+    <h1><a href="index.html" style="text-decoration: none; color: inherit;">Wisely</a></h1>
     <hr>
     <p>Now you can <span>record both, personal and group expenses</span> in one application.</p>
     <p>Analyse which areas do you spend the most using the <span>Pie Chart</span>.</p>
     <p>Limit your eveyday spends and see if you're exceeding or not with the help of the <span>Line Chart.</span></p>
     <p><span>Record, Manage and Analyze</span></p>
-    <button onclick="logout()"> Logout Now</button>
+    <button><a href="main.html" style="text-decoration: none; color: #fff;"> Home Page </a></button>
+    <button id="logoutButton"><a href="login.html" style="text-decoration: none; color: #fff;"> Logout </a></button>
   </div>
 
-<script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+
+  <script type="module">
+      // Your Firebase configuration object
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+      import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  
+      const firebaseConfig = {
+        apiKey: "AIzaSyB9OFGA1fH-UJ7hfBAeGQiBR0JUWzEwyHY",
+                authDomain: "wisely-d1ff2.firebaseapp.com",
+                projectId: "wisely-d1ff2",
+                storageBucket: "wisely-d1ff2.appspot.com",
+                messagingSenderId: "138894388619",
+                appId: "1:138894388619:web:10017c3f6c29fc2311d38e"
+    };
+
+    // Now you can use the firebase object in your script
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Function to handle logout
     function logout() {
-      // You can add session-clearing logic here if needed
-      // For simplicity, let's just redirect to "index.html"
-      window.location.href = "index.html";
+        // Clear session storage
+        sessionStorage.clear();
+
+        // Sign out the user
+        auth.signOut()
+            .then(() => {
+                // Logout successful
+                console.log('User logged out');
+                // Redirect to the login page or any other page as needed
+                window.location.href = 'login.html';
+            })
+            .catch((error) => {
+                // An error occurred during logout
+                console.error('Logout error:', error.code, error.message);
+            });
     }
+
+    // Add an event listener to the logout button
+    document.getElementById('logoutButton').addEventListener('click', logout);
 </script>
 </body>
 </html>
