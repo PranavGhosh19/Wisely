@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up to Wisely</title>
+    <link rel="shortcut icon" href="walletlogo.png" type="image/x-icon">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -187,6 +188,8 @@
         <div class="form">
             <h2>Sign Up Now</h2>
             <form class="signup-form" id="signupform">
+                <label for="firstName">First Name:<input type="text" id="firstName" name="firstName" required></label>
+                <label for="lastName">Last Name:<input type="text" id="lastName" name="lastName" required></label>
                 <label for="phoneNumber">Mobile Number:<input type="tel" id="phoneNumber" name="phoneNumber" pattern="[0-9]{10}" required></label>
                 <label for="email">Email ID:<input type="email" id="email" name="email" required></label>
                 <label for="password">Password:<input type="password" id="password" name="password" required></label>
@@ -258,50 +261,62 @@
         });
     </script>
 
-    <script type="module">
-            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-            import { getDatabase, set, ref } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-            import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, set, ref } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
+    const firebaseConfig = {
+        apiKey: "AIzaSyB9OFGA1fH-UJ7hfBAeGQiBR0JUWzEwyHY",
+        authDomain: "wisely-d1ff2.firebaseapp.com",
+        projectId: "wisely-d1ff2",
+        storageBucket: "wisely-d1ff2.appspot.com",
+        messagingSenderId: "138894388619",
+        appId: "1:138894388619:web:10017c3f6c29fc2311d38e",
+        databaseURL: "https://wisely-d1ff2-default-rtdb.firebaseio.com/"
+    };
 
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
 
-            const firebaseConfig = {
-                apiKey: "AIzaSyB9OFGA1fH-UJ7hfBAeGQiBR0JUWzEwyHY",
-                authDomain: "wisely-d1ff2.firebaseapp.com",
-                projectId: "wisely-d1ff2",
-                storageBucket: "wisely-d1ff2.appspot.com",
-                messagingSenderId: "138894388619",
-                appId: "1:138894388619:web:10017c3f6c29fc2311d38e"
-            };
-            const app = initializeApp(firebaseConfig);
-            const db = getDatabase();
-            const auth = getAuth(app);
+    let firstName = document.getElementById('firstName');
+    let lastName = document.getElementById('lastName');
+    let phoneNumber = document.getElementById('phoneNumber');
+    let email = document.getElementById('email');
+    let password = document.getElementById('password');
+    let signupform = document.getElementById('signupform');
 
-            let phoneNumber = document.getElementById('phoneNumber');
-            let email = document.getElementById('email');
-            let password = document.getElementById('password');
-            let signupform = document.getElementById('signupform')
+    let RegisterUser = evt => {
+        evt.preventDefault();
 
-            let RegisterUser = evt => {
-                evt.preventDefault();
+        createUserWithEmailAndPassword(auth, email.value, password.value)
+            .then((userCredential) => {
+                const user = userCredential.user;
 
-                createUserWithEmailAndPassword(auth, email.value, password.value)
-                    .then((userCredential) => {
-                        const user = userCredential.user;
-                        console.log('User registered:', user.uid);
-                        // Display success message
-                        alert('Account Created');
+                // Store additional user information in the database
+                const userRef = ref(db, 'users/' + user.uid);
+                set(userRef, {
+                    firstName: firstName.value,
+                    lastName: lastName.value,
+                    phoneNumber: phoneNumber.value,
+                    email: email.value,
+                });
 
-                        // Redirect to introduction.html
-                        window.location.href = 'introduction.html';
-                    })
-                    .catch((error) => {
-                        alert(error.message);
-                        console.error('Error:', error.code, error.message);
-                    });
-            }
+                // Display success message
+                alert('Account Created');
 
-            signupform.addEventListener('submit', RegisterUser);
-    </script>
+                //Redirect to introduction.html
+                window.location.href = 'introduction.html';
+            })
+            .catch((error) => {
+                alert(error.message);
+                console.error('Error:', error.code, error.message);
+            });
+    }
+
+    signupform.addEventListener('submit', RegisterUser);
+</script>
+
 </body>
 </html>
