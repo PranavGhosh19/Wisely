@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Log In to Wisely</title>
+    <link rel="shortcut icon" href="walletlogo.png" type="image/x-icon">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -230,56 +231,55 @@
             const myChart = new Chart(document.getElementById('myPieChart'), config);
     </script>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, get, ref, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyAvRr7xhZNDv8feV8okXTC4awgtB7MI2XI",
+        authDomain: "wisely-e0d87.firebaseapp.com",
+        projectId: "wisely-e0d87",
+        storageBucket: "wisely-e0d87.appspot.com",
+        messagingSenderId: "1052871511950",
+        appId: "1:1052871511950:web:9df05fc5b2bd79d2715edf",
+        databaseURL: "https://wisely-e0d87-default-rtdb.firebaseio.com/"
+    };
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyB9OFGA1fH-UJ7hfBAeGQiBR0JUWzEwyHY",
-            authDomain: "wisely-d1ff2.firebaseapp.com",
-            projectId: "wisely-d1ff2",
-            storageBucket: "wisely-d1ff2.appspot.com",
-            messagingSenderId: "138894388619",
-            appId: "1:138894388619:web:10017c3f6c29fc2311d38e"
-        };
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+const dbref = ref(db);
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase();
-        const auth = getAuth(app);
-        const dbref = ref(db);
+let email = document.getElementById('email');
+let password = document.getElementById('password');
+let login = document.getElementById('login');
 
-        let email = document.getElementById('email');
-        let password = document.getElementById('password');
-        let login = document.getElementById('login');
+let loginUser = (evt) => {
+    evt.preventDefault();
 
-        let loginUser = (evt) => {
-            evt.preventDefault();
+    signInWithEmailAndPassword(auth, email.value, password.value)
+        .then((userCredential) => {
+            console.log(userCredential);
 
-            console.log("Email:", email.value);
-            console.log("Password:", password.value);
+            // Display success message
+            alert("Log In Successful!");
 
-            signInWithEmailAndPassword(auth, email.value, password.value)
-                .then((credential) => {
-                    console.log("UserCredential:", credential);
+            //Redirect to introduction.html
+            window.location.href = 'introduction.html';
 
-                    // Display success message
-                    alert("Log In Successful!");
+        })
+        .catch((error) => {
+            alert(error.message);
+            console.error("Error Code:", error.code);
+            console.error("Error Message:", error.message);
+        });
+};
 
-                    // Redirect to introduction.html
-                    window.location.href = 'introduction.html';
-                })
-                .catch((error) => {
-                    alert(error.message);
-                    console.error("Error Code:", error.code);
-                    console.error("Error Message:", error.message);
-                });
-        }
+login.addEventListener('submit', loginUser);
 
-        login.addEventListener('submit', loginUser);
+</script>
 
-
-    </script>
 </body>
 </html>
