@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to Wisely</title>
+    <link rel="shortcut icon" href="walletlogo.png" type="image/x-icon">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
     <style>
         body {
@@ -101,55 +102,60 @@
   <div class="container">
     <h1><a href="index.html" style="text-decoration: none; color: inherit;">Wisely</a></h1>
     <hr>
+    <p id="profile"></p>
     <p>Now you can <span>record both, personal and group expenses</span> in one application.</p>
     <p>Analyse which areas do you spend the most using the <span>Pie Chart</span>.</p>
     <p>Limit your eveyday spends and see if you're exceeding or not with the help of the <span>Line Chart.</span></p>
     <p><span>Record, Manage and Analyze</span></p>
-    <button><a href="main.html" style="text-decoration: none; color: #fff;"> Home Page </a></button>
+    <button><a href="main.html" style="text-decoration: none; color: #fff;"> Start Recording Now! </a></button>
     <button id="logoutButton"><a href="login.html" style="text-decoration: none; color: #fff;"> Logout </a></button>
   </div>
 
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+      <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-  <script type="module">
-      // Your Firebase configuration object
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-      import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-  
-      const firebaseConfig = {
-        apiKey: "AIzaSyB9OFGA1fH-UJ7hfBAeGQiBR0JUWzEwyHY",
-                authDomain: "wisely-d1ff2.firebaseapp.com",
-                projectId: "wisely-d1ff2",
-                storageBucket: "wisely-d1ff2.appspot.com",
-                messagingSenderId: "138894388619",
-                appId: "1:138894388619:web:10017c3f6c29fc2311d38e"
-    };
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAvRr7xhZNDv8feV8okXTC4awgtB7MI2XI",
+            authDomain: "wisely-e0d87.firebaseapp.com",
+            projectId: "wisely-e0d87",
+            storageBucket: "wisely-e0d87.appspot.com",
+            messagingSenderId: "1052871511950",
+            appId: "1:1052871511950:web:9df05fc5b2bd79d2715edf",
+            databaseURL: "https://wisely-e0d87-default-rtdb.firebaseio.com/"
+        };
 
-    // Now you can use the firebase object in your script
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
 
-    // Function to handle logout
-    function logout() {
-        // Clear session storage
-        sessionStorage.clear();
+        const profileDiv = document.getElementById('profile');
 
-        // Sign out the user
-        auth.signOut()
-            .then(() => {
-                // Logout successful
-                console.log('User logged out');
-                // Redirect to the login page or any other page as needed
-                window.location.href = 'login.html';
-            })
-            .catch((error) => {
-                // An error occurred during logout
-                console.error('Logout error:', error.code, error.message);
-            });
-    }
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in
+                const userId = user.uid;
 
-    // Add an event listener to the logout button
-    document.getElementById('logoutButton').addEventListener('click', logout);
-</script>
+                // Fetch user data from the database
+                const userRef = ref(db, 'users/' + userId);
+                onValue(userRef, (snapshot) => {
+                    const userData = snapshot.val();
+
+                    // Update the HTML content with the user's first name and last name
+                    if (userData) {
+                        profileDiv.innerHTML = `<p>Welcome, ${userData.firstName} ${userData.lastName}!</p>`;
+                    }
+                });
+            } else {
+                // User is signed out
+                profileDiv.innerHTML = '<p>Welcome!</p>';
+            }
+        });
+    </script>
+
+
 </body>
 </html>
