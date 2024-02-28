@@ -167,7 +167,7 @@
                         console.log('Camera access successful!', stream);
                         
                         // Redirect to Google Pay (replace with actual Google Pay URL)
-                        window.location.href = 'https://pay.google.com/';
+                         window.location.href = 'intent://scan/#Intent;scheme=gpay;package=com.google.android.apps.walletnfcrel;end';
                     })
                     .catch(error => {
                         console.error('Error accessing camera:', error);
