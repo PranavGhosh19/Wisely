@@ -107,7 +107,7 @@
     <p>Analyse which areas do you spend the most using the <span>Pie Chart</span>.</p>
     <p>Limit your eveyday spends and see if you're exceeding or not with the help of the <span>Line Chart.</span></p>
     <p><span>Record, Manage and Analyze</span></p>
-    <button id="scanButton">Scan QR Code</button>
+    <button id="cameraButton">Open Rear Camera</button>
     <button id="logoutButton"><a href="login.html" style="text-decoration: none; color: #fff;"> Logout </a></button>
   </div>
 
@@ -157,47 +157,23 @@
     </script>
 
 <script>
-document.getElementById('scanButton').addEventListener('click', function() {
-    if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-            .then(function (stream) {
-                // Assume you have a video element with id 'scannerVideo'
-                var videoElement = document.createElement('video');
-                videoElement.setAttribute('id', 'scannerVideo');
-                document.body.appendChild(videoElement);
+    document.getElementById('cameraButton').addEventListener('click', openRearCamera);
 
-                videoElement.srcObject = stream;
-                videoElement.play();
-
-                // Assume you have a QR code scanning library like ZXing.js
-                // Import the library in your project
-                // For ZXing.js, you can use: https://github.com/zxing-js/library
-                // Then, you can use the library to handle QR code scanning
-                // For example:
-                const codeReader = new ZXing.BrowserQRCodeReader();
-
-                codeReader.decodeFromVideoDevice(undefined, 'scannerVideo', (result, err) => {
-                    if (result) {
-                        alert('QR Code scanned: ' + result.text);
-                        // You can perform further actions with the scanned QR code here
-                    }
-                    if (err) {
-                        console.error('Error while scanning QR code:', err);
-                    }
-
-                    // Stop video stream and remove video element
-                    stream.getTracks().forEach(track => track.stop());
-                    document.body.removeChild(videoElement);
-                });
-            })
-            .catch(function (error) {
-                console.error('Error accessing camera:', error);
-                alert('Error accessing camera. Please make sure the camera is accessible.');
-            });
-    } else {
-        alert('Your browser does not support the necessary features for QR code scanning.');
+    function openRearCamera() {
+        // Use the getUserMedia API to access the camera
+        navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' } // Use the rear camera if available
+        })
+        .then(stream => {
+            // Do something with the camera stream, for example, display it in a video element
+            const videoElement = document.createElement('video');
+            videoElement.srcObject = stream;
+            document.body.appendChild(videoElement);
+        })
+        .catch(error => {
+            console.error('Error accessing the camera:', error);
+        });
     }
-});
 </script>
 
 
