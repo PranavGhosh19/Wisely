@@ -107,7 +107,8 @@
     <p>Analyse which areas do you spend the most using the <span>Pie Chart</span>.</p>
     <p>Limit your eveyday spends and see if you're exceeding or not with the help of the <span>Line Chart.</span></p>
     <p><span>Record, Manage and Analyze</span></p>
-    <button id="cameraButton" onclick="openCameraAndRedirect()">Scan and Pay</button>
+    <button onclick="openCamera()">Open Camera</button>
+    <button onclick="redirectToGooglePay()">Redirect to Google Pay</button>
     <button id="logoutButton"><a href="login.html" style="text-decoration: none; color: #fff;"> Logout </a></button>
   </div>
 
@@ -157,24 +158,14 @@
     </script>
 
     <script>
-        function openCameraAndRedirect() {
-            // Check if the browser supports mediaDevices and getUserMedia
-            if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
-                // Access the camera
-                navigator.mediaDevices.getUserMedia({ video: true })
-                    .then(stream => {
-                        // Do something with the camera stream if needed
-                        console.log('Camera access successful!', stream);
-                        
-                        // Redirect to Google Pay (replace with actual Google Pay URL)
-                         window.location.href = 'intent://scan/#Intent;scheme=gpay;package=com.google.android.apps.walletnfcrel;end';
-                    })
-                    .catch(error => {
-                        console.error('Error accessing camera:', error);
-                    });
-            } else {
-                console.error('getUserMedia is not supported in this browser.');
-            }
+        function openCamera() {
+            const cameraInput = document.getElementById('cameraInput');
+            cameraInput.click();
+        }
+
+        function redirectToGooglePay() {
+            // Redirect to Google Pay (replace with actual Google Pay URL)
+            window.location.href = 'https://pay.google.com/';
         }
     </script>
 
