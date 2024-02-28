@@ -107,8 +107,7 @@
     <p>Analyse which areas do you spend the most using the <span>Pie Chart</span>.</p>
     <p>Limit your eveyday spends and see if you're exceeding or not with the help of the <span>Line Chart.</span></p>
     <p><span>Record, Manage and Analyze</span></p>
-    <button onclick="openCamera()">Open Camera</button>
-    <button onclick="redirectToGooglePay()">Redirect to Google Pay</button>
+    <button onclick="openScanner()">Open Camera</button>
     <button id="logoutButton"><a href="login.html" style="text-decoration: none; color: #fff;"> Logout </a></button>
   </div>
 
@@ -157,17 +156,31 @@
         });
     </script>
 
-    <script>
-        function openCamera() {
-            const cameraInput = document.getElementById('cameraInput');
-            cameraInput.click();
-        }
+<script>
+    function openScanner() {
+        // Check if the device supports the getUserMedia API
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            // Use the getUserMedia API to access the camera
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function (stream) {
+                    // Create a video element to display the camera stream
+                    var video = document.createElement('video');
+                    video.srcObject = stream;
+                    video.play();
+                    
+                    // Append the video element to the body
+                    document.body.appendChild(video);
 
-        function redirectToGooglePay() {
-            // Redirect to Google Pay (replace with actual Google Pay URL)
-            window.location.href = 'https://pay.google.com/';
+                    // You can also use the stream for further processing or scanning
+                })
+                .catch(function (error) {
+                    console.error('Error accessing camera:', error);
+                });
+        } else {
+            alert('getUserMedia is not supported on your device');
         }
-    </script>
+    }
+</script>
 
 
 </body>
