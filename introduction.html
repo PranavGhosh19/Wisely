@@ -107,7 +107,7 @@
     <p>Analyse which areas do you spend the most using the <span>Pie Chart</span>.</p>
     <p>Limit your eveyday spends and see if you're exceeding or not with the help of the <span>Line Chart.</span></p>
     <p><span>Record, Manage and Analyze</span></p>
-    <button onclick="openScanner()">Open Camera</button>
+    <button onclick="openBackCamera()">Open Camera</button>
     <button id="logoutButton"><a href="login.html" style="text-decoration: none; color: #fff;"> Logout </a></button>
   </div>
 
@@ -157,11 +157,11 @@
     </script>
 
 <script>
-    function openScanner() {
+    function openBackCamera() {
         // Check if the device supports the getUserMedia API
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            // Use the getUserMedia API to access the camera
-            navigator.mediaDevices.getUserMedia({ video: true })
+            // Use the getUserMedia API with facingMode constraint to access the back camera
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
                 .then(function (stream) {
                     // Create a video element to display the camera stream
                     var video = document.createElement('video');
@@ -174,7 +174,7 @@
                     // You can also use the stream for further processing or scanning
                 })
                 .catch(function (error) {
-                    console.error('Error accessing camera:', error);
+                    console.error('Error accessing back camera:', error);
                 });
         } else {
             alert('getUserMedia is not supported on your device');
