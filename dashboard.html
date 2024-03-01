@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Icons+Outlined" />
+    <title>Wisely</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Material Symbols Outlined', sans-serif;
+        }
+
+        body, html {
+            height: 100%;
+            background-color: #212020;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 5% auto;
+            grid-template-rows: 10% 12% 78%;
+            grid-template-areas: 
+                "header header header"
+                "sidebar main main"
+                "sidebar section section";
+            height: 100vh;
+        }
+
+        .header, .sidebar, .main, .section {
+            text-align: center;
+            justify-content: center;
+            max-width: 100%;
+            padding: 5px;
+        }
+
+        .header {
+            background-color: #000000;
+            color: white;
+            grid-area: header;
+        }
+        
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add box shadow effect */
+        }
+
+        #logo {
+            color: #ffffff;
+            font-size: 3.8em;
+        }
+    
+        #brand {
+          color: #fff; /* Choose your desired text color */
+          font-size: 2.25em;
+          margin: 0;
+        }
+
+        .profile-picture-container {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-right: 10px;
+        }
+
+        .profile-picture {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        /*-----------------------------------------Add an Expense-----------------------------------------*/
+    
+        .add-an-expense-btn {
+          background-color: #2ecc71; /* Choose your desired button color */
+          color: #000000; /* Choose your desired button text color */
+          padding: 10px 20px;
+          border: none;
+          border-radius: 20px;
+          font-size: 1em;
+          cursor: pointer;
+        }
+
+        .add-an-expense-btn-mobile {
+            display: none;
+        }
+
+        /* Style for modal overlay */
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+            z-index: 1;
+        }
+
+        /* Style for modal content */
+        #form-container {
+            background-color: #fff;
+            max-width: 800px;
+            border-radius: 20px;
+            padding: 20px;
+            margin: 20px auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 2;
+            color: #000000;
+        }
+
+        #form-container p {
+          text-align: center;
+        }
+
+        form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-gap: 10px;
+            margin-top: 20px;
+        }
+
+        input[type="radio"],
+        input[type="text"],
+        input[type="number"],
+        select,
+        input[type="date"] {
+            width: 100%; /* Adjusted width for smaller screens */
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        input[type="radio"] {
+            width: auto;
+            margin-top: 15px;
+            margin-right: 5px;
+        }
+
+        #add-expense-button, #cancel-expense-button {
+            width: 100%; /* Adjusted width for smaller screens */
+            padding: 10px;
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #add-expense-button:hover {
+            background-color: #45a049;
+        }
+
+        
+
+        /*-------------------------------------------Sidebar-------------------------------------------*/
+        .sidebar {
+            background-color: #000000;
+            grid-area: sidebar;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar a {
+            text-decoration: none;
+            color: white;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon {
+            font-size: 24px;
+            margin: 1px;
+            display: flex;
+            align-items: center;
+        }
+
+        /*-------------------------------------------Main-------------------------------------------*/
+
+        .main {
+            background-color: rgb(0, 0, 0);
+            grid-area: main;
+            display: grid;
+            grid-template-columns: 100%; /* Divide into three equal parts */
+            justify-content: space-between;
+            gap: 5px;
+        }
+
+        .main-content {
+            background-color: #2ecc71;
+            border-radius: 20px;
+        }
+
+        .number {
+            font-size: 1.5em; /* Adjust the font size as needed */
+            font-weight: bold;
+            text-align: center;
+        }
+
+        #h2 {
+            text-align: center;
+            font-size: 1.25em;
+        }
+
+        .h3 {
+            text-align: center;
+        }
+        
+
+        #h1 {
+            color: #fff; /* Choose your desired text color */
+            font-size: 1.5em;
+        }
+
+        /*-------------------------------------------Section------------------------------------------*/
+
+        .section {
+            background-color: rgb(0, 0, 0);
+            grid-area: section;
+            display: grid;
+            grid-template-columns: 1.2fr 1.8fr; /* Divide into two equal parts */
+        }
+
+        .section-content {
+            background-color: #000000;
+            border-radius: 10px;
+        }
+
+        .section-content > h2 {
+            margin: 10px;
+            color: #fff;
+        }
+
+        .chart-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 70%; /* Set a specific width, adjust as needed */
+            height: 70%; /* Set a specific height, adjust as needed */
+            margin: auto;
+        }
+        
+        
+        @media screen and (max-width: 600px) {
+            .container {
+                grid-template-columns: 1fr; /* Change to a single column layout for small screens */
+                grid-template-areas: 
+                    "header"
+                    "main"
+                    "section"
+                    "sidebar";
+            }
+    
+            /* You can add specific styling for smaller screens here */
+            .header {
+                padding: 10px;
+                position: fixed;
+                width: 100%;
+                grid-area: header;
+            }
+
+            #logo {
+                color: #ffffff;
+                font-size: 2.5em;
+            }
+
+            #brand {
+                color: #fff; /* Choose your desired text color */
+                font-size: 1.5em;
+                margin: 0;
+            }
+    
+            .add-an-expense-btn {
+                display: none; /* Hide the button for small screens */
+            }
+
+            .add-an-expense-btn-mobile {
+                padding: 10px;
+                font-size: 1.5em;
+                margin: 10px; /* Add margin for spacing */
+            }
+
+            .add-an-expense-btn-mobile {
+                margin: 10px;
+                width: 40px; /* Set the width and height to create a circle */
+                height: 40px;
+                border: none;
+                background-color: #2ecc71;
+                color: #000000;
+                cursor: pointer;
+                border-radius: 50%; /* Set border-radius to 50% for a circle */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
+            }
+
+            /* Style for modal overlay */
+            #overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+                z-index: 1;
+            }
+
+            /* Style for modal content */
+            #form-container {
+                background-color: #fff;
+                width: 80%; /* Updated width for smaller screens */
+                max-width: 800px;
+                border-radius: 20px;
+                padding: 20px;
+                text-align: left;
+                margin: 20px auto;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            }
+    
+            /*.sidebar {
+                max-height: 100%;
+                max-width: 100%;
+                background-color: #333;
+                display: flex;
+                flex-direction: column;
+                border-radius: 20px;
+                padding: 10px;
+            }*/
+
+            .sidebar {
+                flex-direction: row; /* Change the direction to a row for smaller screens */
+                position: fixed;
+                bottom: 0;
+                left: 50%;
+                transform: translateX(-50%); /* Center the sidebar horizontally */
+                width: 100%;
+                max-height: 100%;
+                margin: 0;
+                align-items: center;
+                justify-content: space-between;
+                grid-area: sidebar;
+            }
+    
+            .sidebar a {
+                padding: 10px 5px;
+            }
+
+            .sidebar a.icon:nth-child(3),
+            .sidebar a.icon:last-child {
+                display: none;
+            }
+
+            .icon {
+                font-size: 24px;
+                margin: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+    
+            .main {
+                grid-template-columns: 1fr; /* Change to a single column layout for small screens */
+                justify-content: none;
+                gap: 0;
+                grid-area: main;
+                display: grid;
+            }
+
+            .main-content {
+                display: flex;
+                align-items: center; /* Center content horizontally */
+                justify-content: space-between;
+                margin: 10px;
+                text-align: left; /* Center text within the container */
+            }
+
+            #h2 {
+                font-size: 1.25em;
+                margin: 10px;
+            }
+
+            .number {
+                margin: 10px;
+            }
+
+            .h3 {
+                display: none;
+            }
+    
+            .section {
+                grid-template-columns: 1fr; /* Change to a single column layout for small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!---------------------------------------------Header / NavBar-------------------------------------------->
+        <div class="header">
+            <span class="material-icons-outlined" id="logo">
+                wallet
+            </span>
+          <div id="brand">
+              Wisely
+          </div>
+          <button class="add-an-expense-btn" id="open-form-button" style="display: none;">Add an Expense</button>
+          <div class="profile-picture-container">
+            <label for="profile-picture-input">
+                <img src="" alt="Profile Picture" class="profile-picture" id="profile-picture-preview">
+                <span>Upload Photo</span>
+            </label>
+            <input type="file" id="profile-picture-input" accept="image/*" style="display: none">
+          </div>
+
+            <!-- Modal overlay -->
+            <div id="overlay"></div>
+
+            <!-- Form container (modal content) -->
+            <div id="form-container">
+                <h2 style="text-align: center;">Add an Expense</h2>
+                <br>
+                <form id="expense-form">
+                    <input type="text" id="description" placeholder="Description">
+                    <input type="number" id="amount" placeholder="Amount">
+                    <select id="expense_category">
+                      <option value="food">Food</option>
+                      <option value="transportation">Transportation</option>
+                      <option value="entertainment">Entertainment</option>
+                      <option value="other">Other</option>
+                    </select>
+                    <!-- Add a date picker input -->
+                    <input type="date" id="expense_date">
+                    <!-- Cancel button to close the form without adding an expense -->
+                    <button type="button" id="cancel-expense-button" style="background-color:white; color:black;"> Cancel </button>                    
+                    <button type="button" id="add-expense-button">Add Expense</button>
+                    <br><br>
+                </form>
+            </div>
+
+        </div>
+        <!---------------------------------------------Sidebar to Menu Bar------------------------------------->
+        <div class="sidebar">
+            <a href="#" class="icon"><span class="material-icons-outlined">dashboard</span></a>
+            <a href="#" class="icon"><span class="material-icons-outlined">groups</span></a>
+            <a href="#" class="icon"><span class="material-icons-outlined">analytics</span></a>
+            <a href="#" class="icon" id="open-form-button-mobile"><span class="material-icons-outlined" style="color: #2ecc71; font-size: 2em;">add_circle</span></a>
+            <a href="#" class="icon"><span class="material-icons-outlined">receipt_long</span></a>
+            <a href="settings.html" class="icon"><span class="material-icons-outlined">settings</span></a>
+            <a href="#" class="icon"><span class="material-icons-outlined">logout</span></a>
+        </div>
+        <!---------------------------------------------Main----------------------------------------------->      
+        <div class="main">
+            <div class="main-content">
+                <div id="h2">Total Expenses</div>
+                <span id="totalExpenses" class="number" style="align-items: end;"></span>
+            </div>
+        </body>
+        </div>
+        <!---------------------------------------------Section--------------------------------------------->
+        <div class="section">
+        </div>
+    </div>
+
+    <script>
+
+
+        //-----------------------------------------------------Pie----------------------------------------------------//
+
+
+        //--------------------------------------------------Line---------------------------------------------------//
+
+
+
+        //------------------------------------------------------------------------------------------//
+
+        // Initialize total expenses and last recorded month
+        var totalExpenses = 0;
+        var lastRecordedMonth = new Date().getMonth(); // Get the current month (0-indexed)
+
+        // Function to update the total expenses amount
+        function updateTotalExpenses() {
+            var totalExpensesElement = document.getElementById("totalExpenses");
+            totalExpensesElement.textContent = "₹" + totalExpenses.toFixed(2); // Display amount with two decimal places
+        }
+
+        // Function to clear the form and reset the total expenses
+        function clearFormAndResetTotal() {
+            totalExpenses = 0;
+            updateTotalExpenses();
+            document.getElementById("expense-form").reset();
+        }
+
+        // Function to open the form container
+function openFormContainer() {
+    document.getElementById("overlay").style.display = "block";
+    document.getElementById("form-container").style.display = "block";
+}
+
+// Button to open the form container
+document.getElementById("open-form-button").addEventListener("click", openFormContainer);
+
+// Mobile button to open the form container
+document.getElementById("open-form-button-mobile").addEventListener("click", openFormContainer);
+
+// Clear form container and hide it when adding an expense
+document.getElementById("add-expense-button").addEventListener("click", function() {
+    // ... (your existing form submission code) ...
+
+    // Get the amount from the form input
+    var expenseAmount = parseFloat(document.getElementById("amount").value);
+
+    // Add the expense amount to the total
+    totalExpenses += expenseAmount;
+
+    // Update the total expenses amount
+    updateTotalExpenses();
+
+    // Clear the form inputs
+    document.getElementById("expense-form").reset();
+
+    // Clear form container and hide it
+    document.getElementById("overlay").style.display = "none";
+    document.getElementById("form-container").style.display = "none";
+});
+
+// Cancel button to hide the form without adding an expense
+document.getElementById("cancel-expense-button").addEventListener("click", function() {
+    // Clear the form inputs
+    document.getElementById("expense-form").reset();
+
+    // Clear form container and hide it
+    document.getElementById("overlay").style.display = "none";
+    document.getElementById("form-container").style.display = "none";
+});
+
+
+
+
+
+
+            // ------------------------------------------------------Page.html------------------------------------------------------------//    
+            // Add event listeners to handle sidebar link clicks
+            document.querySelectorAll('.sidebar a').forEach(function(link) {
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    
+                    // Get the href attribute of the clicked link
+                    var pageUrl = this.getAttribute('href');
+                    
+                    // Use window.location.href to navigate to the respective page
+                    window.location.href = pageUrl;
+                });
+            });
+
+            // -----------------------------------------Profile Picture----------------------------------------------------------//  
+            const profilePictureInput = document.getElementById('profile-picture-input');
+            const profilePicturePreview = document.getElementById('profile-picture-preview');
+
+            profilePictureInput.addEventListener('change', handleProfilePictureUpload);
+
+            function handleProfilePictureUpload() {
+                const file = profilePictureInput.files[0];
+
+                if (file) {
+                    const reader = new FileReader();
+
+                    reader.onload = function (e) {
+                        profilePicturePreview.src = e.target.result;
+                    };
+
+                    reader.readAsDataURL(file);
+                }
+            }
+
+
+
+    </script>
+    
+    
+</body>
+</html>
