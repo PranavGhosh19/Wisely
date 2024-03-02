@@ -18,7 +18,7 @@
 
         body, html {
             height: 100%;
-            background-color: #212020;
+            background-color: #000000;
         }
 
         .container {
@@ -213,7 +213,7 @@
         }
 
         .number {
-            font-size: 1.5em; /* Adjust the font size as needed */
+            font-size: 1.15em; /* Adjust the font size as needed */
             font-weight: bold;
             text-align: center;
         }
@@ -240,6 +240,7 @@
             grid-area: section;
             display: grid;
             grid-template-columns: 1.2fr 1.8fr; /* Divide into two equal parts */
+            grid-template-rows: 1fr 1fr;
         }
 
         .section-content {
@@ -398,7 +399,7 @@
             }
 
             #h2 {
-                font-size: 1.25em;
+                font-size: 1em;
                 margin: 10px;
             }
 
@@ -481,20 +482,11 @@
         </div>
         <!---------------------------------------------Section--------------------------------------------->
         <div class="section">
+            
         </div>
     </div>
 
     <script>
-
-
-        //-----------------------------------------------------Pie----------------------------------------------------//
-
-
-        //--------------------------------------------------Line---------------------------------------------------//
-
-
-
-        //------------------------------------------------------------------------------------------//
 
         // Initialize total expenses and last recorded month
         var totalExpenses = 0;
@@ -514,51 +506,47 @@
         }
 
         // Function to open the form container
-function openFormContainer() {
-    document.getElementById("overlay").style.display = "block";
-    document.getElementById("form-container").style.display = "block";
-}
-
-// Button to open the form container
-document.getElementById("open-form-button").addEventListener("click", openFormContainer);
-
-// Mobile button to open the form container
-document.getElementById("open-form-button-mobile").addEventListener("click", openFormContainer);
-
-// Clear form container and hide it when adding an expense
-document.getElementById("add-expense-button").addEventListener("click", function() {
-    // ... (your existing form submission code) ...
-
-    // Get the amount from the form input
-    var expenseAmount = parseFloat(document.getElementById("amount").value);
-
-    // Add the expense amount to the total
-    totalExpenses += expenseAmount;
-
-    // Update the total expenses amount
-    updateTotalExpenses();
-
-    // Clear the form inputs
-    document.getElementById("expense-form").reset();
-
-    // Clear form container and hide it
-    document.getElementById("overlay").style.display = "none";
-    document.getElementById("form-container").style.display = "none";
-});
-
-// Cancel button to hide the form without adding an expense
-document.getElementById("cancel-expense-button").addEventListener("click", function() {
-    // Clear the form inputs
-    document.getElementById("expense-form").reset();
-
-    // Clear form container and hide it
-    document.getElementById("overlay").style.display = "none";
-    document.getElementById("form-container").style.display = "none";
-});
-
-
-
-
+        function openFormContainer() {
+            document.getElementById("overlay").style.display = "block";
+            document.getElementById("form-container").style.display = "block";
+        }
+        
+        // Button to open the form container
+        document.getElementById("open-form-button").addEventListener("click", openFormContainer);
+        
+        // Mobile button to open the form container
+        document.getElementById("open-form-button-mobile").addEventListener("click", openFormContainer);
+        
+        // Clear form container and hide it when adding an expense
+        document.getElementById("add-expense-button").addEventListener("click", function() {
+            // ... (your existing form submission code) ...
+        
+            // Get the amount from the form input
+            var expenseAmount = parseFloat(document.getElementById("amount").value);
+        
+            // Add the expense amount to the total
+            totalExpenses += expenseAmount;
+        
+            // Update the total expenses amount
+            updateTotalExpenses();
+        
+            // Clear the form inputs
+            document.getElementById("expense-form").reset();
+        
+            // Clear form container and hide it
+            document.getElementById("overlay").style.display = "none";
+            document.getElementById("form-container").style.display = "none";
+        });
+        
+        // Cancel button to hide the form without adding an expense
+        document.getElementById("cancel-expense-button").addEventListener("click", function() {
+            // Clear the form inputs
+            document.getElementById("expense-form").reset();
+        
+            // Clear form container and hide it
+            document.getElementById("overlay").style.display = "none";
+            document.getElementById("form-container").style.display = "none";
+        });
 
 
             // ------------------------------------------------------Page.html------------------------------------------------------------//    
@@ -594,11 +582,6 @@ document.getElementById("cancel-expense-button").addEventListener("click", funct
                     reader.readAsDataURL(file);
                 }
             }
-
-
-
-    </script>
-    
-    
+    </script>    
 </body>
 </html>
