@@ -41,7 +41,29 @@
         h1 {
             text-align: center;
             color: #d1d7e0;
-            font-size: 50px;
+            font-size: 30px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #d1d7e0;
+            font-size: 20px;
+        }
+
+
+        .profile-picture-container {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 10px;
+        }
+
+        .profile-picture {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
         }
 
         p {
@@ -99,23 +121,39 @@
     </style>
 </head>
 <body>
-  <div class="container">
-    <h1><a href="index.html" style="text-decoration: none; color: inherit;">Wisely</a></h1>
-    <hr>
-    <p id="profile"></p>
-    <p>Now you can <span>record both, personal and group expenses</span> in one application.</p>
-    <p>Analyse which areas do you spend the most using the <span>Pie Chart</span>.</p>
-    <p>Limit your eveyday spends and see if you're exceeding or not with the help of the <span>Line Chart.</span></p>
-    <p><span>Record, Manage and Analyze</span></p>
-    <button><a href="dashboard.html" style="text-decoration: none; color: #fff;" target="_blank">Dashboard</a></button>
-    <button id="logoutButton"><a href="login.html" style="text-decoration: none; color: #fff;"> Logout </a></button>
-  </div>
+    <div class="container">
+      <h1><a href="index.html" style="text-decoration: none; color: inherit;">Wisely</a></h1>
+      <hr>
+      <h2>Profile Details</h2>
+  
+<!-- Profile Picture Container -->
+<div class="profile-picture-container">
+    <input type="file" id="profile-picture-input" style="display: none" accept="image/*">
+    <label for="profile-picture-input">
+        <img alt="Profile Picture" class="profile-picture" id="profile-picture-preview">
+        <span>Upload Photo</span>
+    </label>
+</div>
+  
+      <!-- Other Profile Content (to be dynamically updated by JavaScript) -->
+      <p id="profile"></p>
+      <p>Now you can <span>record both, personal and group expenses</span> in one application.</p>
+      <p>Analyze which areas do you spend the most using the <span>Pie Chart</span>.</p>
+      <p>Limit your everyday spends and see if you're exceeding or not with the help of the <span>Line Chart.</span></p>
+      <p><span>Record, Manage and Analyze</span></p>
+  
+      <!-- Buttons -->
+      <button><a href="main.html" style="text-decoration: none; color: #fff;"> Start Recording Now! </a></button>
+      <button id="logoutButton"><a href="login.html" style="text-decoration: none; color: #fff;"> Logout </a></button>
+    </div>
 
-      <script type="module">
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
+        import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+        import { ref as databaseRef, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    
         // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAvRr7xhZNDv8feV8okXTC4awgtB7MI2XI",
@@ -126,27 +164,70 @@
             appId: "1:1052871511950:web:9df05fc5b2bd79d2715edf",
             databaseURL: "https://wisely-e0d87-default-rtdb.firebaseio.com/"
         };
-
+    
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const auth = getAuth(app);
-
+        const storage = getStorage(app);
+    
         const profileDiv = document.getElementById('profile');
-
+        const profilePictureInput = document.getElementById('profile-picture-input');
+        const profilePicturePreview = document.getElementById('profile-picture-preview');
+    
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 // User is signed in
                 const userId = user.uid;
-
+    
                 // Fetch user data from the database
                 const userRef = ref(db, 'users/' + userId);
                 onValue(userRef, (snapshot) => {
                     const userData = snapshot.val();
-
-                    // Update the HTML content with the user's first name and last name
+    
+                    // Update the HTML content with the user's details
                     if (userData) {
-                        profileDiv.innerHTML = `<p>Welcome, ${userData.firstName} ${userData.lastName}!</p>`;
+                        const { firstName, lastName, phoneNumber, email } = userData;
+                        profileDiv.innerHTML = `
+                            <p>Welcome, ${firstName} ${lastName}!</p>
+                            <p>Phone Number: ${phoneNumber}</p>
+                            <p>Email: ${email}</p>
+                        `;
+                    }
+    
+                    // Profile picture handling logic
+                    profilePictureInput.addEventListener('change', handleProfilePictureUpload);
+    
+                    function handleProfilePictureUpload() {
+                        const file = profilePictureInput.files[0];
+    
+                        if (file) {
+                            const reader = new FileReader();
+    
+                            reader.onload = function (e) {
+                                // Update the preview with the selected image
+                                profilePicturePreview.src = e.target.result;
+    
+                                // Upload the image to Firebase Storage
+                                const storageRefPath = storageRef(storage, 'profile_pictures/' + userId); // Adjust the path as needed
+                                const uploadTask = uploadString(storageRefPath, e.target.result, 'data_url');
+    
+                                uploadTask.then((snapshot) => {
+                                    console.log('Profile picture uploaded successfully');
+    
+                                    // Get the download URL of the uploaded image
+                                    getDownloadURL(snapshot.ref).then((downloadURL) => {
+                                        // Update the user's profile data in the database with the download URL
+                                        const userRef = databaseRef(db, 'users/' + userId);
+                                        update(userRef, { profilePictureURL: downloadURL });
+                                    });
+                                }).catch((error) => {
+                                    console.error('Error uploading profile picture:', error.message);
+                                });
+                            };
+    
+                            reader.readAsDataURL(file);
+                        }
                     }
                 });
             } else {
@@ -154,27 +235,21 @@
                 profileDiv.innerHTML = '<p>Welcome!</p>';
             }
         });
+
+        // Check if the user is logged in
+        const userString = localStorage.getItem('user');
+
+        if (!userString) {
+            // User not logged in, redirect to the login page
+            window.location.href = 'login.html';
+        } else {
+            // User is logged in, parse the JSON string
+            const user = JSON.parse(userString);
+
+            // Now, you can use the 'user' object for further operations
+            console.log('User:', user);
+        }
     </script>
-
-<script>
-    document.getElementById('cameraButton').addEventListener('click', openRearCamera);
-
-    function openRearCamera() {
-        // Use the getUserMedia API to access the camera
-        navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment' } // Use the rear camera if available
-        })
-        .then(stream => {
-            // Do something with the camera stream, for example, display it in a video element
-            const videoElement = document.createElement('video');
-            videoElement.srcObject = stream;
-            document.body.appendChild(videoElement);
-        })
-        .catch(error => {
-            console.error('Error accessing the camera:', error);
-        });
-    }
-</script>
 
 
 </body>
