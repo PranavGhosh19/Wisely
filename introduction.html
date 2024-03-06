@@ -155,6 +155,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+        import { ref as databaseRef, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -167,81 +169,81 @@
             databaseURL: "https://wisely-e0d87-default-rtdb.firebaseio.com/"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const auth = getAuth(app);
+        const storage = getStorage(app);
 
-        const profileDiv = document.getElementById('profile');
-        const profilePictureInput = document.getElementById('profile-picture-input');
-        const profilePicturePreview = document.getElementById('profile-picture-preview');
+    const profileDiv = document.getElementById('profile');
+    const profilePictureInput = document.getElementById('profile-picture-input');
+    const profilePicturePreview = document.getElementById('profile-picture-preview');
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // User is signed in
-                const userId = user.uid;
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // User is signed in
+            const userId = user.uid;
 
-                // Fetch user data from the database
-                const userRef = ref(db, 'users/' + userId);
-                onValue(userRef, (snapshot) => {
-                    const userData = snapshot.val();
+            // Fetch user data from the database
+            const userRef = ref(db, 'users/' + userId);
+            onValue(userRef, (snapshot) => {
+                const userData = snapshot.val();
 
-                    // Update the HTML content with the user's details
-                    if (userData) {
-                        const { firstName, lastName, phoneNumber, email, profilePictureURL } = userData;
-                        profileDiv.innerHTML = `
-                            <p>Welcome, ${firstName} ${lastName}!</p>
-                            <p>Phone Number: ${phoneNumber}</p>
-                            <p>Email: ${email}</p>
-                        `;
+                // Update the HTML content with the user's details
+                if (userData) {
+                    const { firstName, lastName, phoneNumber, email, profilePictureURL } = userData;
+                    profileDiv.innerHTML = `
+                        <p>Welcome, ${firstName} ${lastName}!</p>
+                        <p>Phone Number: ${phoneNumber}</p>
+                        <p>Email: ${email}</p>
+                    `;
 
-                        // Display the profile picture if available
-                        if (profilePictureURL) {
-                            profilePicturePreview.src = profilePictureURL;
-                        }
+                    // Display the profile picture if available
+                    if (profilePictureURL) {
+                        profilePicturePreview.src = profilePictureURL;
                     }
+                }
 
-                    // Profile picture handling logic
-                    profilePictureInput.addEventListener('change', handleProfilePictureUpload);
+                // Profile picture handling logic
+                profilePictureInput.addEventListener('change', handleProfilePictureUpload);
 
-                    function handleProfilePictureUpload() {
-                        const file = profilePictureInput.files[0];
+                function handleProfilePictureUpload() {
+                    const file = profilePictureInput.files[0];
 
-                        if (file) {
-                            const reader = new FileReader();
+                    if (file) {
+                        const reader = new FileReader();
 
-                            reader.onload = function (e) {
-                                // Update the preview with the selected image
-                                profilePicturePreview.src = e.target.result;
+                        reader.onload = function (e) {
+                            // Update the preview with the selected image
+                            profilePicturePreview.src = e.target.result;
 
-                                // Upload the image to Firebase Storage
-                                const storageRefPath = storageRef(storage, 'profile_pictures/' + userId); // Adjust the path as needed
-                                const uploadTask = uploadString(storageRefPath, e.target.result, 'data_url');
+                            // Upload the image to Firebase Storage
+                            const storageRefPath = storageRef(storage, 'profile_pictures/' + userId); // Adjust the path as needed
+                            const uploadTask = uploadString(storageRefPath, e.target.result, 'data_url');
 
-                                uploadTask.then((snapshot) => {
-                                    console.log('Profile picture uploaded successfully');
+                            uploadTask.then((snapshot) => {
+                                console.log('Profile picture uploaded successfully');
 
-                                    // Get the download URL of the uploaded image
-                                    getDownloadURL(snapshot.ref).then((downloadURL) => {
-                                        // Update the user's profile data in the database with the download URL
-                                        const userRef = databaseRef(db, 'users/' + userId);
-                                        update(userRef, { profilePictureURL: downloadURL });
-                                    });
-                                }).catch((error) => {
-                                    console.error('Error uploading profile picture:', error.message);
+                                // Get the download URL of the uploaded image
+                                getDownloadURL(snapshot.ref).then((downloadURL) => {
+                                    // Update the user's profile data in the database with the download URL
+                                    const userRef = databaseRef(db, 'users/' + userId);
+                                    update(userRef, { profilePictureURL: downloadURL });
                                 });
-                            };
+                            }).catch((error) => {
+                                console.error('Error uploading profile picture:', error.message);
+                            });
+                        };
 
-                            reader.readAsDataURL(file);
-                        }
+                        reader.readAsDataURL(file);
                     }
-                });
-            } else {
-                // No user is signed in, redirect to login page or handle as needed
-                console.log('No user is signed in');
-                window.location.href = 'login.html';
-            }
-        });
+                }
+            });
+        } else {
+            // No user is signed in, redirect to login page or handle as needed
+            console.log('No user is signed in');
+            // You might want to redirect the user to the login page or perform other actions
+        }
+    });
 
     </script>
 
