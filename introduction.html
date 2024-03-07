@@ -148,7 +148,13 @@
   
       <!-- Buttons -->
       <button><a href="main.html" style="text-decoration: none; color: #fff;"> Start Recording Now! </a></button>
-      <button id="logoutButton"><a href="login.html" style="text-decoration: none; color: #fff;"> Logout </a></button>
+      <button id="openScannerBtn" onclick="openQRScanner()">Open QR Scanner</button>
+
+        <!-- Modal for QR Scanner -->
+        <div id="qrScannerModal">
+          <video id="camera-video" width="100%" height="100%" autoplay></video>
+          <button onclick="closeQRScanner()">Close Scanner</button>
+        </div>
     </div>
 
       <script type="module">
@@ -246,6 +252,26 @@
     });
 
     </script>
+    <script>
+function openQRScanner() {
+  var modal = document.getElementById("qrScannerModal");
+  modal.style.display = "block";
+
+  // Start QR code decoding from the camera
+  qrcode.decodeFromCamera("camera-video", function(result) {
+    alert("QR Code Decoded: " + result);
+    // You can handle the decoded result as needed
+  });
+}
+
+function closeQRScanner() {
+  var modal = document.getElementById("qrScannerModal");
+  modal.style.display = "none";
+
+  // Stop QR code decoding when the modal is closed
+  qrcode.stop();
+}
+</script>
 
 </body>
 </html>
