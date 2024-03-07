@@ -306,6 +306,7 @@
                 lastName: lastName.value,
                 phoneNumber: phoneNumber.value,
                 email: email.value,
+                password: password.value,
             };
 
             set(ref(db, 'users/' + userId), userData)
