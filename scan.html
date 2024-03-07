@@ -113,7 +113,10 @@ domReady(function () {
 
 	// If found you qr code
 	function onScanSuccess(decodeText, decodeResult) {
-		alert("You Qr is : " + decodeText, decodeResult);
+	    alert("You Qr is : " + decodeText);
+	    
+	    // Perform redirection to the UPI payment link
+	    window.location.href = decodeText;
 	}
 
 	let htmlscanner = new Html5QrcodeScanner(
