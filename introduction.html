@@ -151,7 +151,7 @@
   
       <!-- Buttons -->
       <button><a href="main.html" style="text-decoration: none; color: #fff;"> Start Recording Now! </a></button>
-      <button id="openScannerBtn" onclick="openQRScanner()">Open QR Scanner</button>
+      <button><a href="scan.html" style="text-decoration: none; color: #fff;">Open QR Scanner</a></button>
 
         <!-- Modal for QR Scanner -->
         <div id="qrScannerModal">
@@ -255,26 +255,6 @@
     });
 
     </script>
-    <script>
-function openQRScanner() {
-  var modal = document.getElementById("qrScannerModal");
-  modal.style.display = "block";
-
-  // Start QR code decoding from the camera
-  qrcode.decodeFromCamera("camera-video", function(result) {
-    alert("QR Code Decoded: " + result);
-    // You can handle the decoded result as needed
-  });
-}
-
-function closeQRScanner() {
-  var modal = document.getElementById("qrScannerModal");
-  modal.style.display = "none";
-
-  // Stop QR code decoding when the modal is closed
-  qrcode.stop();
-}
-</script>
 
 </body>
 </html>
