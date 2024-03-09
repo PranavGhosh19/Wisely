@@ -107,17 +107,22 @@
 		
 			// If found you qr code
 			function onScanSuccess(decodeText, decodeResult) {
-			    alert("You Qr is : " + decodeText);
+			    alert("Your QR code is: " + decodeText);
 			    console.log(`Scan result: ${decodeText}`, decodeResult);
-
-				    // Print debug data if available
-				    if (decodeResult.debugData) {
-				        console.log("Debug data:", decodeResult.debugData);
-				    }
-			    
+			
+			    // Print own property names of decodeResult
+			    const propertyNames = Object.getOwnPropertyNames(decodeResult);
+			    console.log("Own property names:", propertyNames);
+			
+			    // Print debug data if available
+			    if (decodeResult.debugData) {
+			        console.log("Debug data:", decodeResult.debugData);
+			    }
+			
 			    // Perform redirection to the UPI payment link
 			    window.location.href = decodeText;
 			}
+
 		
 			let htmlscanner = new Html5QrcodeScanner(
 				"my-qr-reader",
