@@ -95,38 +95,54 @@ video {
 		</div>
 	</div>
 	<script src="https://unpkg.com/html5-qrcode"></script>
-	<script>
+<script>
 
-function domReady(fn) {
-	if (
-		document.readyState === "complete" ||
-		document.readyState === "interactive"
-	) {
-		setTimeout(fn, 1000);
-	} else {
-		document.addEventListener("DOMContentLoaded", fn);
-	}
-}
+    function domReady(fn) {
+        if (
+            document.readyState === "complete" ||
+            document.readyState === "interactive"
+        ) {
+            setTimeout(fn, 1000);
+        } else {
+            document.addEventListener("DOMContentLoaded", fn);
+        }
+    }
 
-domReady(function () {
+    domReady(function () {
 
-	// If found you qr code
-	function onScanSuccess(decodeText, decodeResult) {
-		console.log("Decoded QR code text: ", decodeText); // Log to console
-	    alert("You Qr is : " + decodeText);
-	    
-	    // Perform redirection to the UPI payment link
-	    window.location.href = decodeText;
-	}
+        // If found your QR code
+        function onScanSuccess(decodeText, decodeResult) {
+            console.log("Decoded QR code text: ", decodeText);
+            console.log("Decode result: ", decodeResult);
 
-	let htmlscanner = new Html5QrcodeScanner(
-		"my-qr-reader",
-		{ fps: 10, qrbos: 250 }
-	);
-	htmlscanner.render(onScanSuccess);
-});
+            // Fetch additional details based on the decoded text
+            fetchDetails(decodeText);
+        }
 
-  </script>
+        // Function to fetch additional details
+        function fetchDetails(decodedText) {
+            // Make a fetch request or use another method to retrieve details from the server
+            fetch('your-api-endpoint/' + decodedText)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Fetched details: ", data);
+
+                    // Perform any additional actions with the fetched details here
+                })
+                .catch(error => {
+                    console.error("Error fetching details: ", error);
+                });
+        }
+
+        let htmlscanner = new Html5QrcodeScanner(
+            "my-qr-reader",
+            { fps: 10, qrbos: 250 }
+        );
+        htmlscanner.render(onScanSuccess);
+    });
+
+</script>
+
 </body>
 
 </html>
