@@ -96,7 +96,6 @@ video {
 	</div>
 	<script src="https://unpkg.com/html5-qrcode"></script>
 	<script>
-    // script.js file
 
 function domReady(fn) {
 	if (
@@ -113,6 +112,7 @@ domReady(function () {
 
 	// If found you qr code
 	function onScanSuccess(decodeText, decodeResult) {
+		console.log("Decoded QR code text: ", decodeText); // Log to console
 	    alert("You Qr is : " + decodeText);
 	    
 	    // Perform redirection to the UPI payment link
