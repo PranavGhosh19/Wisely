@@ -4,13 +4,10 @@
 
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport"
-		content="width=device-width, initial-scale=1.0">
-	<link rel="stylesheet"
-		href="style.css">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 	<title>QR Code Scanner / Reader </title>
   <style>
-    /* style.css file*/
 body {
 	display: flex;
 	justify-content: center;
@@ -115,23 +112,38 @@ video {
             console.log("Decoded QR code text: ", decodeText);
             console.log("Decode result: ", decodeResult);
 
+            // Extract Merchant ID from the decoded text
+            const merchantId = extractMerchantId(decodeText);
+            console.log("Merchant ID: ", merchantId);
+
             // Fetch additional details based on the decoded text
-            fetchDetails(decodeText);
+            fetchDetails(merchantId);
+        }
+
+        // Function to extract Merchant ID from decoded text
+        function extractMerchantId(decodedText) {
+            // Implement your logic to extract Merchant ID based on QR code content structure
+            // This is a simplified example assuming the Merchant ID is a substring of the decoded text
+            const merchantIdSubstring = "MerchantID:";
+            const startIndex = decodedText.indexOf(merchantIdSubstring);
+            
+            if (startIndex !== -1) {
+                const endIndex = decodedText.indexOf("\n", startIndex);
+                return decodedText.substring(startIndex + merchantIdSubstring.length, endIndex).trim();
+            } else {
+                // Handle the case where Merchant ID is not found
+                console.error("Merchant ID not found in the decoded text.");
+                return null;
+            }
         }
 
         // Function to fetch additional details
-        function fetchDetails(decodedText) {
-            // Make a fetch request or use another method to retrieve details from the server
-            fetch('your-api-endpoint/' + decodedText)
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Fetched details: ", data);
+        function fetchDetails(merchantId) {
+            // Implement your fetch logic based on the extracted Merchant ID
+            // Log a message without simulating details
+            console.log("Fetching details for Merchant ID ", merchantId);
 
-                    // Perform any additional actions with the fetched details here
-                })
-                .catch(error => {
-                    console.error("Error fetching details: ", error);
-                });
+            // Perform any additional actions with the fetched details here
         }
 
         let htmlscanner = new Html5QrcodeScanner(
@@ -142,6 +154,7 @@ video {
     });
 
 </script>
+
 
 </body>
 
