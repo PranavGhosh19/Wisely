@@ -75,15 +75,25 @@
 
         button {
             margin: 20px; /* Adjusted margin for better spacing */
-            padding: 10px 20px;
+            padding: 10px;
             font-size: 16px;
-            background-color: #26aabb;
+            background-color: #000000;
             color: #fff;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s ease;
             width: 20%;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+
+        .google-icon {
+            width: 24px;
+            height: 24px;
+            margin: 0 10px 0 10px;
         }
       
         button:hover {
@@ -151,8 +161,8 @@
   
       <!-- Buttons -->
       <button><a href="main.html" style="text-decoration: none; color: #fff;"> Start Recording Now! </a></button>
-      <button><a href="scan.html" style="text-decoration: none; color: #fff;">Open QR Scanner</a></button>
-        <button><a href="login.html" style="text-decoration: none; color: #fff;">Logout</a></button>
+      <button><a href="scan.html" style="text-decoration: none; color: #fff; ">Pay with<img class="google-icon" src="search.png" alt="Google Pay Icon">Pay</a></button>
+      <button><a href="login.html" style="text-decoration: none; color: #fff;">Logout</a></button>
     </div>
 
       <script type="module">
