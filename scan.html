@@ -108,7 +108,12 @@
 			// If found you qr code
 			function onScanSuccess(decodeText, decodeResult) {
 			    alert("You Qr is : " + decodeText);
-				console.log(`Scan result: ${decodeText}`, decodeResult);
+			    console.log(`Scan result: ${decodeText}`, decodeResult);
+
+				    // Print debug data if available
+				    if (decodeResult.debugData) {
+				        console.log("Debug data:", decodeResult.debugData);
+				    }
 			    
 			    // Perform redirection to the UPI payment link
 			    window.location.href = decodeText;
