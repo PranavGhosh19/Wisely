@@ -261,14 +261,18 @@ let loginUser = (evt) => {
 
     signInWithEmailAndPassword(auth, email.value, password.value)
         .then((userCredential) => {
-            console.log(userCredential);
-
             // Display success message
             alert("Log In Successful!");
 
-            //Redirect to introduction.html
-            window.location.href = 'introduction.html';
+            // Get the user's ID token
+            return userCredential.user.getIdToken();
+        })
+        .then((userToken) => {
+            // Save the token securely, e.g., in local storage
+            localStorage.setItem('userToken', userToken);
 
+            // Redirect to introduction.html
+            window.location.href = 'introduction.html';
         })
         .catch((error) => {
             alert(error.message);
@@ -277,7 +281,15 @@ let loginUser = (evt) => {
         });
 };
 
+const storedToken = localStorage.getItem('userToken');
+
+if (storedToken) {
+    // Use the stored token for authentication
+    // You may need to verify the token depending on the authentication system used
+}
+
 login.addEventListener('submit', loginUser);
+
 
 </script>
 
