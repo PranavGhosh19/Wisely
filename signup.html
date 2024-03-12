@@ -299,17 +299,19 @@
         .then((userCredential) => {
             console.log('User Credential:', userCredential);
 
+            // Use the phone number as the user identifier
+            const userPhoneNumber = phoneNumber.value;
+
             // Save user data to the database
-            const userId = userCredential.user.uid;
             const userData = {
                 firstName: firstName.value,
                 lastName: lastName.value,
-                phoneNumber: phoneNumber.value,
+                phoneNumber: userPhoneNumber,
                 email: email.value,
                 password: password.value,
             };
 
-            set(ref(db, 'users/' + userId), userData)
+            set(ref(db, 'users/' + userPhoneNumber), userData)
                 .then(() => {
                     console.log('User data saved to the database');
                     
@@ -329,8 +331,7 @@
         });
 }
 
-
-    signupform.addEventListener('submit', RegisterUser);
+signupform.addEventListener('submit', RegisterUser);
 </script>
 
 </body>
