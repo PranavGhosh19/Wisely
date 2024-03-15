@@ -438,7 +438,6 @@
             <label for="profile-picture-input">
                 <img src="" alt="Profile Picture" class="profile-picture" id="profile-picture-preview">
             </label>
-            <input type="file" id="profile-picture-input" accept="image/*" style="display: none">
           </div>
 
             <!-- Modal overlay -->
@@ -567,26 +566,56 @@
                     window.location.href = pageUrl;
                 });
             });
+    </script>  
+        <script type="module">
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+            import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+            import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+    
+            // Your web app's Firebase configuration
+            const firebaseConfig = {
+                apiKey: "AIzaSyAvRr7xhZNDv8feV8okXTC4awgtB7MI2XI",
+                authDomain: "wisely-e0d87.firebaseapp.com",
+                projectId: "wisely-e0d87",
+                storageBucket: "wisely-e0d87.appspot.com",
+                messagingSenderId: "1052871511950",
+                appId: "1:1052871511950:web:9df05fc5b2bd79d2715edf",
+                databaseURL: "https://wisely-e0d87-default-rtdb.firebaseio.com/"
+            };
 
-            // -----------------------------------------Profile Picture----------------------------------------------------------//  
-            const profilePictureInput = document.getElementById('profile-picture-input');
-            const profilePicturePreview = document.getElementById('profile-picture-preview');
-
-            profilePictureInput.addEventListener('change', handleProfilePictureUpload);
-
-            function handleProfilePictureUpload() {
-                const file = profilePictureInput.files[0];
-
-                if (file) {
-                    const reader = new FileReader();
-
-                    reader.onload = function (e) {
-                        profilePicturePreview.src = e.target.result;
-                    };
-
-                    reader.readAsDataURL(file);
+            const firebaseApp = initializeApp(firebaseConfig);
+    
+            // Function to display the profile picture
+            function displayProfilePicture() {
+                const auth = getAuth(firebaseApp);
+                const user = auth.currentUser;
+                if (user) {
+                    // User is signed in
+                    const storage = getStorage(firebaseApp);
+                    const storageRef = ref(storage, `profile_pictures/${user.uid}`);
+                    getDownloadURL(storageRef).then(function(url) {
+                        // Display the profile picture
+                        document.getElementById('profile-picture-preview').src = url;
+                    }).catch(function(error) {
+                        // Handle errors
+                        console.error('Error getting profile picture:', error);
+                    });
+                } else {
+                    // No user is signed in
+                    console.log('No user signed in.');
                 }
             }
-    </script>    
+    
+            // Listen for changes in authentication state
+            onAuthStateChanged(getAuth(), function(user) {
+                if (user) {
+                    // User is signed in
+                    displayProfilePicture();
+                } else {
+                    // No user is signed in
+                    console.log('No user signed in.');
+                }
+            });
+        </script>  
 </body>
 </html>
