@@ -1,56 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Icons+Outlined" />
-    <title>Wisely</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="walletlogo.png" type="image/x-icon">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Icons+Outlined"/>
+<title>Wisely</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        font-family: 'Poppins', sans-serif;
+    }
 
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Material Symbols Outlined', sans-serif;
-        }
+    .container {
+        display: grid;
+        grid-template-columns: 5% auto;
+        grid-template-rows: 10% 12% 78%;
+        grid-template-areas: 
+            "header header header"
+            "sidebar main main"
+            "sidebar section section";
+        height: 100vh;
+    }
 
-        body, html {
-            height: 100%;
-            background-color: #000000;
-        }
+    /*-----------------------Nav Bar------------------------*/
 
-        .container {
-            display: grid;
-            grid-template-columns: 5% auto;
-            grid-template-rows: 10% 12% 78%;
-            grid-template-areas: 
-                "header header header"
-                "sidebar main main"
-                "sidebar section section";
-            height: 100vh;
-        }
-
-        .header, .sidebar, .main, .section {
-            text-align: center;
-            justify-content: center;
-            max-width: 100%;
-            padding: 5px;
-        }
-
-        .header {
-            background-color: #000000;
-            color: white;
-            grid-area: header;
-        }
-        
-        .header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add box shadow effect */
-        }
+    .header {
+        grid-area: header;
+        background-color: #000000;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+    }
 
         #logo {
             color: #ffffff;
@@ -78,63 +63,35 @@
             border-radius: 50%;
         }
 
-        /*-----------------------------------------Add an Expense-----------------------------------------*/
-    
-        .add-an-expense-btn {
-          background-color: #2ecc71; /* Choose your desired button color */
-          color: #000000; /* Choose your desired button text color */
-          padding: 10px 20px;
-          border: none;
-          border-radius: 20px;
-          font-size: 1em;
-          cursor: pointer;
-        }
+        #overlay-container {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black overlay */
+          backdrop-filter: blur(5px); /* Blur effect for modern browsers */
+          z-index: 1000; /* Ensure it appears on top */
+      }
+      
+      #form-container {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background-color: white;
+          padding: 20px;
+          border-radius: 10px;
+      }
 
-        .add-an-expense-btn-mobile {
-            display: none;
-        }
-
-        /* Style for modal overlay */
-        #overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
-            z-index: 1;
-        }
-
-        /* Style for modal content */
-        #form-container {
-            background-color: #fff;
-            max-width: 800px;
-            border-radius: 20px;
-            padding: 20px;
-            margin: 20px auto;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            z-index: 2;
-            color: #000000;
-        }
-
-        #form-container p {
-          text-align: center;
-        }
-
-        form {
+      form {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             grid-gap: 10px;
             margin-top: 20px;
         }
-
+      
         input[type="radio"],
         input[type="text"],
         input[type="number"],
@@ -153,7 +110,7 @@
             margin-top: 15px;
             margin-right: 5px;
         }
-
+        
         #add-expense-button, #cancel-expense-button {
             width: 100%; /* Adjusted width for smaller screens */
             padding: 10px;
@@ -168,9 +125,8 @@
             background-color: #45a049;
         }
 
-        
-
-        /*-------------------------------------------Sidebar-------------------------------------------*/
+    
+    /*-----------------------Side Bar------------------------*/
         .sidebar {
             background-color: #000000;
             grid-area: sidebar;
@@ -196,18 +152,16 @@
             align-items: center;
         }
 
-        /*-------------------------------------------Main-------------------------------------------*/
+    /*-----------------------Main Bar------------------------*/
+    .main {
+                justify-content: none;
+                gap: 0;
+                grid-area: main;
+                display: grid;
+                background-color: #000000;
+            }
 
-        .main {
-            background-color: rgb(0, 0, 0);
-            grid-area: main;
-            display: grid;
-            grid-template-columns: 100%; /* Divide into three equal parts */
-            justify-content: space-between;
-            gap: 5px;
-        }
-
-        .main-content {
+    .main-content {
             background-color: #2ecc71;
             border-radius: 20px;
             display: flex;
@@ -217,6 +171,11 @@
             text-align: left; /* Center text within the container */
         }
 
+        #h2 {
+            font-size: 1.25em;
+            margin: 10px;
+        }
+        
         .number {
             font-size: 1.15em; /* Adjust the font size as needed */
             font-weight: bold;
@@ -224,24 +183,9 @@
             margin: 10px;
         }
 
-        #h2 {
-            font-size: 1.25em;
-            margin: 10px;
-        }
+    /*-----------------------Section Bar------------------------*/
 
-        .h3 {
-            text-align: center;
-        }
-        
-
-        #h1 {
-            color: #fff; /* Choose your desired text color */
-            font-size: 1.5em;
-        }
-
-        /*-------------------------------------------Section------------------------------------------*/
-
-        .section {
+    .section {
             background-color: rgb(0, 0, 0);
             grid-area: section;
             display: grid;
@@ -254,110 +198,34 @@
             border-radius: 10px;
         }
 
-        .section-content > h2 {
-            margin: 10px;
-            color: #fff;
+    
+    
+    /*----------------------Media Query for Smaller Screens--------------------------------------------------------------------*/
+        @media screen and (max-width: 600px) {
+        .container {
+            grid-template-columns: 1fr;
+            grid-template-areas: 
+                "header"
+                "main"
+                "section"
+                "sidebar";
         }
 
-        .chart-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 70%; /* Set a specific width, adjust as needed */
-            height: 70%; /* Set a specific height, adjust as needed */
-            margin: auto;
-        }
-        
-        
-        @media screen and (max-width: 600px) {
-            .container {
-                grid-template-columns: 1fr; /* Change to a single column layout for small screens */
-                grid-template-areas: 
-                    "header"
-                    "main"
-                    "section"
-                    "sidebar";
-            }
-    
-            /* You can add specific styling for smaller screens here */
-            .header {
+        .header {
                 padding: 10px;
                 position: fixed;
                 width: 100%;
                 grid-area: header;
             }
 
-            #logo {
-                color: #ffffff;
-                font-size: 2.5em;
+        .section {
+                grid-template-columns: 1fr; /* Change to a single column layout for small screens */
             }
-
-            #brand {
-                color: #fff; /* Choose your desired text color */
-                font-size: 1.5em;
-                margin: 0;
-            }
-    
-            .add-an-expense-btn {
-                display: none; /* Hide the button for small screens */
-            }
-
-            .add-an-expense-btn-mobile {
-                padding: 10px;
-                font-size: 1.5em;
-                margin: 10px; /* Add margin for spacing */
-            }
-
-            .add-an-expense-btn-mobile {
-                margin: 10px;
-                width: 40px; /* Set the width and height to create a circle */
-                height: 40px;
-                border: none;
-                background-color: #2ecc71;
-                color: #000000;
-                cursor: pointer;
-                border-radius: 50%; /* Set border-radius to 50% for a circle */
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: all 0.3s ease;
-            }
-
-            /* Style for modal overlay */
-            #overlay {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
-                z-index: 1;
-            }
-
-            /* Style for modal content */
-            #form-container {
-                background-color: #fff;
-                width: 80%; /* Updated width for smaller screens */
-                max-width: 800px;
-                border-radius: 20px;
-                padding: 20px;
-                text-align: left;
-                margin: 20px auto;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            }
-    
-            /*.sidebar {
-                max-height: 100%;
-                max-width: 100%;
-                background-color: #333;
-                display: flex;
-                flex-direction: column;
-                border-radius: 20px;
-                padding: 10px;
-            }*/
-
-            .sidebar {
+        
+        
+        
+        /*-----------------------Side Bar------------------------*/
+        .sidebar {
                 flex-direction: row; /* Change the direction to a row for smaller screens */
                 position: fixed;
                 bottom: 0;
@@ -387,45 +255,11 @@
                 align-items: center;
                 justify-content: space-between;
             }
-    
-            .main {
-                grid-template-columns: 1fr; /* Change to a single column layout for small screens */
-                justify-content: none;
-                gap: 0;
-                grid-area: main;
-                display: grid;
-            }
-
-            .main-content {
-                display: flex;
-                align-items: center; /* Center content horizontally */
-                justify-content: space-between;
-                margin: 10px;
-                text-align: left; /* Center text within the container */
-            }
-
-            #h2 {
-                font-size: 1.35em;
-                margin: 10px;
-            }
-
-            .number {
-                margin: 10px;
-            }
-
-            .h3 {
-                display: none;
-            }
-    
-            .section {
-                grid-template-columns: 1fr; /* Change to a single column layout for small screens */
-            }
-        }
-    </style>
+    }
+</style>
 </head>
 <body>
     <div class="container">
-        <!---------------------------------------------Header / NavBar-------------------------------------------->
         <div class="header">
             <span class="material-icons-outlined" id="logo">
                 wallet
@@ -433,189 +267,304 @@
           <div id="brand">
               Wisely
           </div>
-          <button class="add-an-expense-btn" id="open-form-button" style="display: none;">Add an Expense</button>
           <div class="profile-picture-container">
             <label for="profile-picture-input">
                 <img src="" alt="Profile Picture" class="profile-picture" id="profile-picture-preview">
             </label>
           </div>
 
-            <!-- Modal overlay -->
-            <div id="overlay"></div>
-
-            <!-- Form container (modal content) -->
+          <div id="overlay-container"> <!-- Overlay container for the form -->
             <div id="form-container">
-                <h2 style="text-align: center;">Add an Expense</h2>
-                <br>
+              <h1 style="text-align: center; font-size: 20px; color: #000000;">Add an Expense</h1>
                 <form id="expense-form">
-                    <input type="text" id="description" placeholder="Description">
-                    <input type="number" id="amount" placeholder="Amount">
-                    <select id="expense_category">
-                      <option value="food">Food</option>
-                      <option value="transportation">Transportation</option>
-                      <option value="entertainment">Entertainment</option>
-                      <option value="other">Other</option>
+                    <input type="text" id="description" placeholder="Description" required>
+                    <input type="number" id="amount" placeholder="Amount" required>
+                    <select id="expense_category" required>
+                        <option value="" disabled selected>Select Category</option>
+                        <option value="food">Food</option>
+                        <option value="transportation">Transportation</option>
+                        <option value="entertainment">Entertainment</option>
+                        <option value="other">Other</option>
                     </select>
-                    <!-- Add a date picker input -->
-                    <input type="date" id="expense_date">
-                    <!-- Cancel button to close the form without adding an expense -->
+                    <input type="date" id="expense_date" required>
                     <button type="button" id="cancel-expense-button" style="background-color:white; color:black;"> Cancel </button>                    
-                    <button type="button" id="add-expense-button">Add Expense</button>
-                    <br><br>
+                    <button type="submit" id="add-expense-button">Add Expense</button>
                 </form>
             </div>
-
         </div>
-        <!---------------------------------------------Sidebar to Menu Bar------------------------------------->
+        </div>
         <div class="sidebar">
             <a href="dashboard.html" class="icon"><span class="material-icons-outlined">dashboard</span></a>
-            <a href="groups.html" class="icon"><span class="material-icons-outlined">groups</span></a>
+            <a href="#" class="icon"><span class="material-icons-outlined">groups</span></a>
             <a href="#" class="icon"><span class="material-icons-outlined">analytics</span></a>
-            <a href="#" class="icon" id="open-form-button-mobile"><span class="material-icons-outlined" style="color: #2ecc71; font-size: 2em;">add_circle</span></a>
+            <a href="#" class="icon" id="open-form-button">
+                <span class="material-icons-outlined" style="color: #2ecc71; font-size: 2em;">add_circle</span>
+            </a>
             <a href="#" class="icon"><span class="material-icons-outlined">receipt_long</span></a>
             <a href="#" class="icon"><span class="material-icons-outlined">settings</span></a>
             <a href="#" class="icon"><span class="material-icons-outlined">logout</span></a>
         </div>
-        <!---------------------------------------------Main----------------------------------------------->      
         <div class="main">
             <div class="main-content">
                 <div id="h2">Total Expenses</div>
-                <span id="totalExpenses" class="number" style="align-items: end;"></span>
+                <span id="total-expense" class="number" style="align-items: end;">0</span>
             </div>
-        </body>
         </div>
-        <!---------------------------------------------Section--------------------------------------------->
         <div class="section">
+            <div class="section-content">
+                <canvas id="pieChart"></canvas>
+            </div>
+            <div class="section-content">
+                <canvas id="stackedBarChart"></canvas>
+            </div>
             
+
         </div>
     </div>
 
     <script>
-
-        // Initialize total expenses and last recorded month
-        var totalExpenses = 0;
-        var lastRecordedMonth = new Date().getMonth(); // Get the current month (0-indexed)
-
-        // Function to update the total expenses amount
-        function updateTotalExpenses() {
-            var totalExpensesElement = document.getElementById("totalExpenses");
-            totalExpensesElement.textContent = "₹" + totalExpenses.toFixed(2); // Display amount with two decimal places
-        }
-
-        // Function to clear the form and reset the total expenses
-        function clearFormAndResetTotal() {
-            totalExpenses = 0;
-            updateTotalExpenses();
-            document.getElementById("expense-form").reset();
-        }
-
-        // Function to open the form container
-        function openFormContainer() {
-            document.getElementById("overlay").style.display = "block";
-            document.getElementById("form-container").style.display = "block";
-        }
-        
-        // Button to open the form container
-        document.getElementById("open-form-button").addEventListener("click", openFormContainer);
-        
-        // Mobile button to open the form container
-        document.getElementById("open-form-button-mobile").addEventListener("click", openFormContainer);
-        
-        // Clear form container and hide it when adding an expense
-        document.getElementById("add-expense-button").addEventListener("click", function() {
-            // ... (your existing form submission code) ...
-        
-            // Get the amount from the form input
-            var expenseAmount = parseFloat(document.getElementById("amount").value);
-        
-            // Add the expense amount to the total
-            totalExpenses += expenseAmount;
-        
-            // Update the total expenses amount
-            updateTotalExpenses();
-        
-            // Clear the form inputs
-            document.getElementById("expense-form").reset();
-        
-            // Clear form container and hide it
-            document.getElementById("overlay").style.display = "none";
-            document.getElementById("form-container").style.display = "none";
-        });
-        
-        // Cancel button to hide the form without adding an expense
-        document.getElementById("cancel-expense-button").addEventListener("click", function() {
-            // Clear the form inputs
-            document.getElementById("expense-form").reset();
-        
-            // Clear form container and hide it
-            document.getElementById("overlay").style.display = "none";
-            document.getElementById("form-container").style.display = "none";
-        });
-
-
-            // ------------------------------------------------------Page.html------------------------------------------------------------//    
-            // Add event listeners to handle sidebar link clicks
-            document.querySelectorAll('.sidebar a').forEach(function(link) {
-                link.addEventListener('click', function(event) {
-                    event.preventDefault();
-                    
-                    // Get the href attribute of the clicked link
-                    var pageUrl = this.getAttribute('href');
-                    
-                    // Use window.location.href to navigate to the respective page
-                    window.location.href = pageUrl;
-                });
-            });
-    </script>  
-        <script type="module">
-            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-            import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-            import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+        document.addEventListener('DOMContentLoaded', function() {
+        const openFormButton = document.getElementById('open-form-button');
+        const overlayContainer = document.getElementById('overlay-container');
     
-            // Your web app's Firebase configuration
-            const firebaseConfig = {
-                apiKey: "AIzaSyAvRr7xhZNDv8feV8okXTC4awgtB7MI2XI",
-                authDomain: "wisely-e0d87.firebaseapp.com",
-                projectId: "wisely-e0d87",
-                storageBucket: "wisely-e0d87.appspot.com",
-                messagingSenderId: "1052871511950",
-                appId: "1:1052871511950:web:9df05fc5b2bd79d2715edf",
-                databaseURL: "https://wisely-e0d87-default-rtdb.firebaseio.com/"
+        // Show overlay and form when "Add an Expense" button is clicked
+        openFormButton.addEventListener('click', function() {
+            overlayContainer.style.display = 'block';
+        });
+    
+        // Hide overlay and form when "Cancel" button is clicked
+        document.getElementById('cancel-expense-button').addEventListener('click', function() {
+            overlayContainer.style.display = 'none';
+        });
+    
+        // Hide overlay and form when form is submitted (handled in your existing code)
+        document.getElementById('expense-form').addEventListener('submit', function(event) {
+            overlayContainer.style.display = 'none';
+            event.preventDefault(); // Prevent form submission
+            // Add your existing form submission logic here
+        });
+    });
+    </script>
+    <script>
+            // Sample initial data for the chart
+            let chartData = {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Food',
+                        data: [],
+                        backgroundColor: 'rgba(255, 99, 132, 0.5)'
+                    },
+                    {
+                        label: 'Transportation',
+                        data: [],
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)'
+                    },
+                    {
+                        label: 'Entertainment',
+                        data: [],
+                        backgroundColor: 'rgba(255, 206, 86, 0.5)'
+                    },
+                    {
+                        label: 'Other',
+                        data: [],
+                        backgroundColor: 'rgba(75, 192, 192, 0.5)'
+                    }
+                ]
             };
 
-            const firebaseApp = initializeApp(firebaseConfig);
     
-            // Function to display the profile picture
-            function displayProfilePicture() {
-                const auth = getAuth(firebaseApp);
-                const user = auth.currentUser;
-                if (user) {
-                    // User is signed in
-                    const storage = getStorage(firebaseApp);
-                    const storageRef = ref(storage, `profile_pictures/${user.uid}`);
-                    getDownloadURL(storageRef).then(function(url) {
-                        // Display the profile picture
-                        document.getElementById('profile-picture-preview').src = url;
-                    }).catch(function(error) {
-                        // Handle errors
-                        console.error('Error getting profile picture:', error);
-                    });
-                } else {
-                    // No user is signed in
-                    console.log('No user signed in.');
+            // Configuration for the charts
+            const chartConfig = {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Everyday Expenses',
+                            // Set font color and size for the title
+                            color: 'white',
+                            font: {
+                                size: 16 // You can adjust the font size as needed
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: 'Date',
+                                color: 'white'
+                            },
+                            ticks: {
+                                // Set font color and size for x-axis labels
+                                color: 'white',
+                                font: {
+                                    size: 12 // You can adjust the font size as needed
+                                }
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: 'Amount',
+                                color: 'white'
+                            },
+                            ticks: {
+                                // Set font color and size for y-axis labels
+                                color: 'white',
+                                font: {
+                                    size: 12 // You can adjust the font size as needed
+                                }
+                            }
+                        }
+                    }
                 }
-            }
+            };
+
     
-            // Listen for changes in authentication state
-            onAuthStateChanged(getAuth(), function(user) {
-                if (user) {
-                    // User is signed in
-                    displayProfilePicture();
-                } else {
-                    // No user is signed in
-                    console.log('No user signed in.');
+            const pieChartConfig = {
+                type: 'pie',
+                data: {
+                    labels: chartData.datasets.map(dataset => dataset.label),
+                    datasets: [{
+                        label: 'Category Wise Expenses',
+                        data: chartData.datasets.map(dataset => dataset.data.reduce((acc, curr) => acc + curr, 0)),
+                        backgroundColor: chartData.datasets.map(dataset => dataset.backgroundColor),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Category Wise Expenses',
+                            // Set font color and size for the title
+                            color: 'white',
+                            font: {
+                                size: 16 // You can adjust the font size as needed
+                            }
+                        }
+                    },
+                    // Set color for labels
+                    color: 'white',
+                    // You can also set font size, style, etc. if needed
+                    labels: {
+                        color: 'white',
+                        font: {
+                            size: 12 // You can adjust the font size as needed
+                        }
+                    }
                 }
+            };
+    
+            // Create the charts
+            const ctx = document.getElementById('stackedBarChart').getContext('2d');
+            const myChart = new Chart(ctx, chartConfig);
+    
+            const pieCtx = document.getElementById('pieChart').getContext('2d');
+            const pieChart = new Chart(pieCtx, pieChartConfig);
+    
+    // Handle form submission
+    document.getElementById('expense-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+    
+        // Extract form data
+        const description = document.getElementById('description').value;
+        const amount = parseFloat(document.getElementById('amount').value);
+        const category = document.getElementById('expense_category').value;
+        const date = document.getElementById('expense_date').value;
+    
+        // Add data to the chart
+        let index = chartData.labels.indexOf(date);
+        if (index === -1) {
+            chartData.labels.push(date);
+            chartData.labels.sort(); // Sort the dates in ascending order
+            index = chartData.labels.indexOf(date);
+    
+            chartData.datasets.forEach(dataset => {
+                dataset.data.splice(index, 0, 0);
             });
-        </script>  
+        }
+    
+        const categoryIndex = chartData.datasets.findIndex(dataset => dataset.label.toLowerCase() === category.toLowerCase());
+        if (categoryIndex !== -1) {
+            chartData.datasets[categoryIndex].data[index] += amount;
+            myChart.update();
+        }
+    
+        // Update pie chart dataset
+        pieChart.data.datasets[0].data = chartData.datasets.map(dataset =>
+            dataset.data.reduce((acc, curr) => acc + curr, 0)
+        );
+        pieChart.update();
+    
+        // Clear form fields
+        document.getElementById('description').value = '';
+        document.getElementById('amount').value = '';
+        document.getElementById('expense_category').selectedIndex = 0;
+        document.getElementById('expense_date').value = '';
+    
+        // Calculate and display total expense
+        const totalExpense = chartData.datasets.reduce((acc, dataset) =>
+            acc + dataset.data.reduce((subAcc, value) => subAcc + value, 0), 0);
+        document.getElementById('total-expense').textContent = "₹" + totalExpense.toFixed(2);
+        
+    });
+    
+        </script>
+        <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAvRr7xhZNDv8feV8okXTC4awgtB7MI2XI",
+            authDomain: "wisely-e0d87.firebaseapp.com",
+            projectId: "wisely-e0d87",
+            storageBucket: "wisely-e0d87.appspot.com",
+            messagingSenderId: "1052871511950",
+            appId: "1:1052871511950:web:9df05fc5b2bd79d2715edf",
+            databaseURL: "https://wisely-e0d87-default-rtdb.firebaseio.com/"
+        };
+
+        const firebaseApp = initializeApp(firebaseConfig);
+
+        // Function to display the profile picture
+        function displayProfilePicture() {
+            const auth = getAuth(firebaseApp);
+            const user = auth.currentUser;
+            if (user) {
+                // User is signed in
+                const storage = getStorage(firebaseApp);
+                const storageRef = ref(storage, `profile_pictures/${user.uid}`);
+                getDownloadURL(storageRef).then(function(url) {
+                    // Display the profile picture
+                    document.getElementById('profile-picture-preview').src = url;
+                }).catch(function(error) {
+                    // Handle errors
+                    console.error('Error getting profile picture:', error);
+                });
+            } else {
+                // No user is signed in
+                console.log('No user signed in.');
+            }
+        }
+
+        // Listen for changes in authentication state
+        onAuthStateChanged(getAuth(), function(user) {
+            if (user) {
+                // User is signed in
+                displayProfilePicture();
+            } else {
+                // No user is signed in
+                console.log('No user signed in.');
+            }
+        });
+    </script>  
 </body>
 </html>
