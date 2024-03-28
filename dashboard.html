@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="walletlogo.png" type="image/x-icon">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Icons+Outlined"/>
 <title>Wisely</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -321,6 +322,7 @@
         </div>
     </div>
 
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
         const openFormButton = document.getElementById('open-form-button');
@@ -467,72 +469,32 @@
             const pieCtx = document.getElementById('pieChart').getContext('2d');
             const pieChart = new Chart(pieCtx, pieChartConfig);
     
-    // Handle form submission
-    document.getElementById('expense-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-    
-        // Extract form data
-        const description = document.getElementById('description').value;
-        const amount = parseFloat(document.getElementById('amount').value);
-        const category = document.getElementById('expense_category').value;
-        const date = document.getElementById('expense_date').value;
-    
-        // Add data to the chart
-        let index = chartData.labels.indexOf(date);
-        if (index === -1) {
-            chartData.labels.push(date);
-            chartData.labels.sort(); // Sort the dates in ascending order
-            index = chartData.labels.indexOf(date);
-    
-            chartData.datasets.forEach(dataset => {
-                dataset.data.splice(index, 0, 0);
-            });
-        }
-    
-        const categoryIndex = chartData.datasets.findIndex(dataset => dataset.label.toLowerCase() === category.toLowerCase());
-        if (categoryIndex !== -1) {
-            chartData.datasets[categoryIndex].data[index] += amount;
-            myChart.update();
-        }
-    
-        // Update pie chart dataset
-        pieChart.data.datasets[0].data = chartData.datasets.map(dataset =>
-            dataset.data.reduce((acc, curr) => acc + curr, 0)
-        );
-        pieChart.update();
-    
-        // Clear form fields
-        document.getElementById('description').value = '';
-        document.getElementById('amount').value = '';
-        document.getElementById('expense_category').selectedIndex = 0;
-        document.getElementById('expense_date').value = '';
-    
-        // Calculate and display total expense
-        const totalExpense = chartData.datasets.reduce((acc, dataset) =>
-            acc + dataset.data.reduce((subAcc, value) => subAcc + value, 0), 0);
-        document.getElementById('total-expense').textContent = "₹" + totalExpense.toFixed(2);
-        
-    });
-    
-        </script>
-        <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+</script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+    import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAvRr7xhZNDv8feV8okXTC4awgtB7MI2XI",
-            authDomain: "wisely-e0d87.firebaseapp.com",
-            projectId: "wisely-e0d87",
-            storageBucket: "wisely-e0d87.appspot.com",
-            messagingSenderId: "1052871511950",
-            appId: "1:1052871511950:web:9df05fc5b2bd79d2715edf",
-            databaseURL: "https://wisely-e0d87-default-rtdb.firebaseio.com/"
-        };
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyAvRr7xhZNDv8feV8okXTC4awgtB7MI2XI",
+        authDomain: "wisely-e0d87.firebaseapp.com",
+        projectId: "wisely-e0d87",
+        storageBucket: "wisely-e0d87.appspot.com",
+        messagingSenderId: "1052871511950",
+        appId: "1:1052871511950:web:9df05fc5b2bd79d2715edf",
+        databaseURL: "https://wisely-e0d87-default-rtdb.firebaseio.com/"
+    };
 
-        const firebaseApp = initializeApp(firebaseConfig);
+    // Initialize Firebase
+    const firebaseApp = initializeApp(firebaseConfig);
+    const db = getFirestore(firebaseApp);
 
+// Listen for changes in authentication state
+onAuthStateChanged(getAuth(firebaseApp), function(user) {
+    if (user) {
+        // User is signed in
         // Function to display the profile picture
         function displayProfilePicture() {
             const auth = getAuth(firebaseApp);
@@ -548,22 +510,82 @@
                     // Handle errors
                     console.error('Error getting profile picture:', error);
                 });
-            } else {
-                // No user is signed in
-                console.log('No user signed in.');
             }
         }
+        displayProfilePicture();
 
-        // Listen for changes in authentication state
-        onAuthStateChanged(getAuth(), function(user) {
-            if (user) {
-                // User is signed in
-                displayProfilePicture();
-            } else {
-                // No user is signed in
-                console.log('No user signed in.');
-            }
-        });
-    </script>  
+            // Handle form submission
+    document.getElementById('expense-form').addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        // Extract form data
+        const description = document.getElementById('description').value;
+        const amount = parseFloat(document.getElementById('amount').value);
+        const category = document.getElementById('expense_category').value;
+        const date = document.getElementById('expense_date').value;
+
+        // Save data to Firestore
+        try {
+            const docRef = await addDoc(collection(db, "expenses"), {
+                description: description,
+                amount: amount,
+                category: category,
+                date: date
+            });
+            console.log("Document written with ID: ", docRef.id);
+        } catch (e) {
+            console.error("Error adding document: ", e);
+        }
+
+        // Print form data to console
+        console.log("Description:", description);
+        console.log("Amount:", amount);
+        console.log("Category:", category);
+        console.log("Date:", date);
+
+        // Add data to the chart
+        let index = chartData.labels.indexOf(date);
+        if (index === -1) {
+            chartData.labels.push(date);
+            chartData.labels.sort(); // Sort the dates in ascending order
+            index = chartData.labels.indexOf(date);
+
+            chartData.datasets.forEach(dataset => {
+                dataset.data.splice(index, 0, 0);
+            });
+        }
+
+        const categoryIndex = chartData.datasets.findIndex(dataset => dataset.label.toLowerCase() === category.toLowerCase());
+        if (categoryIndex !== -1) {
+            chartData.datasets[categoryIndex].data[index] += amount;
+            myChart.update();
+        }
+
+        // Update pie chart dataset
+        pieChart.data.datasets[0].data = chartData.datasets.map(dataset =>
+            dataset.data.reduce((acc, curr) => acc + curr, 0)
+        );
+        pieChart.update();
+
+        // Clear form fields
+        document.getElementById('description').value = '';
+        document.getElementById('amount').value = '';
+        document.getElementById('expense_category').selectedIndex = 0;
+        document.getElementById('expense_date').value = '';
+
+        // Calculate and display total expense
+        const totalExpense = chartData.datasets.reduce((acc, dataset) =>
+            acc + dataset.data.reduce((subAcc, value) => subAcc + value, 0), 0);
+        document.getElementById('total-expense').textContent = "₹" + totalExpense.toFixed(2);
+    });
+
+
+    } else {
+        // No user is signed in
+        console.log('No user signed in.');
+    }
+});
+
+</script>
 </body>
 </html>
