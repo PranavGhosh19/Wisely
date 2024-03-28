@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="shortcut icon" href="walletlogo.png" type="image/x-icon">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Icons+Outlined"/>
 <title>Wisely</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -12,6 +11,7 @@
         margin: 0;
         padding: 0;
         font-family: 'Poppins', sans-serif;
+        background-color: #000000;
     }
 
     .container {
@@ -154,7 +154,6 @@
 
     /*-----------------------Main Bar------------------------*/
     .main {
-                justify-content: none;
                 gap: 0;
                 grid-area: main;
                 display: grid;
@@ -194,8 +193,12 @@
         }
 
         .section-content {
-            background-color: #000000;
-            border-radius: 10px;
+            align-items: center;
+            background-color: #943c3c;
+            border-color: #ffffff;
+            box-shadow: #4caf50;
+            border-radius: 20px;
+            margin: 10px;
         }
 
     
@@ -211,6 +214,8 @@
                 "sidebar";
         }
 
+        /*-----------------------Header-------------------------*/
+
         .header {
                 padding: 10px;
                 position: fixed;
@@ -218,9 +223,21 @@
                 grid-area: header;
             }
 
+        /*-----------------------Section------------------------*/
+
         .section {
                 grid-template-columns: 1fr; /* Change to a single column layout for small screens */
+                gap: 5px;
             }
+
+        .section-content {
+            align-items: center;
+            background-color: #b35151;
+            border-color: #ffffff;
+            box-shadow: #4caf50;
+            border-radius: 20px;
+            gap: 5px;
+        }
         
         
         
@@ -312,10 +329,10 @@
         </div>
         <div class="section">
             <div class="section-content">
-                <canvas id="pieChart"></canvas>
+                <canvas id="pieChart" style="padding: 20px;"></canvas>
             </div>
             <div class="section-content">
-                <canvas id="stackedBarChart"></canvas>
+                <canvas id="stackedBarChart" style="margin-bottom: 120px;"></canvas>
             </div>
             
 
