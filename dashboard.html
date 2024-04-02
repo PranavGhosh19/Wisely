@@ -509,7 +509,7 @@
     const db = getFirestore(firebaseApp);
 
 // Listen for changes in authentication state
-onAuthStateChanged(getAuth(firebaseApp), function(user) {
+onAuthStateChanged(getAuth(firebaseApp), async function(user) {
     if (user) {
         // User is signed in
         // Function to display the profile picture
@@ -530,43 +530,44 @@ onAuthStateChanged(getAuth(firebaseApp), function(user) {
             }
         }
         displayProfilePicture();
+        
+// Fetch previous expense data from Firestore
+const expensesRef = collection(db, "expenses");
+const querySnapshot = await getDocs(expensesRef);
+querySnapshot.forEach((doc) => {
+    const expenseData = doc.data();
 
-        // Fetch previous expense data from Firestore
-        const expensesRef = collection(db, "expenses");
-        const querySnapshot = await getDocs(expensesRef);
-        querySnapshot.forEach((doc) => {
-            const expenseData = doc.data();
-        
-            // Update bar chart data
-            const index = chartData.labels.indexOf(expenseData.date);
-            if (index === -1) {
-                chartData.labels.push(expenseData.date);
-                chartData.labels.sort(); // Sort the dates in ascending order
-                index = chartData.labels.indexOf(expenseData.date);
-        
-                chartData.datasets.forEach(dataset => {
-                    dataset.data.splice(index, 0, 0);
-                });
-            }
-        
-            const categoryIndex = chartData.datasets.findIndex(dataset => dataset.label.toLowerCase() === expenseData.category.toLowerCase());
-            if (categoryIndex !== -1) {
-                chartData.datasets[categoryIndex].data[index] += expenseData.amount;
-            }
-        
-            // Update pie chart data
-            const pieChartDataIndex = pieChart.data.labels.indexOf(expenseData.category.toLowerCase());
-            if (pieChartDataIndex !== -1) {
-                pieChart.data.datasets[0].data[pieChartDataIndex] += expenseData.amount;
-            } else {
-                pieChart.data.labels.push(expenseData.category.toLowerCase());
-                pieChart.data.datasets[0].data.push(expenseData.amount);
-            }
+    // Update bar chart data
+    const index = chartData.labels.indexOf(expenseData.date);
+    if (index === -1) {
+        chartData.labels.push(expenseData.date);
+        chartData.labels.sort(); // Sort the dates in ascending order
+        index = chartData.labels.indexOf(expenseData.date);
+
+        chartData.datasets.forEach(dataset => {
+            dataset.data.splice(index, 0, 0);
         });
-        
-        // Update both charts
-        myChart.update();
-        pieChart.update();
+    }
+
+    const categoryIndex = chartData.datasets.findIndex(dataset => dataset.label.toLowerCase() === expenseData.category.toLowerCase());
+    if (categoryIndex !== -1) {
+        chartData.datasets[categoryIndex].data[index] += expenseData.amount;
+    }
+
+    // Update pie chart data
+    const pieChartDataIndex = pieChart.data.labels.indexOf(expenseData.category.toLowerCase());
+    if (pieChartDataIndex !== -1) {
+        pieChart.data.datasets[0].data[pieChartDataIndex] += expenseData.amount;
+    } else {
+        pieChart.data.labels.push(expenseData.category.toLowerCase());
+        pieChart.data.datasets[0].data.push(expenseData.amount);
+    }
+});
+
+// Update both charts
+myChart.update();
+pieChart.update();
+
 
 
             // Handle form submission
