@@ -538,7 +538,7 @@ querySnapshot.forEach((doc) => {
     const expenseData = doc.data();
 
     // Update bar chart data
-    const index = chartData.labels.indexOf(expenseData.date);
+    let index = chartData.labels.indexOf(expenseData.date);
     if (index === -1) {
         chartData.labels.push(expenseData.date);
         chartData.labels.sort(); // Sort the dates in ascending order
