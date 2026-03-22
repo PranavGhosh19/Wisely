@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,8 @@ import { AlertCircle } from "lucide-react";
 interface AddExpenseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultType?: ExpenseType;
+  defaultGroupId?: string;
 }
 
 const CATEGORIES = [
@@ -23,19 +25,34 @@ const CATEGORIES = [
   "Education", "Travel", "Personal Care", "Other"
 ];
 
-export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) {
+export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroupId }: AddExpenseDialogProps) {
   const { user, addExpense, groups } = useStore();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [expenseType, setExpenseType] = useState<ExpenseType>("PERSONAL");
+  const [expenseType, setExpenseType] = useState<ExpenseType>(defaultType || "PERSONAL");
   
   const [formData, setFormData] = useState({
     amount: "",
     category: "",
     notes: "",
     date: new Date().toISOString().split('T')[0],
-    groupId: "",
+    groupId: defaultGroupId || "",
   });
+
+  // Sync state with props when dialog opens
+  useEffect(() => {
+    if (open) {
+      setExpenseType(defaultType || "PERSONAL");
+      setFormData(prev => ({
+        ...prev,
+        groupId: defaultGroupId || "",
+        amount: "",
+        category: "",
+        notes: "",
+        date: new Date().toISOString().split('T')[0],
+      }));
+    }
+  }, [open, defaultType, defaultGroupId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,13 +88,6 @@ export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) 
       
       toast({ title: "Success", description: "Expense added successfully." });
       onOpenChange(false);
-      setFormData({
-        amount: "",
-        category: "",
-        notes: "",
-        date: new Date().toISOString().split('T')[0],
-        groupId: "",
-      });
     } catch (error) {
       toast({ title: "Error", description: "Failed to add expense." });
     } finally {
@@ -92,11 +102,18 @@ export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) 
           <DialogTitle className="font-headline text-xl font-bold">Add New Expense</DialogTitle>
         </DialogHeader>
         
-        <Tabs defaultValue="PERSONAL" onValueChange={(val) => setExpenseType(val as ExpenseType)} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted p-1 rounded-xl">
-            <TabsTrigger value="PERSONAL" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:text-primary">Personal</TabsTrigger>
-            <TabsTrigger value="GROUP" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:text-primary">Group</TabsTrigger>
-          </TabsList>
+        <Tabs 
+          value={expenseType} 
+          onValueChange={(val) => setExpenseType(val as ExpenseType)} 
+          className="w-full"
+        >
+          {/* Only show tabs if we aren't pre-locked into a group context */}
+          {!defaultGroupId && (
+            <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted p-1 rounded-xl">
+              <TabsTrigger value="PERSONAL" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:text-primary">Personal</TabsTrigger>
+              <TabsTrigger value="GROUP" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:text-primary">Group</TabsTrigger>
+            </TabsList>
+          )}
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -130,7 +147,7 @@ export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) 
               </Select>
             </div>
 
-            {expenseType === "GROUP" && (
+            {expenseType === "GROUP" && !defaultGroupId && (
               <div className="space-y-2">
                 <Label htmlFor="group" className="font-bold">Select Group</Label>
                 {groups.length === 0 ? (
@@ -153,6 +170,13 @@ export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) 
                     </SelectContent>
                   </Select>
                 )}
+              </div>
+            )}
+
+            {defaultGroupId && (
+              <div className="bg-primary/5 p-3 rounded-xl border border-primary/10 mb-2">
+                <p className="text-[10px] font-bold uppercase text-primary/70 tracking-wider mb-0.5">Adding to Group</p>
+                <p className="font-bold text-sm text-primary">{groups.find(g => g.id === defaultGroupId)?.name || "Unknown Group"}</p>
               </div>
             )}
 

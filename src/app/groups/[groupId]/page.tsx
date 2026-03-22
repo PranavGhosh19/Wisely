@@ -155,6 +155,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       <AddExpenseDialog 
         open={isAddExpenseOpen} 
         onOpenChange={setIsAddExpenseOpen}
+        defaultType="GROUP"
+        defaultGroupId={groupId}
       />
     </div>
   );
