@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,15 +8,18 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Users, Receipt, TrendingUp } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { AddExpenseDialog } from "@/components/expenses/AddExpenseDialog";
-import { useState } from "react";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
   const router = useRouter();
   const { groups, expenses, user } = useStore();
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const group = groups.find(g => g.id === groupId);
   const groupExpenses = expenses.filter(e => e.groupId === groupId);
@@ -132,7 +135,9 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                       <div>
                         <p className="font-bold text-sm md:text-base">{expense.category}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[11px] font-medium text-muted-foreground uppercase">{format(expense.date, "MMM dd, yyyy")}</span>
+                          <span className="text-[11px] font-medium text-muted-foreground uppercase">
+                            {mounted ? format(expense.date, "MMM dd, yyyy") : ""}
+                          </span>
                           <span className="h-0.5 w-0.5 bg-muted-foreground rounded-full"></span>
                           <span className="text-[10px] uppercase font-bold text-accent">
                             Paid by {expense.paidBy === user?.uid ? "You" : "Member"}

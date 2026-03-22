@@ -16,8 +16,10 @@ export default function Dashboard() {
   const router = useRouter();
   const { user, expenses, isLoading, setLoading } = useStore();
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (!user) {
       router.push("/auth");
     } else {
@@ -124,7 +126,9 @@ export default function Dashboard() {
                           <div>
                             <p className="font-bold text-sm sm:text-base">{expense.category}</p>
                             <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="text-[11px] font-medium text-muted-foreground uppercase">{format(expense.date, "MMM dd")}</span>
+                              <span className="text-[11px] font-medium text-muted-foreground uppercase">
+                                {mounted ? format(expense.date, "MMM dd") : ""}
+                              </span>
                               <span className="h-0.5 w-0.5 bg-muted-foreground rounded-full"></span>
                               <span className={cn(
                                 "text-[10px] uppercase font-bold tracking-wider",
