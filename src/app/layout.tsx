@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'SpenseFlow | Smart Expense Tracking',
+  title: 'Wisely | Smart Expense Tracking',
   description: 'Manage personal and group expenses with ease.',
 };
 

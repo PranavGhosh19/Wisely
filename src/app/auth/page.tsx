@@ -53,7 +53,7 @@ export default function AuthPage() {
     <div className="flex h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="font-headline text-4xl font-bold text-primary mb-2">SpenseFlow</h1>
+          <h1 className="font-headline text-4xl font-bold text-primary mb-2">Wisely</h1>
           <p className="text-muted-foreground">Master your money, personal or shared.</p>
         </div>
 
@@ -64,7 +64,7 @@ export default function AuthPage() {
             </CardTitle>
             <CardDescription>
               {isRegistering 
-                ? "Join SpenseFlow to start tracking your expenses." 
+                ? "Join Wisely to start tracking your expenses." 
                 : "Enter your credentials to access your dashboard."}
             </CardDescription>
           </CardHeader>

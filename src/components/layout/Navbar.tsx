@@ -30,7 +30,7 @@ export function Navbar() {
       <div className="flex h-full flex-col justify-between">
         <div className="flex flex-col gap-6">
           <div className="hidden md:block mb-4 px-2">
-            <h1 className="text-2xl font-bold font-headline text-primary tracking-tight">SpenseFlow</h1>
+            <h1 className="text-2xl font-bold font-headline text-primary tracking-tight">Wisely</h1>
           </div>
           
           <div className="flex flex-row justify-around md:flex-col md:gap-1.5">
