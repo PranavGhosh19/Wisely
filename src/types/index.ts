@@ -4,7 +4,7 @@ export type SplitType = 'EQUAL' | 'UNEQUAL' | 'PERCENTAGE';
 export interface User {
   uid: string;
   name: string;
-  phone: string;
+  email: string;
   photoURL?: string;
   groupIds: string[];
 }

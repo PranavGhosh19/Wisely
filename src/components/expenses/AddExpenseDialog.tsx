@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -7,12 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
-import { addDoc, collection } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { ExpenseType, SplitType } from "@/types";
+import { ExpenseType, SplitType, Expense } from "@/types";
 
 interface AddExpenseDialogProps {
   open: boolean;
@@ -26,7 +23,7 @@ const CATEGORIES = [
 ];
 
 export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) {
-  const { user } = useStore();
+  const { user, addExpense } = useStore();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [expenseType, setExpenseType] = useState<ExpenseType>("PERSONAL");
@@ -48,7 +45,8 @@ export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) 
 
     setLoading(true);
     try {
-      const expenseData = {
+      const expenseData: Expense = {
+        id: Math.random().toString(36).substr(2, 9),
         amount: parseFloat(formData.amount),
         category: formData.category,
         notes: formData.notes,
@@ -56,14 +54,13 @@ export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) 
         type: expenseType,
         createdBy: user.uid,
         paidBy: user.uid,
-        createdAt: Date.now(),
         splitType: "EQUAL" as SplitType,
         splitBetween: [{ userId: user.uid, amount: parseFloat(formData.amount) }],
       };
 
-      await addDoc(collection(db, "expenses"), expenseData);
+      addExpense(expenseData);
       
-      toast({ title: "Success", description: "Expense added successfully." });
+      toast({ title: "Success", description: "Expense added to memory." });
       onOpenChange(false);
       setFormData({
         amount: "",
@@ -97,6 +94,7 @@ export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) 
               <Input 
                 id="amount" 
                 type="number" 
+                step="0.01"
                 placeholder="0.00" 
                 value={formData.amount}
                 onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
@@ -143,14 +141,14 @@ export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) 
 
             {expenseType === "GROUP" && (
               <div className="p-3 bg-muted rounded-md text-xs text-muted-foreground border border-dashed border-primary/20">
-                Group features allow you to split bills with members. Choose a group below.
+                Group split features are currently in demo mode. Choose a group below.
                 <Select>
                   <SelectTrigger className="mt-2 bg-white">
                     <SelectValue placeholder="Choose a group" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="g1">Friends (Roommates)</SelectItem>
-                    <SelectItem value="g2">Road Trip 2024</SelectItem>
+                    <SelectItem value="g1">Demo Group 1</SelectItem>
+                    <SelectItem value="g2">Demo Group 2</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

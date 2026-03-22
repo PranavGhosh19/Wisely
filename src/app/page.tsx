@@ -1,86 +1,37 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { onAuthStateChanged } from "firebase/auth";
-import { collection, query, where, onSnapshot, orderBy, limit, doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
 import { useStore } from "@/lib/store";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowUpRight, ArrowDownLeft, Wallet, Users, AlertCircle } from "lucide-react";
+import { Plus, ArrowDownLeft, Wallet, Users, AlertCircle } from "lucide-react";
 import { AddExpenseDialog } from "@/components/expenses/AddExpenseDialog";
-import { Expense } from "@/types";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const router = useRouter();
-  const { user, setUser, expenses, setExpenses, setLoading, isLoading } = useStore();
+  const { user, expenses, isLoading, setLoading } = useStore();
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser) {
-        router.push("/auth");
-        return;
-      }
-
-      const userRef = doc(db, "users", firebaseUser.uid);
-      const userSnap = await getDoc(userRef);
-      
-      if (userSnap.exists()) {
-        const userData = userSnap.data();
-        setUser({
-          uid: firebaseUser.uid,
-          name: userData.name,
-          phone: userData.phone,
-          groupIds: userData.groupIds || [],
-        });
-      } else {
-        setUser({
-          uid: firebaseUser.uid,
-          name: "User",
-          phone: firebaseUser.phoneNumber || "",
-          groupIds: [],
-        });
-      }
+    // Check if user is logged in
+    if (!user) {
+      router.push("/auth");
+    } else {
       setLoading(false);
-    });
-
-    return () => unsubscribeAuth();
-  }, [router, setUser, setLoading]);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const q = query(
-      collection(db, "expenses"),
-      where("createdBy", "==", user.uid),
-      orderBy("date", "desc"),
-      limit(20)
-    );
-
-    const unsubscribeExpenses = onSnapshot(q, (snapshot) => {
-      const expenseList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Expense[];
-      setExpenses(expenseList);
-    });
-
-    return () => unsubscribeExpenses();
-  }, [user, setExpenses]);
+    }
+  }, [user, router, setLoading]);
 
   const totalSpent = expenses.reduce((acc, curr) => acc + curr.amount, 0);
   
-  const youAreOwed = 125.50;
-  const youOwe = 45.00;
+  const youAreOwed = 0.00;
+  const youOwe = 0.00;
 
-  if (isLoading) {
+  if (isLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -116,14 +67,11 @@ export default function Dashboard() {
               <Wallet className="h-24 w-24 text-primary" />
             </div>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Spent This Month</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Spent</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-primary">${totalSpent.toFixed(2)}</div>
-              <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                <ArrowDownLeft className="h-3 w-3" />
-                8.2% less than last month
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">In-memory tracking</p>
             </CardContent>
           </Card>
 
@@ -133,7 +81,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-accent">${youAreOwed.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground mt-1">From 3 people</p>
+              <p className="text-xs text-muted-foreground mt-1">0 people</p>
             </CardContent>
           </Card>
 
@@ -143,7 +91,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-destructive">${youOwe.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground mt-1">To 2 people</p>
+              <p className="text-xs text-muted-foreground mt-1">0 people</p>
             </CardContent>
           </Card>
         </div>
@@ -226,19 +174,11 @@ export default function Dashboard() {
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Food & Drinks</span>
-                    <span className="font-bold">35%</span>
+                    <span className="text-muted-foreground">Spending distribution</span>
+                    <span className="font-bold">Summary</span>
                   </div>
                   <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                    <div className="bg-primary h-full w-[35%]"></div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Rent & Bills</span>
-                    <span className="font-bold">42%</span>
-                  </div>
-                  <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                    <div className="bg-accent h-full w-[42%]"></div>
+                    <div className="bg-primary h-full w-[100%]"></div>
                   </div>
                   
                   <Button variant="outline" className="w-full mt-2" asChild>

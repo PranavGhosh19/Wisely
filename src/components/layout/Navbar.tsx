@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, PieChart, PlusCircle, LogOut } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { LayoutDashboard, Users, PieChart, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
-import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
@@ -16,9 +15,15 @@ const navItems = [
 
 export function Navbar() {
   const pathname = usePathname();
-  const { user } = useStore();
+  const router = useRouter();
+  const { user, logout } = useStore();
 
   if (!user) return null;
+
+  const handleSignOut = () => {
+    logout();
+    router.push("/auth");
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 z-50 w-full border-t bg-white md:relative md:top-0 md:h-screen md:w-64 md:border-r md:border-t-0 p-4">
@@ -58,14 +63,14 @@ export function Navbar() {
             </div>
             <div className="flex flex-col truncate">
               <span className="text-sm font-medium truncate">{user.name}</span>
-              <span className="text-xs text-muted-foreground truncate">{user.phone}</span>
+              <span className="text-xs text-muted-foreground truncate">{user.email}</span>
             </div>
           </div>
           <Button 
             variant="ghost" 
             size="sm" 
             className="justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/5"
-            onClick={() => auth.signOut()}
+            onClick={handleSignOut}
           >
             <LogOut className="h-4 w-4" />
             Sign Out
