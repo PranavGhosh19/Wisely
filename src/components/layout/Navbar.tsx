@@ -39,6 +39,11 @@ export function Navbar() {
     router.push("/auth");
   };
 
+  // Detect if we are in a group context based on the URL
+  // Matches: /groups/[groupId]
+  const groupMatch = pathname.match(/^\/groups\/([^/]+)$/);
+  const contextGroupId = groupMatch ? groupMatch[1] : undefined;
+
   return (
     <>
       {/* Desktop Sidebar */}
@@ -172,7 +177,12 @@ export function Navbar() {
         </div>
       </nav>
 
-      <AddExpenseDialog open={isAddExpenseOpen} onOpenChange={setIsAddExpenseOpen} />
+      <AddExpenseDialog 
+        open={isAddExpenseOpen} 
+        onOpenChange={setIsAddExpenseOpen} 
+        defaultType={contextGroupId ? "GROUP" : "PERSONAL"}
+        defaultGroupId={contextGroupId}
+      />
     </>
   );
 }
