@@ -5,16 +5,38 @@ import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Users, Receipt, TrendingUp } from "lucide-react";
+import { 
+  ArrowLeft, 
+  Plus, 
+  Users, 
+  Receipt, 
+  TrendingUp, 
+  QrCode, 
+  Copy, 
+  Check,
+  Share2
+} from "lucide-react";
 import { useStore } from "@/lib/store";
 import { AddExpenseDialog } from "@/components/expenses/AddExpenseDialog";
 import { format } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
   const router = useRouter();
   const { groups, expenses, user } = useStore();
+  const { toast } = useToast();
+  
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [isQrOpen, setIsQrOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -24,6 +46,18 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   const group = groups.find(g => g.id === groupId);
   const groupExpenses = expenses.filter(e => e.groupId === groupId);
   const totalSpent = groupExpenses.reduce((acc, curr) => acc + curr.amount, 0);
+
+  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/join/${groupId}` : `wisely.app/join/${groupId}`;
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    toast({
+      title: "Link copied!",
+      description: "Share this link with your friends to join the group.",
+    });
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   if (!group) {
     return (
@@ -53,7 +87,17 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-3xl font-bold font-headline text-primary">{group.name}</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-3xl font-bold font-headline text-primary">{group.name}</h2>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-8 w-8 rounded-lg border-primary/20 hover:bg-primary/5 hover:text-primary"
+                  onClick={() => setIsQrOpen(true)}
+                >
+                  <QrCode className="h-4 w-4" />
+                </Button>
+              </div>
               <div className="flex items-center gap-2 mt-1 text-muted-foreground">
                 <Users className="h-4 w-4" />
                 <span>{group.members.length} Members</span>
@@ -163,6 +207,73 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         defaultType="GROUP"
         defaultGroupId={groupId}
       />
+
+      <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
+        <DialogContent className="sm:max-w-md rounded-3xl">
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-2xl font-bold font-headline text-primary">Invite Members</DialogTitle>
+            <DialogDescription>
+              Share this code with friends to join <span className="font-bold text-foreground">"{group.name}"</span>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col items-center gap-6 py-4">
+            <div className="bg-white p-4 rounded-3xl shadow-md border-2 border-primary/10">
+              {/* Generic QR Code SVG */}
+              <svg 
+                viewBox="0 0 100 100" 
+                className="w-48 h-48 text-primary"
+                fill="currentColor"
+              >
+                <path d="M0 0h30v10H10v20H0V0zm10 10h10v10H10V10zm60-10h30v30h-10V10H70V0zm10 10h10v10H80V10zM0 70h30v30H0V70zm10 10h10v10H10V80zm70 0h10v10H80V80zm10-10h10v10H90V70zm-10-10h10v10H80V60zm-10 10h10v10H70V70zm10 10h10v10H80V80zm-20-20h10v10H60V60zm-10 10h10v10H50V70zm10 10h10v10H60V80zm-10-10h10v10H50V70zm10-10h10v10H60V60z" />
+                <rect x="40" y="40" width="20" height="20" rx="2" />
+                <rect x="0" y="40" width="10" height="10" />
+                <rect x="20" y="40" width="10" height="10" />
+                <rect x="40" y="0" width="10" height="10" />
+                <rect x="40" y="20" width="10" height="10" />
+                <rect x="70" y="40" width="10" height="10" />
+                <rect x="90" y="40" width="10" height="10" />
+                <rect x="40" y="70" width="10" height="10" />
+                <rect x="40" y="90" width="10" height="10" />
+              </svg>
+            </div>
+
+            <div className="w-full space-y-3">
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-xl border border-border">
+                <span className="flex-1 text-xs truncate text-muted-foreground font-mono">
+                  {shareUrl}
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-primary hover:bg-primary/10"
+                  onClick={copyToClipboard}
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              
+              <Button 
+                className="w-full rounded-xl font-bold h-12 gap-2"
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({
+                      title: `Join ${group.name} on Wisely`,
+                      text: `I'm using Wisely to track shared expenses. Join our group: ${group.name}`,
+                      url: shareUrl,
+                    });
+                  } else {
+                    copyToClipboard();
+                  }
+                }}
+              >
+                <Share2 className="h-4 w-4" />
+                Share Link
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
