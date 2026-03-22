@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,16 +10,14 @@ import { useStore } from "@/lib/store";
 import { CreateGroupDialog } from "@/components/groups/CreateGroupDialog";
 
 export default function GroupsPage() {
+  const router = useRouter();
   const { groups, expenses } = useStore();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  // Helper to calculate balance for a group (Simplified for demo)
+  // Helper to calculate total volume for a group
   const getGroupBalance = (groupId: string) => {
     const groupExpenses = expenses.filter(e => e.groupId === groupId);
-    const total = groupExpenses.reduce((acc, curr) => acc + curr.amount, 0);
-    // In a real app, this would calculate per-user debts. 
-    // For this demo, we'll just show the total group volume.
-    return total;
+    return groupExpenses.reduce((acc, curr) => acc + curr.amount, 0);
   };
 
   return (
@@ -58,7 +57,11 @@ export default function GroupsPage() {
             {groups.map((group) => {
               const groupVolume = getGroupBalance(group.id);
               return (
-                <Card key={group.id} className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-white group rounded-2xl">
+                <Card 
+                  key={group.id} 
+                  className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-white group rounded-2xl"
+                  onClick={() => router.push(`/groups/${group.id}`)}
+                >
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="font-headline text-lg font-bold">{group.name}</CardTitle>
                     <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
@@ -79,7 +82,7 @@ export default function GroupsPage() {
                   </CardContent>
                   <CardFooter className="pt-0">
                     <Button variant="ghost" className="w-full text-primary hover:bg-primary/5 gap-2 group-hover:translate-x-1 transition-transform font-bold rounded-xl">
-                      View Expenses
+                      View Group
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </CardFooter>
