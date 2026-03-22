@@ -50,13 +50,15 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/join/${groupId}` : `wisely.app/join/${groupId}`;
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    toast({
-      title: "Link copied!",
-      description: "Share this link with your friends to join the group.",
-    });
-    setTimeout(() => setCopied(false), 2000);
+    if (typeof navigator !== 'undefined') {
+      navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      toast({
+        title: "Link copied!",
+        description: "Share this link with your friends to join the group.",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   if (!group) {
@@ -74,37 +76,37 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     <div className="flex min-h-screen flex-col md:flex-row bg-background">
       <Navbar />
       
-      <main className="flex-1 p-4 md:p-8 pb-28 md:pb-8 max-w-7xl mx-auto w-full">
-        <header className="mb-8">
+      <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-7xl mx-auto w-full">
+        <header className="mb-6">
           <Button 
             variant="ghost" 
-            className="mb-4 -ml-2 text-muted-foreground hover:text-primary gap-2"
+            className="mb-4 -ml-2 text-muted-foreground hover:text-primary gap-2 h-8 px-2"
             onClick={() => router.push("/groups")}
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Groups
+            Groups
           </Button>
           
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-3xl font-bold font-headline text-primary">{group.name}</h2>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <h2 className="text-2xl sm:text-3xl font-bold font-headline text-primary truncate">{group.name}</h2>
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  className="h-8 w-8 rounded-lg border-primary/20 hover:bg-primary/5 hover:text-primary"
+                  className="h-9 w-9 shrink-0 rounded-xl border-primary/20 hover:bg-primary/5 hover:text-primary"
                   onClick={() => setIsQrOpen(true)}
                 >
                   <QrCode className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="flex items-center gap-2 mt-1 text-muted-foreground">
-                <Users className="h-4 w-4" />
+              <div className="flex items-center gap-2 mt-1 text-xs sm:text-sm text-muted-foreground">
+                <Users className="h-3.5 w-3.5" />
                 <span>{group.members.length} Members</span>
               </div>
             </div>
             <Button 
-              className="bg-primary hover:bg-primary/90 gap-2 h-11 rounded-xl font-bold"
+              className="hidden sm:flex bg-primary hover:bg-primary/90 gap-2 h-11 rounded-xl font-bold"
               onClick={() => setIsAddExpenseOpen(true)}
             >
               <Plus className="h-5 w-5" />
@@ -113,14 +115,14 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           </div>
         </header>
 
-        <div className="grid gap-6 md:grid-cols-3 mb-8">
-          <Card className="border-none shadow-sm bg-white rounded-2xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Group Spending</CardTitle>
+        <div className="grid gap-3 sm:gap-6 grid-cols-2 lg:grid-cols-3 mb-8">
+          <Card className="border-none shadow-sm bg-white rounded-2xl col-span-2 lg:col-span-1">
+            <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
+              <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Spending</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">${totalSpent.toFixed(2)}</div>
-              <div className="flex items-center gap-1 mt-1 text-accent text-[10px] font-bold uppercase">
+            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+              <div className="text-2xl sm:text-3xl font-bold text-primary">${totalSpent.toFixed(2)}</div>
+              <div className="flex items-center gap-1 mt-1 text-accent text-[9px] sm:text-[10px] font-bold uppercase">
                 <TrendingUp className="h-3 w-3" />
                 Live Tracking
               </div>
@@ -128,24 +130,24 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           </Card>
 
           <Card className="border-none shadow-sm bg-white rounded-2xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Share</CardTitle>
+            <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
+              <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Share</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">
+            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+              <div className="text-2xl sm:text-3xl font-bold text-foreground">
                 ${(totalSpent / (group.members.length || 1)).toFixed(2)}
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">Split Equally</p>
+              <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-1 uppercase font-medium">Split Equally</p>
             </CardContent>
           </Card>
 
           <Card className="border-none shadow-sm bg-white rounded-2xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Transactions</CardTitle>
+            <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
+              <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Transactions</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">{groupExpenses.length}</div>
-              <div className="flex items-center gap-1 mt-1 text-muted-foreground text-[10px] font-bold uppercase">
+            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+              <div className="text-2xl sm:text-3xl font-bold text-foreground">{groupExpenses.length}</div>
+              <div className="flex items-center gap-1 mt-1 text-muted-foreground text-[9px] sm:text-[10px] font-bold uppercase">
                 <Receipt className="h-3 w-3" />
                 Recorded
               </div>
@@ -154,44 +156,44 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         </div>
 
         <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
-          <CardHeader className="border-b bg-white">
-            <CardTitle className="font-headline text-lg font-bold">Group Transactions</CardTitle>
+          <CardHeader className="border-b bg-white px-4 sm:px-6 py-4">
+            <CardTitle className="font-headline text-base sm:text-lg font-bold">Group Transactions</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {groupExpenses.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="flex flex-col items-center justify-center py-20 text-center px-4">
                 <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
                   <Receipt className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-bold">No expenses in this group</h3>
+                <h3 className="text-lg font-bold font-headline">No expenses in this group</h3>
                 <p className="text-sm text-muted-foreground max-w-xs mt-1">
-                  Click the button above to add the first group transaction.
+                  Start tracking by adding your first shared transaction.
                 </p>
               </div>
             ) : (
               <div className="divide-y divide-muted">
                 {groupExpenses.map((expense) => (
-                  <div key={expense.id} className="flex items-center justify-between p-4 md:px-6 md:py-5 hover:bg-muted/5 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-lg">
+                  <div key={expense.id} className="flex items-center justify-between p-4 sm:px-6 sm:py-5 hover:bg-muted/5 transition-colors active:bg-muted/10">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-lg sm:text-xl">
                         {expense.category[0] || "💰"}
                       </div>
-                      <div>
-                        <p className="font-bold text-sm md:text-base">{expense.category}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[11px] font-medium text-muted-foreground uppercase">
-                            {mounted ? format(expense.date, "MMM dd, yyyy") : ""}
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm sm:text-base truncate">{expense.category}</p>
+                        <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5">
+                          <span className="text-[10px] sm:text-[11px] font-medium text-muted-foreground uppercase whitespace-nowrap">
+                            {mounted ? format(expense.date, "MMM dd") : ""}
                           </span>
-                          <span className="h-0.5 w-0.5 bg-muted-foreground rounded-full"></span>
-                          <span className="text-[10px] uppercase font-bold text-accent">
-                            Paid by {expense.paidBy === user?.uid ? "You" : "Member"}
+                          <span className="h-0.5 w-0.5 bg-muted-foreground rounded-full shrink-0"></span>
+                          <span className="text-[9px] sm:text-[10px] uppercase font-bold text-accent truncate">
+                            {expense.paidBy === user?.uid ? "You paid" : "Member paid"}
                           </span>
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-base md:text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
-                      {expense.notes && <p className="text-[11px] text-muted-foreground italic truncate max-w-[120px] md:max-w-[200px]">{expense.notes}</p>}
+                    <div className="text-right shrink-0">
+                      <p className="font-bold text-base sm:text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
+                      {expense.notes && <p className="text-[10px] sm:text-[11px] text-muted-foreground italic truncate max-w-[80px] sm:max-w-[200px]">{expense.notes}</p>}
                     </div>
                   </div>
                 ))}
@@ -209,20 +211,20 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       />
 
       <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
-        <DialogContent className="sm:max-w-md rounded-3xl">
-          <DialogHeader className="text-center">
-            <DialogTitle className="text-2xl font-bold font-headline text-primary">Invite Members</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="w-[92%] max-w-md rounded-[2rem] p-6 sm:p-8">
+          <DialogHeader className="text-center space-y-2">
+            <DialogTitle className="text-xl sm:text-2xl font-bold font-headline text-primary">Invite Members</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               Share this code with friends to join <span className="font-bold text-foreground">"{group.name}"</span>
             </DialogDescription>
           </DialogHeader>
           
           <div className="flex flex-col items-center gap-6 py-4">
-            <div className="bg-white p-4 rounded-3xl shadow-md border-2 border-primary/10">
+            <div className="bg-white p-4 sm:p-5 rounded-3xl shadow-xl border-2 border-primary/5">
               {/* Generic QR Code SVG */}
               <svg 
                 viewBox="0 0 100 100" 
-                className="w-48 h-48 text-primary"
+                className="w-40 h-40 sm:w-48 sm:h-48 text-primary"
                 fill="currentColor"
               >
                 <path d="M0 0h30v10H10v20H0V0zm10 10h10v10H10V10zm60-10h30v30h-10V10H70V0zm10 10h10v10H80V10zM0 70h30v30H0V70zm10 10h10v10H10V80zm70 0h10v10H80V80zm10-10h10v10H90V70zm-10-10h10v10H80V60zm-10 10h10v10H70V70zm10 10h10v10H80V80zm-20-20h10v10H60V60zm-10 10h10v10H50V70zm10 10h10v10H60V80zm-10-10h10v10H50V70zm10-10h10v10H60V60z" />
@@ -238,15 +240,15 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               </svg>
             </div>
 
-            <div className="w-full space-y-3">
-              <div className="flex items-center gap-2 p-3 bg-muted rounded-xl border border-border">
-                <span className="flex-1 text-xs truncate text-muted-foreground font-mono">
+            <div className="w-full space-y-4">
+              <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-2xl border border-border/50">
+                <span className="flex-1 text-[10px] sm:text-xs truncate text-muted-foreground font-mono">
                   {shareUrl}
                 </span>
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-8 w-8 text-primary hover:bg-primary/10"
+                  className="h-9 w-9 text-primary hover:bg-primary/10 shrink-0"
                   onClick={copyToClipboard}
                 >
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -254,21 +256,21 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               </div>
               
               <Button 
-                className="w-full rounded-xl font-bold h-12 gap-2"
+                className="w-full rounded-2xl font-bold h-12 sm:h-14 gap-2 text-sm sm:text-base shadow-lg shadow-primary/20"
                 onClick={() => {
-                  if (navigator.share) {
+                  if (typeof navigator !== 'undefined' && navigator.share) {
                     navigator.share({
                       title: `Join ${group.name} on Wisely`,
                       text: `I'm using Wisely to track shared expenses. Join our group: ${group.name}`,
                       url: shareUrl,
-                    });
+                    }).catch(() => copyToClipboard());
                   } else {
                     copyToClipboard();
                   }
                 }}
               >
                 <Share2 className="h-4 w-4" />
-                Share Link
+                Share Group Link
               </Button>
             </div>
           </div>
