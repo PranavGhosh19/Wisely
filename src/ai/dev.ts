@@ -1,1 +1,5 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/generate-monthly-spending-summary.ts';
+import '@/ai/flows/categorize-expense-from-notes.ts';
