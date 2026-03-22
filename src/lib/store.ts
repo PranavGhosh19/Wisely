@@ -15,7 +15,23 @@ interface SpenseFlowState {
   logout: () => void;
 }
 
-// Initial mock data for a better "first look"
+const MOCK_GROUPS: Group[] = [
+  {
+    id: 'g1',
+    name: 'Roommates 202',
+    members: ['default-user', 'user-2', 'user-3'],
+    createdBy: 'default-user',
+    createdAt: Date.now() - 10000000,
+  },
+  {
+    id: 'g2',
+    name: 'Europe Trip',
+    members: ['default-user', 'user-4'],
+    createdBy: 'user-4',
+    createdAt: Date.now() - 5000000,
+  }
+];
+
 const MOCK_EXPENSES: Expense[] = [
   {
     id: '1',
@@ -33,11 +49,12 @@ const MOCK_EXPENSES: Expense[] = [
     id: '2',
     amount: 120.00,
     category: 'Utilities',
-    type: 'PERSONAL',
+    type: 'GROUP',
+    groupId: 'g1',
     date: Date.now() - 172800000,
     createdBy: 'default-user',
     paidBy: 'default-user',
-    splitBetween: [],
+    splitBetween: [{ userId: 'default-user', amount: 40 }, { userId: 'user-2', amount: 40 }, { userId: 'user-3', amount: 40 }],
     splitType: 'EQUAL',
     notes: 'Electricity bill'
   }
@@ -46,7 +63,7 @@ const MOCK_EXPENSES: Expense[] = [
 export const useStore = create<SpenseFlowState>((set) => ({
   user: null,
   expenses: MOCK_EXPENSES,
-  groups: [],
+  groups: MOCK_GROUPS,
   isLoading: true,
   setUser: (user) => set({ user, isLoading: false }),
   setExpenses: (expenses) => set({ expenses }),
@@ -54,5 +71,5 @@ export const useStore = create<SpenseFlowState>((set) => ({
   setLoading: (isLoading) => set({ isLoading }),
   addExpense: (expense) => set((state) => ({ expenses: [expense, ...state.expenses] })),
   addGroup: (group) => set((state) => ({ groups: [group, ...state.groups] })),
-  logout: () => set({ user: null, expenses: MOCK_EXPENSES, groups: [] }),
+  logout: () => set({ user: null, expenses: MOCK_EXPENSES, groups: MOCK_GROUPS }),
 }));

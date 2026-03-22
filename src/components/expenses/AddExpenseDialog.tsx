@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { ExpenseType, SplitType, Expense } from "@/types";
+import { AlertCircle } from "lucide-react";
 
 interface AddExpenseDialogProps {
   open: boolean;
@@ -23,7 +24,7 @@ const CATEGORIES = [
 ];
 
 export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) {
-  const { user, addExpense } = useStore();
+  const { user, addExpense, groups } = useStore();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [expenseType, setExpenseType] = useState<ExpenseType>("PERSONAL");
@@ -33,6 +34,7 @@ export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) 
     category: "",
     notes: "",
     date: new Date().toISOString().split('T')[0],
+    groupId: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,30 +45,38 @@ export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) 
       return;
     }
 
+    if (expenseType === "GROUP" && !formData.groupId) {
+      toast({ title: "Error", description: "Please select a group for this expense." });
+      return;
+    }
+
     setLoading(true);
     try {
+      const amount = parseFloat(formData.amount);
       const expenseData: Expense = {
         id: Math.random().toString(36).substr(2, 9),
-        amount: parseFloat(formData.amount),
+        amount: amount,
         category: formData.category,
         notes: formData.notes,
         date: new Date(formData.date).getTime(),
         type: expenseType,
         createdBy: user.uid,
         paidBy: user.uid,
+        groupId: expenseType === "GROUP" ? formData.groupId : undefined,
         splitType: "EQUAL" as SplitType,
-        splitBetween: [{ userId: user.uid, amount: parseFloat(formData.amount) }],
+        splitBetween: [{ userId: user.uid, amount: amount }],
       };
 
       addExpense(expenseData);
       
-      toast({ title: "Success", description: "Expense added to memory." });
+      toast({ title: "Success", description: "Expense added successfully." });
       onOpenChange(false);
       setFormData({
         amount: "",
         category: "",
         notes: "",
         date: new Date().toISOString().split('T')[0],
+        groupId: "",
       });
     } catch (error) {
       toast({ title: "Error", description: "Failed to add expense." });
@@ -77,20 +87,20 @@ export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="font-headline text-xl">Add New Expense</DialogTitle>
+          <DialogTitle className="font-headline text-xl font-bold">Add New Expense</DialogTitle>
         </DialogHeader>
         
         <Tabs defaultValue="PERSONAL" onValueChange={(val) => setExpenseType(val as ExpenseType)} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="PERSONAL">Personal</TabsTrigger>
-            <TabsTrigger value="GROUP">Group</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted p-1 rounded-xl">
+            <TabsTrigger value="PERSONAL" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:text-primary">Personal</TabsTrigger>
+            <TabsTrigger value="GROUP" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:text-primary">Group</TabsTrigger>
           </TabsList>
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount ($)</Label>
+              <Label htmlFor="amount" className="font-bold">Amount ($)</Label>
               <Input 
                 id="amount" 
                 type="number" 
@@ -99,16 +109,17 @@ export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) 
                 value={formData.amount}
                 onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
                 required
+                className="h-11 rounded-xl text-lg font-bold"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category" className="font-bold">Category</Label>
               <Select 
                 value={formData.category} 
                 onValueChange={(val) => setFormData(prev => ({ ...prev, category: val }))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-11 rounded-xl">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -119,43 +130,57 @@ export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) 
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="date">Date</Label>
-              <Input 
-                id="date" 
-                type="date" 
-                value={formData.date}
-                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Input 
-                id="notes" 
-                placeholder="What was this for?" 
-                value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              />
-            </div>
-
             {expenseType === "GROUP" && (
-              <div className="p-3 bg-muted rounded-md text-xs text-muted-foreground border border-dashed border-primary/20">
-                Group split features are currently in demo mode. Choose a group below.
-                <Select>
-                  <SelectTrigger className="mt-2 bg-white">
-                    <SelectValue placeholder="Choose a group" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="g1">Demo Group 1</SelectItem>
-                    <SelectItem value="g2">Demo Group 2</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="space-y-2">
+                <Label htmlFor="group" className="font-bold">Select Group</Label>
+                {groups.length === 0 ? (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-2 text-xs text-destructive">
+                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <span>You haven't joined or created any groups yet. Create one in the Groups tab first.</span>
+                  </div>
+                ) : (
+                  <Select 
+                    value={formData.groupId} 
+                    onValueChange={(val) => setFormData(prev => ({ ...prev, groupId: val }))}
+                  >
+                    <SelectTrigger className="h-11 rounded-xl">
+                      <SelectValue placeholder="Choose a group" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {groups.map(group => (
+                        <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             )}
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="date" className="font-bold">Date</Label>
+                <Input 
+                  id="date" 
+                  type="date" 
+                  value={formData.date}
+                  onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                  className="h-11 rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="notes" className="font-bold">Notes (Opt.)</Label>
+                <Input 
+                  id="notes" 
+                  placeholder="Pizza night..." 
+                  value={formData.notes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  className="h-11 rounded-xl"
+                />
+              </div>
+            </div>
+
             <DialogFooter className="pt-4">
-              <Button type="submit" className="w-full bg-primary" disabled={loading}>
+              <Button type="submit" className="w-full bg-primary h-11 rounded-xl font-bold text-base" disabled={loading}>
                 {loading ? "Adding..." : "Add Expense"}
               </Button>
             </DialogFooter>
