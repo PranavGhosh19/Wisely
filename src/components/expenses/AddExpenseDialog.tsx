@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -12,7 +13,6 @@ import { addDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { ExpenseType, SplitType } from "@/types";
-import { categorizeExpense } from "@/ai/flows/categorize-expense-from-notes";
 
 interface AddExpenseDialogProps {
   open: boolean;
@@ -37,18 +37,6 @@ export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) 
     notes: "",
     date: new Date().toISOString().split('T')[0],
   });
-
-  const handleAIAutoCategorize = async () => {
-    if (!formData.notes) return;
-    try {
-      const result = await categorizeExpense({ notes: formData.notes });
-      if (result.category) {
-        setFormData(prev => ({ ...prev, category: result.category }));
-      }
-    } catch (error) {
-      console.error("AI categorization failed", error);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,18 +132,7 @@ export function AddExpenseDialog({ open, onOpenChange }: AddExpenseDialogProps) 
             </div>
 
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <Label htmlFor="notes">Notes</Label>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-auto py-0 text-accent font-medium hover:bg-transparent"
-                  onClick={handleAIAutoCategorize}
-                >
-                  AI Suggest Category
-                </Button>
-              </div>
+              <Label htmlFor="notes">Notes</Label>
               <Input 
                 id="notes" 
                 placeholder="What was this for?" 
