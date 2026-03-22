@@ -55,7 +55,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       setCopied(true);
       toast({
         title: "Link copied!",
-        description: "Share this link with your friends to join the group.",
+        description: "Invite link is ready to share.",
       });
       setTimeout(() => setCopied(false), 2000);
     }
@@ -80,7 +80,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         <header className="mb-6">
           <Button 
             variant="ghost" 
-            className="mb-4 -ml-2 text-muted-foreground hover:text-primary gap-2 h-8 px-2"
+            className="mb-3 -ml-2 text-muted-foreground hover:text-primary gap-2 h-8 px-2"
             onClick={() => router.push("/groups")}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -89,24 +89,24 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <h2 className="text-2xl sm:text-3xl font-bold font-headline text-primary truncate">{group.name}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl sm:text-3xl font-bold font-headline text-primary truncate">{group.name}</h2>
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  className="h-9 w-9 shrink-0 rounded-xl border-primary/20 hover:bg-primary/5 hover:text-primary"
+                  className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-xl border-primary/20 bg-white hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm"
                   onClick={() => setIsQrOpen(true)}
                 >
                   <QrCode className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="flex items-center gap-2 mt-1 text-xs sm:text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 mt-1 text-[11px] sm:text-sm text-muted-foreground">
                 <Users className="h-3.5 w-3.5" />
                 <span>{group.members.length} Members</span>
               </div>
             </div>
             <Button 
-              className="hidden sm:flex bg-primary hover:bg-primary/90 gap-2 h-11 rounded-xl font-bold"
+              className="hidden sm:flex bg-primary hover:bg-primary/90 gap-2 h-11 rounded-xl font-bold px-6"
               onClick={() => setIsAddExpenseOpen(true)}
             >
               <Plus className="h-5 w-5" />
@@ -134,7 +134,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Share</CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
-              <div className="text-2xl sm:text-3xl font-bold text-foreground">
+              <div className="text-xl sm:text-3xl font-bold text-foreground">
                 ${(totalSpent / (group.members.length || 1)).toFixed(2)}
               </div>
               <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-1 uppercase font-medium">Split Equally</p>
@@ -143,10 +143,10 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
 
           <Card className="border-none shadow-sm bg-white rounded-2xl">
             <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
-              <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Transactions</CardTitle>
+              <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Txns</CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
-              <div className="text-2xl sm:text-3xl font-bold text-foreground">{groupExpenses.length}</div>
+              <div className="text-xl sm:text-3xl font-bold text-foreground">{groupExpenses.length}</div>
               <div className="flex items-center gap-1 mt-1 text-muted-foreground text-[9px] sm:text-[10px] font-bold uppercase">
                 <Receipt className="h-3 w-3" />
                 Recorded
@@ -211,44 +211,44 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       />
 
       <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
-        <DialogContent className="w-[92%] max-w-md rounded-[2rem] p-6 sm:p-8">
-          <DialogHeader className="text-center space-y-2">
-            <DialogTitle className="text-xl sm:text-2xl font-bold font-headline text-primary">Invite Members</DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">
+        <DialogContent className="w-[94%] max-w-sm rounded-[2.5rem] p-6 sm:p-10 border-none shadow-2xl overflow-hidden">
+          <DialogHeader className="text-center space-y-2 mb-2">
+            <DialogTitle className="text-2xl font-bold font-headline text-primary">Invite Members</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm px-4">
               Share this code with friends to join <span className="font-bold text-foreground">"{group.name}"</span>
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex flex-col items-center gap-6 py-4">
-            <div className="bg-white p-4 sm:p-5 rounded-3xl shadow-xl border-2 border-primary/5">
+          <div className="flex flex-col items-center gap-6 py-2">
+            <div className="bg-white p-6 rounded-[2.5rem] shadow-2xl shadow-primary/10 border-2 border-primary/5">
               {/* Generic QR Code SVG */}
               <svg 
                 viewBox="0 0 100 100" 
-                className="w-40 h-40 sm:w-48 sm:h-48 text-primary"
+                className="w-44 h-44 sm:w-52 sm:h-52 text-primary"
                 fill="currentColor"
               >
                 <path d="M0 0h30v10H10v20H0V0zm10 10h10v10H10V10zm60-10h30v30h-10V10H70V0zm10 10h10v10H80V10zM0 70h30v30H0V70zm10 10h10v10H10V80zm70 0h10v10H80V80zm10-10h10v10H90V70zm-10-10h10v10H80V60zm-10 10h10v10H70V70zm10 10h10v10H80V80zm-20-20h10v10H60V60zm-10 10h10v10H50V70zm10 10h10v10H60V80zm-10-10h10v10H50V70zm10-10h10v10H60V60z" />
-                <rect x="40" y="40" width="20" height="20" rx="2" />
-                <rect x="0" y="40" width="10" height="10" />
-                <rect x="20" y="40" width="10" height="10" />
-                <rect x="40" y="0" width="10" height="10" />
-                <rect x="40" y="20" width="10" height="10" />
-                <rect x="70" y="40" width="10" height="10" />
-                <rect x="90" y="40" width="10" height="10" />
-                <rect x="40" y="70" width="10" height="10" />
-                <rect x="40" y="90" width="10" height="10" />
+                <rect x="40" y="40" width="20" height="20" rx="4" />
+                <rect x="0" y="40" width="10" height="10" rx="1" />
+                <rect x="20" y="40" width="10" height="10" rx="1" />
+                <rect x="40" y="0" width="10" height="10" rx="1" />
+                <rect x="40" y="20" width="10" height="10" rx="1" />
+                <rect x="70" y="40" width="10" height="10" rx="1" />
+                <rect x="90" y="40" width="10" height="10" rx="1" />
+                <rect x="40" y="70" width="10" height="10" rx="1" />
+                <rect x="40" y="90" width="10" height="10" rx="1" />
               </svg>
             </div>
 
             <div className="w-full space-y-4">
-              <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-2xl border border-border/50">
+              <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-2xl border border-border/50 group active:bg-muted/50 transition-colors">
                 <span className="flex-1 text-[10px] sm:text-xs truncate text-muted-foreground font-mono">
                   {shareUrl}
                 </span>
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-9 w-9 text-primary hover:bg-primary/10 shrink-0"
+                  className="h-9 w-9 text-primary hover:bg-primary/10 shrink-0 rounded-xl"
                   onClick={copyToClipboard}
                 >
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -256,7 +256,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               </div>
               
               <Button 
-                className="w-full rounded-2xl font-bold h-12 sm:h-14 gap-2 text-sm sm:text-base shadow-lg shadow-primary/20"
+                className="w-full rounded-[1.25rem] font-bold h-14 gap-2 text-sm sm:text-base shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 transition-all active:scale-[0.98]"
                 onClick={() => {
                   if (typeof navigator !== 'undefined' && navigator.share) {
                     navigator.share({
@@ -269,7 +269,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   }
                 }}
               >
-                <Share2 className="h-4 w-4" />
+                <Share2 className="h-5 w-5" />
                 Share Group Link
               </Button>
             </div>
