@@ -8,6 +8,7 @@ interface SpenseFlowState {
   groups: Group[];
   categories: string[];
   isLoading: boolean;
+  installPrompt: any | null;
   setUser: (user: User | null) => void;
   setExpenses: (expenses: Expense[]) => void;
   setGroups: (groups: Group[]) => void;
@@ -18,6 +19,7 @@ interface SpenseFlowState {
   addExpense: (expense: Expense) => void;
   deleteExpense: (id: string) => void;
   addGroup: (group: Group) => void;
+  setInstallPrompt: (prompt: any) => void;
   logout: () => void;
 }
 
@@ -83,6 +85,7 @@ export const useStore = create<SpenseFlowState>((set) => ({
   groups: MOCK_GROUPS,
   categories: DEFAULT_CATEGORIES,
   isLoading: true,
+  installPrompt: null,
   setUser: (user) => set({ user, isLoading: false }),
   setExpenses: (expenses) => set({ expenses }),
   setGroups: (groups) => set({ groups }),
@@ -99,5 +102,6 @@ export const useStore = create<SpenseFlowState>((set) => ({
     expenses: state.expenses.map(e => e.id === id ? { ...e, isDeleted: true } : e)
   })),
   addGroup: (group) => set((state) => ({ groups: [group, ...state.groups] })),
-  logout: () => set({ user: null, expenses: [], groups: [], categories: DEFAULT_CATEGORIES }),
+  setInstallPrompt: (installPrompt) => set({ installPrompt }),
+  logout: () => set({ user: null, expenses: [], groups: [], categories: DEFAULT_CATEGORIES, installPrompt: null }),
 }));

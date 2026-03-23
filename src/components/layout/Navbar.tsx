@@ -7,7 +7,7 @@ import { LayoutDashboard, Users, PieChart, LogOut, Plus, User as UserIcon } from
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AddExpenseDialog } from "@/components/expenses/AddExpenseDialog";
 
 const navItems = [
@@ -22,8 +22,23 @@ const rightNavItems = [
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useStore();
+  const { user, logout, setInstallPrompt } = useStore();
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setInstallPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, [setInstallPrompt]);
 
   if (!user) return null;
 

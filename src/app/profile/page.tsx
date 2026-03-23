@@ -24,13 +24,14 @@ import {
   Bell,
   Tag,
   Plus,
-  Trash2
+  Trash2,
+  Smartphone
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, logout, categories, addCategory, removeCategory } = useStore();
+  const { user, logout, categories, addCategory, removeCategory, installPrompt, setInstallPrompt } = useStore();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
@@ -67,6 +68,30 @@ export default function ProfilePage() {
       title: "Category added",
       description: `"${newCategory.trim()}" is now available for your expenses.`
     });
+  };
+
+  const handleAddToHomeScreen = async () => {
+    if (!installPrompt) {
+      toast({
+        title: "App Installation",
+        description: "To install Wisely on your device, use your browser's 'Add to Home Screen' option in the menu.",
+      });
+      return;
+    }
+
+    // Show the install prompt
+    installPrompt.prompt();
+    
+    // Wait for the user to respond to the prompt
+    const { outcome } = await installPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+      setInstallPrompt(null);
+      toast({
+        title: "Welcome Home!",
+        description: "Wisely has been added to your home screen.",
+      });
+    }
   };
 
   const appearanceOptions = [
@@ -196,10 +221,26 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Additional Settings (Mock) */}
+          {/* Additional Settings */}
           <div className="space-y-2">
             <p className="text-[10px] font-bold uppercase text-muted-foreground px-2 tracking-widest">Preferences</p>
             <div className="bg-card rounded-2xl overflow-hidden shadow-sm border-none">
+              <button 
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
+                onClick={handleAddToHomeScreen}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500">
+                    <Smartphone className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-medium">Add to Home Screen</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {!installPrompt && <span className="text-[10px] font-bold uppercase text-muted-foreground bg-muted px-2 py-0.5 rounded">Native</span>}
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </button>
+
               <button className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50">
                 <div className="flex items-center gap-3">
                   <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
