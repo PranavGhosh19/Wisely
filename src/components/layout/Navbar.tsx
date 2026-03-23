@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -8,14 +9,6 @@ import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { AddExpenseDialog } from "@/components/expenses/AddExpenseDialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const navItems = [
   { name: "Dash", href: "/", icon: LayoutDashboard },
@@ -40,14 +33,13 @@ export function Navbar() {
   };
 
   // Detect if we are in a group context based on the URL
-  // Matches: /groups/[groupId]
   const groupMatch = pathname.match(/^\/groups\/([^/]+)$/);
   const contextGroupId = groupMatch ? groupMatch[1] : undefined;
 
   return (
     <>
       {/* Desktop Sidebar */}
-      <nav className="hidden md:flex fixed top-0 left-0 z-50 h-screen w-64 flex-col justify-between border-r bg-white p-4">
+      <nav className="hidden md:flex fixed top-0 left-0 z-50 h-screen w-64 flex-col justify-between border-r bg-card p-4">
         <div className="flex flex-col gap-6">
           <div className="mb-4 px-2">
             <h1 className="text-2xl font-bold font-headline text-primary tracking-tight">Wisely</h1>
@@ -73,11 +65,23 @@ export function Navbar() {
                 </Link>
               );
             })}
+            <Link
+              href="/profile"
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all",
+                pathname === "/profile" 
+                  ? "text-primary bg-primary/10" 
+                  : "text-muted-foreground hover:text-primary hover:bg-primary/5"
+              )}
+            >
+              <UserIcon className={cn("h-5 w-5", pathname === "/profile" && "text-primary")} />
+              <span>Profile</span>
+            </Link>
           </div>
         </div>
 
         <div className="flex flex-col gap-4 border-t pt-4">
-          <div className="flex items-center gap-3 px-2">
+          <Link href="/profile" className="flex items-center gap-3 px-2 hover:bg-muted/50 p-2 rounded-xl transition-colors">
             <div className="h-9 w-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold shadow-sm">
               {user.name?.[0] || "?"}
             </div>
@@ -85,7 +89,7 @@ export function Navbar() {
               <span className="text-sm font-bold truncate">{user.name}</span>
               <span className="text-[11px] text-muted-foreground truncate">{user.email}</span>
             </div>
-          </div>
+          </Link>
           <Button 
             variant="ghost" 
             size="sm" 
@@ -99,9 +103,8 @@ export function Navbar() {
       </nav>
 
       {/* Mobile Bottom Bar */}
-      <nav className="fixed bottom-0 left-0 z-50 w-full border-t bg-white/95 backdrop-blur-md safe-area-bottom md:hidden h-20">
+      <nav className="fixed bottom-0 left-0 z-50 w-full border-t bg-background/95 backdrop-blur-md safe-area-bottom md:hidden h-20">
         <div className="relative flex h-full items-center justify-around px-4">
-          {/* Left Nav Items */}
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -120,7 +123,6 @@ export function Navbar() {
             );
           })}
 
-          {/* Central Add Button */}
           <div className="relative -top-6">
             <Button
               onClick={() => setIsAddExpenseOpen(true)}
@@ -131,7 +133,6 @@ export function Navbar() {
             </Button>
           </div>
 
-          {/* Right Nav Item */}
           {rightNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -150,30 +151,21 @@ export function Navbar() {
             );
           })}
 
-          {/* Profile Section */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex flex-col items-center gap-1 text-muted-foreground focus:outline-none">
-                <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-transparent">
-                  <UserIcon className="h-4 w-4" />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest">Me</span>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 rounded-xl mb-4 mr-2">
-              <DropdownMenuLabel>
-                <div className="flex flex-col">
-                  <span className="font-bold">{user.name}</span>
-                  <span className="text-xs text-muted-foreground font-normal">{user.email}</span>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="text-destructive font-bold focus:text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Link
+            href="/profile"
+            className={cn(
+              "flex flex-col items-center gap-1 transition-all",
+              pathname === "/profile" ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            <div className={cn(
+              "h-6 w-6 rounded-full flex items-center justify-center border-2 transition-all",
+              pathname === "/profile" ? "border-primary bg-primary/10" : "border-transparent bg-muted"
+            )}>
+              <UserIcon className="h-4 w-4" />
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-widest">Me</span>
+          </Link>
         </div>
       </nav>
 

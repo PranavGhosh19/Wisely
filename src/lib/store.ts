@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { User, Expense, Group } from '@/types';
 
@@ -15,7 +16,6 @@ interface SpenseFlowState {
   logout: () => void;
 }
 
-// Using static timestamps to prevent hydration mismatches during module initialization
 const MOCK_GROUPS: Group[] = [
   {
     id: 'g1',
