@@ -7,8 +7,10 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { useStore } from "@/lib/store";
 import { useTheme } from "next-themes";
+import { useToast } from "@/hooks/use-toast";
 import { 
   User as UserIcon, 
   Mail, 
@@ -19,15 +21,20 @@ import {
   LogOut, 
   ChevronRight,
   Shield,
-  Bell
+  Bell,
+  Tag,
+  Plus,
+  Trash2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, logout } = useStore();
+  const { user, logout, categories, addCategory, removeCategory } = useStore();
   const { theme, setTheme } = useTheme();
+  const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
 
   useEffect(() => {
     setMounted(true);
@@ -41,6 +48,27 @@ export default function ProfilePage() {
     router.push("/auth");
   };
 
+  const handleAddCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategory.trim()) return;
+    
+    if (categories.includes(newCategory.trim())) {
+      toast({
+        variant: "destructive",
+        title: "Already exists",
+        description: "This category is already in your list."
+      });
+      return;
+    }
+
+    addCategory(newCategory.trim());
+    setNewCategory("");
+    toast({
+      title: "Category added",
+      description: `"${newCategory.trim()}" is now available for your expenses.`
+    });
+  };
+
   const appearanceOptions = [
     { id: 'light', name: 'Light', icon: Sun },
     { id: 'dark', name: 'Dark', icon: Moon },
@@ -52,9 +80,9 @@ export default function ProfilePage() {
       <Navbar />
       
       <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-2xl mx-auto w-full">
-        <header className="mb-8">
+        <header className="mb-8 text-center md:text-left">
           <h2 className="text-3xl font-bold font-headline text-primary">Settings</h2>
-          <p className="text-muted-foreground">Manage your profile and app preferences.</p>
+          <p className="text-muted-foreground">Manage your profile, categories, and preferences.</p>
         </header>
 
         <div className="space-y-6">
@@ -88,6 +116,48 @@ export default function ProfilePage() {
                     <p className="text-sm font-medium truncate">{user.phoneNumber || "Not provided"}</p>
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Custom Categories Section */}
+          <Card className="border-none shadow-sm rounded-2xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="font-headline text-lg flex items-center gap-2">
+                <Tag className="h-5 w-5 text-primary" />
+                Expense Categories
+              </CardTitle>
+              <CardDescription>Customize the categories you use for tracking.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <form onSubmit={handleAddCategory} className="flex gap-2">
+                <Input 
+                  placeholder="New category name..." 
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  className="rounded-xl h-11"
+                />
+                <Button type="submit" size="icon" className="h-11 w-11 shrink-0 rounded-xl bg-primary">
+                  <Plus className="h-5 w-5" />
+                </Button>
+              </form>
+
+              <div className="flex flex-wrap gap-2 pt-2">
+                {categories.map((cat) => (
+                  <div 
+                    key={cat} 
+                    className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-full border border-border/50 group hover:bg-muted transition-colors"
+                  >
+                    <span className="text-sm font-medium">{cat}</span>
+                    <button 
+                      onClick={() => removeCategory(cat)}
+                      className="text-muted-foreground hover:text-destructive transition-colors"
+                      title="Remove category"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

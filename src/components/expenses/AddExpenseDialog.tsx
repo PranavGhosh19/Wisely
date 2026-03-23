@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -19,14 +20,8 @@ interface AddExpenseDialogProps {
   defaultGroupId?: string;
 }
 
-const CATEGORIES = [
-  "Food & Dining", "Transportation", "Utilities", "Rent/Mortgage", 
-  "Shopping", "Entertainment", "Groceries", "Healthcare", 
-  "Education", "Travel", "Personal Care", "Other"
-];
-
 export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroupId }: AddExpenseDialogProps) {
-  const { user, addExpense, groups } = useStore();
+  const { user, addExpense, groups, categories } = useStore();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [expenseType, setExpenseType] = useState<ExpenseType>(defaultType || "PERSONAL");
@@ -140,7 +135,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map(cat => (
+                  {categories.map(cat => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
                 </SelectContent>
