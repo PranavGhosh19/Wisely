@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { ExpenseType, SplitType, Expense } from "@/types";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Upload, X, FileText } from "lucide-react";
 import { format } from "date-fns";
 
 interface AddExpenseDialogProps {
@@ -27,6 +27,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [expenseType, setExpenseType] = useState<ExpenseType>(defaultType || "PERSONAL");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     amount: "",
@@ -34,6 +35,8 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
     notes: "",
     date: format(new Date(), "yyyy-MM-dd"),
     groupId: defaultGroupId || "",
+    receiptName: "",
+    receiptUrl: "",
   });
 
   // Sync state with props or edit object
@@ -47,6 +50,8 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
           notes: expenseToEdit.notes || "",
           date: format(new Date(expenseToEdit.date), "yyyy-MM-dd"),
           groupId: expenseToEdit.groupId || "",
+          receiptName: expenseToEdit.receiptName || "",
+          receiptUrl: expenseToEdit.receiptUrl || "",
         });
       } else {
         setExpenseType(defaultType || "PERSONAL");
@@ -56,10 +61,35 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
           notes: "",
           date: format(new Date(), "yyyy-MM-dd"),
           groupId: defaultGroupId || "",
+          receiptName: "",
+          receiptUrl: "",
         });
       }
     }
   }, [open, defaultType, defaultGroupId, expenseToEdit]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // In a real app, we would upload this to Firebase Storage.
+      // For the demo, we'll use a local object URL to simulate success.
+      const fakeUrl = URL.createObjectURL(file);
+      setFormData(prev => ({ 
+        ...prev, 
+        receiptName: file.name,
+        receiptUrl: fakeUrl 
+      }));
+      toast({
+        title: "Receipt attached",
+        description: `${file.name} ready for upload.`,
+      });
+    }
+  };
+
+  const removeReceipt = () => {
+    setFormData(prev => ({ ...prev, receiptName: "", receiptUrl: "" }));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +125,8 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
         groupId: expenseType === "GROUP" ? formData.groupId : undefined,
         splitType: "EQUAL" as SplitType,
         splitBetween: [{ userId: user.uid, amount: amount }],
+        receiptName: formData.receiptName,
+        receiptUrl: formData.receiptUrl,
       };
 
       addExpense(expenseData);
@@ -113,7 +145,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] rounded-2xl">
+      <DialogContent className="sm:max-w-[425px] rounded-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-headline text-xl font-bold">
             {expenseToEdit ? "Edit Expense" : "Add New Expense"}
@@ -222,6 +254,43 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
                   className="h-11 rounded-xl"
                 />
               </div>
+            </div>
+
+            {/* Receipt Section */}
+            <div className="space-y-2">
+              <Label className="font-bold">Receipt (Optional)</Label>
+              {formData.receiptName ? (
+                <div className="flex items-center justify-between p-3 bg-accent/5 border border-accent/20 rounded-xl">
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <FileText className="h-4 w-4 text-accent shrink-0" />
+                    <span className="text-xs font-medium truncate">{formData.receiptName}</span>
+                  </div>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive"
+                    onClick={removeReceipt}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div 
+                  className="border-2 border-dashed border-muted-foreground/20 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-muted/30 cursor-pointer transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground font-medium">Click to upload receipt</span>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*,application/pdf"
+                    onChange={handleFileChange}
+                  />
+                </div>
+              )}
             </div>
 
             <DialogFooter className="pt-4">

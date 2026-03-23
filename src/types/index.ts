@@ -37,6 +37,8 @@ export interface Expense {
   splitBetween: SplitMember[];
   splitType: SplitType;
   isDeleted?: boolean;
+  receiptUrl?: string;
+  receiptName?: string;
 }
 
 export interface Balance {

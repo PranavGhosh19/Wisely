@@ -16,7 +16,8 @@ import {
   Copy, 
   Check,
   Share2,
-  Edit2
+  Edit2,
+  FileText
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { AddExpenseDialog } from "@/components/expenses/AddExpenseDialog";
@@ -107,7 +108,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-xl border-primary/20 bg-white hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm"
                   onClick={() => setIsQrOpen(true)}
                 >
-                  <QrCode className="h-4 w-4 sm:h-5 sm:h-5" />
+                  <QrCode className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
               </div>
               <div className="flex items-center gap-2 mt-1.5 text-[10px] sm:text-sm text-muted-foreground">
@@ -192,7 +193,10 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                         {expense.category[0] || "💰"}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-bold text-xs sm:text-base truncate">{expense.category}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-bold text-xs sm:text-base truncate">{expense.category}</p>
+                          {expense.receiptUrl && <FileText className="h-3 w-3 text-accent" title="Has receipt" />}
+                        </div>
                         <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5">
                           <span className="text-[9px] sm:text-[11px] font-medium text-muted-foreground uppercase whitespace-nowrap">
                             {mounted ? format(expense.date, "MMM dd") : ""}
@@ -272,8 +276,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   {shareUrl}
                 </span>
                 <Button 
-                  variant="ghost" 
-                  size="icon" 
+                  variant="ghost" size="icon" 
                   className="h-8 w-8 text-primary hover:bg-primary/10 shrink-0 rounded-md"
                   onClick={copyToClipboard}
                 >
