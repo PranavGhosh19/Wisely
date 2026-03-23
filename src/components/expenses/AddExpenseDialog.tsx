@@ -12,16 +12,18 @@ import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { ExpenseType, SplitType, Expense } from "@/types";
 import { AlertCircle } from "lucide-react";
+import { format } from "date-fns";
 
 interface AddExpenseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultType?: ExpenseType;
   defaultGroupId?: string;
+  expenseToEdit?: Expense;
 }
 
-export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroupId }: AddExpenseDialogProps) {
-  const { user, addExpense, groups, categories } = useStore();
+export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroupId, expenseToEdit }: AddExpenseDialogProps) {
+  const { user, addExpense, deleteExpense, groups, categories } = useStore();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [expenseType, setExpenseType] = useState<ExpenseType>(defaultType || "PERSONAL");
@@ -30,24 +32,34 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
     amount: "",
     category: "",
     notes: "",
-    date: new Date().toISOString().split('T')[0],
+    date: format(new Date(), "yyyy-MM-dd"),
     groupId: defaultGroupId || "",
   });
 
-  // Sync state with props when dialog opens
+  // Sync state with props or edit object
   useEffect(() => {
     if (open) {
-      setExpenseType(defaultType || "PERSONAL");
-      setFormData(prev => ({
-        ...prev,
-        groupId: defaultGroupId || "",
-        amount: "",
-        category: "",
-        notes: "",
-        date: new Date().toISOString().split('T')[0],
-      }));
+      if (expenseToEdit) {
+        setExpenseType(expenseToEdit.type);
+        setFormData({
+          amount: expenseToEdit.amount.toString(),
+          category: expenseToEdit.category,
+          notes: expenseToEdit.notes || "",
+          date: format(new Date(expenseToEdit.date), "yyyy-MM-dd"),
+          groupId: expenseToEdit.groupId || "",
+        });
+      } else {
+        setExpenseType(defaultType || "PERSONAL");
+        setFormData({
+          amount: "",
+          category: "",
+          notes: "",
+          date: format(new Date(), "yyyy-MM-dd"),
+          groupId: defaultGroupId || "",
+        });
+      }
     }
-  }, [open, defaultType, defaultGroupId]);
+  }, [open, defaultType, defaultGroupId, expenseToEdit]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +77,12 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
     setLoading(true);
     try {
       const amount = parseFloat(formData.amount);
+      
+      // If editing, mark the old one as deleted first
+      if (expenseToEdit) {
+        deleteExpense(expenseToEdit.id);
+      }
+
       const expenseData: Expense = {
         id: Math.random().toString(36).substr(2, 9),
         amount: amount,
@@ -81,10 +99,13 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
 
       addExpense(expenseData);
       
-      toast({ title: "Success", description: "Expense added successfully." });
+      toast({ 
+        title: "Success", 
+        description: expenseToEdit ? "Expense updated (new record created)." : "Expense added successfully." 
+      });
       onOpenChange(false);
     } catch (error) {
-      toast({ title: "Error", description: "Failed to add expense." });
+      toast({ title: "Error", description: "Failed to process expense." });
     } finally {
       setLoading(false);
     }
@@ -94,7 +115,9 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="font-headline text-xl font-bold">Add New Expense</DialogTitle>
+          <DialogTitle className="font-headline text-xl font-bold">
+            {expenseToEdit ? "Edit Expense" : "Add New Expense"}
+          </DialogTitle>
         </DialogHeader>
         
         <Tabs 
@@ -102,8 +125,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
           onValueChange={(val) => setExpenseType(val as ExpenseType)} 
           className="w-full"
         >
-          {/* Only show tabs if we aren't pre-locked into a group context */}
-          {!defaultGroupId && (
+          {!defaultGroupId && !expenseToEdit && (
             <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted p-1 rounded-xl">
               <TabsTrigger value="PERSONAL" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:text-primary">Personal</TabsTrigger>
               <TabsTrigger value="GROUP" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:text-primary">Group</TabsTrigger>
@@ -142,7 +164,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
               </Select>
             </div>
 
-            {expenseType === "GROUP" && !defaultGroupId && (
+            {(expenseType === "GROUP" && !defaultGroupId && !expenseToEdit) && (
               <div className="space-y-2">
                 <Label htmlFor="group" className="font-bold">Select Group</Label>
                 {groups.length === 0 ? (
@@ -168,10 +190,14 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
               </div>
             )}
 
-            {defaultGroupId && (
+            {(defaultGroupId || expenseToEdit?.groupId) && (
               <div className="bg-primary/5 p-3 rounded-xl border border-primary/10 mb-2">
-                <p className="text-[10px] font-bold uppercase text-primary/70 tracking-wider mb-0.5">Adding to Group</p>
-                <p className="font-bold text-sm text-primary">{groups.find(g => g.id === defaultGroupId)?.name || "Unknown Group"}</p>
+                <p className="text-[10px] font-bold uppercase text-primary/70 tracking-wider mb-0.5">
+                  {expenseToEdit ? "Updating Group Record" : "Adding to Group"}
+                </p>
+                <p className="font-bold text-sm text-primary">
+                  {groups.find(g => g.id === (formData.groupId || defaultGroupId))?.name || "Group Expense"}
+                </p>
               </div>
             )}
 
@@ -200,7 +226,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
 
             <DialogFooter className="pt-4">
               <Button type="submit" className="w-full bg-primary h-11 rounded-xl font-bold text-base" disabled={loading}>
-                {loading ? "Adding..." : "Add Expense"}
+                {loading ? "Processing..." : (expenseToEdit ? "Update Expense" : "Add Expense")}
               </Button>
             </DialogFooter>
           </form>

@@ -14,9 +14,12 @@ const COLORS = ['#432E8C', '#3380FF', '#6366F1', '#A5B4FC', '#C7D2FE'];
 
 export default function AnalyticsPage() {
   const { expenses } = useStore();
+  
+  // Filter out deleted expenses
+  const activeExpenses = expenses.filter(e => !e.isDeleted);
 
   // Prepare Pie Chart data (Category Distribution)
-  const categoryDataMap = expenses.reduce((acc: any, exp) => {
+  const categoryDataMap = activeExpenses.reduce((acc: any, exp) => {
     acc[exp.category] = (acc[exp.category] || 0) + exp.amount;
     return acc;
   }, {});
@@ -25,8 +28,8 @@ export default function AnalyticsPage() {
 
   // Prepare Bar Chart data (Group vs Personal)
   const groupVsPersonal = [
-    { name: 'Personal', amount: expenses.filter(e => e.type === 'PERSONAL').reduce((a, b) => a + b.amount, 0) },
-    { name: 'Group', amount: expenses.filter(e => e.type === 'GROUP').reduce((a, b) => a + b.amount, 0) },
+    { name: 'Personal', amount: activeExpenses.filter(e => e.type === 'PERSONAL').reduce((a, b) => a + b.amount, 0) },
+    { name: 'Group', amount: activeExpenses.filter(e => e.type === 'GROUP').reduce((a, b) => a + b.amount, 0) },
   ];
 
   // Mock Trend data

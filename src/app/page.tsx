@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -27,7 +28,9 @@ export default function Dashboard() {
     }
   }, [user, router, setLoading]);
 
-  const totalSpent = expenses.reduce((acc, curr) => acc + curr.amount, 0);
+  // Filter out deleted expenses
+  const activeExpenses = expenses.filter(e => !e.isDeleted);
+  const totalSpent = activeExpenses.reduce((acc, curr) => acc + curr.amount, 0);
   const youAreOwed = 0.00;
   const youOwe = 0.00;
 
@@ -71,7 +74,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-primary">${totalSpent.toFixed(2)}</div>
-              <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">In-memory tracking</p>
+              <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">Active tracking</p>
             </CardContent>
           </Card>
 
@@ -105,7 +108,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="px-0 sm:px-6">
                 <div className="divide-y divide-muted">
-                  {expenses.length === 0 ? (
+                  {activeExpenses.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center px-6">
                       <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
                         <AlertCircle className="h-8 w-8 text-muted-foreground" />
@@ -114,7 +117,7 @@ export default function Dashboard() {
                       <p className="text-sm text-muted-foreground max-w-xs mt-1">Start tracking your spending by adding your first expense.</p>
                     </div>
                   ) : (
-                    expenses.map((expense) => (
+                    activeExpenses.map((expense) => (
                       <div key={expense.id} className="flex items-center justify-between p-4 sm:p-0 sm:py-6 first:pt-0 last:pb-0 group active:bg-primary/5 sm:active:bg-transparent transition-colors">
                         <div className="flex items-center gap-3">
                           <div className={cn(

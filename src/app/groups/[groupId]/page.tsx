@@ -15,7 +15,8 @@ import {
   QrCode, 
   Copy, 
   Check,
-  Share2
+  Share2,
+  Edit2
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { AddExpenseDialog } from "@/components/expenses/AddExpenseDialog";
@@ -28,6 +29,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Expense } from "@/types";
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -39,13 +41,15 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [expenseToEdit, setExpenseToEdit] = useState<Expense | undefined>(undefined);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const group = groups.find(g => g.id === groupId);
-  const groupExpenses = expenses.filter(e => e.groupId === groupId);
+  // Filter out deleted transactions
+  const groupExpenses = expenses.filter(e => e.groupId === groupId && !e.isDeleted);
   const totalSpent = groupExpenses.reduce((acc, curr) => acc + curr.amount, 0);
 
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/join/${groupId}` : `wisely.app/join/${groupId}`;
@@ -60,6 +64,11 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       });
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const handleEditClick = (expense: Expense) => {
+    setExpenseToEdit(expense);
+    setIsAddExpenseOpen(true);
   };
 
   if (!group) {
@@ -108,7 +117,10 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             </div>
             <Button 
               className="hidden sm:flex bg-primary hover:bg-primary/90 gap-2 h-11 rounded-xl font-bold px-6"
-              onClick={() => setIsAddExpenseOpen(true)}
+              onClick={() => {
+                setExpenseToEdit(undefined);
+                setIsAddExpenseOpen(true);
+              }}
             >
               <Plus className="h-5 w-5" />
               Add Group Expense
@@ -174,9 +186,9 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             ) : (
               <div className="divide-y divide-muted">
                 {groupExpenses.map((expense) => (
-                  <div key={expense.id} className="flex items-center justify-between p-4 sm:px-6 sm:py-5 hover:bg-muted/5 transition-colors active:bg-muted/10">
+                  <div key={expense.id} className="flex items-center justify-between p-4 sm:px-6 sm:py-5 hover:bg-muted/5 transition-colors group">
                     <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-base sm:text-xl">
+                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-base sm:text-xl shrink-0">
                         {expense.category[0] || "💰"}
                       </div>
                       <div className="min-w-0">
@@ -192,9 +204,19 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                         </div>
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="font-bold text-sm sm:text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
-                      {expense.notes && <p className="text-[9px] sm:text-[11px] text-muted-foreground italic truncate max-w-[60px] sm:max-w-[200px]">{expense.notes}</p>}
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="text-right">
+                        <p className="font-bold text-sm sm:text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
+                        {expense.notes && <p className="text-[9px] sm:text-[11px] text-muted-foreground italic truncate max-w-[60px] sm:max-w-[120px]">{expense.notes}</p>}
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleEditClick(expense)}
+                      >
+                        <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -206,9 +228,13 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
 
       <AddExpenseDialog 
         open={isAddExpenseOpen} 
-        onOpenChange={setIsAddExpenseOpen}
+        onOpenChange={(open) => {
+          setIsAddExpenseOpen(open);
+          if (!open) setExpenseToEdit(undefined);
+        }}
         defaultType="GROUP"
         defaultGroupId={groupId}
+        expenseToEdit={expenseToEdit}
       />
 
       <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>

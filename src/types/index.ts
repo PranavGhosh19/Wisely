@@ -36,6 +36,7 @@ export interface Expense {
   paidBy: string; // User UID
   splitBetween: SplitMember[];
   splitType: SplitType;
+  isDeleted?: boolean;
 }
 
 export interface Balance {

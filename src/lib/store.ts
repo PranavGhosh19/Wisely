@@ -16,6 +16,7 @@ interface SpenseFlowState {
   removeCategory: (category: string) => void;
   setLoading: (loading: boolean) => void;
   addExpense: (expense: Expense) => void;
+  deleteExpense: (id: string) => void;
   addGroup: (group: Group) => void;
   logout: () => void;
 }
@@ -72,7 +73,12 @@ const MOCK_EXPENSES: Expense[] = [
 ];
 
 export const useStore = create<SpenseFlowState>((set) => ({
-  user: null,
+  user: {
+    uid: 'default-user',
+    name: 'Jane Doe',
+    email: 'jane@example.com',
+    groupIds: ['g1', 'g2']
+  },
   expenses: MOCK_EXPENSES,
   groups: MOCK_GROUPS,
   categories: DEFAULT_CATEGORIES,
@@ -89,6 +95,9 @@ export const useStore = create<SpenseFlowState>((set) => ({
   })),
   setLoading: (isLoading) => set({ isLoading }),
   addExpense: (expense) => set((state) => ({ expenses: [expense, ...state.expenses] })),
+  deleteExpense: (id) => set((state) => ({
+    expenses: state.expenses.map(e => e.id === id ? { ...e, isDeleted: true } : e)
+  })),
   addGroup: (group) => set((state) => ({ groups: [group, ...state.groups] })),
-  logout: () => set({ user: null, expenses: MOCK_EXPENSES, groups: MOCK_GROUPS, categories: DEFAULT_CATEGORIES }),
+  logout: () => set({ user: null, expenses: [], groups: [], categories: DEFAULT_CATEGORIES }),
 }));
