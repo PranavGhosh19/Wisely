@@ -15,7 +15,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile 
 } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { useAuth, useFirestore } from "@/firebase";
 
 export default function AuthPage() {
@@ -31,6 +31,7 @@ export default function AuthPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Automatically redirect to dashboard once the user state is populated
   useEffect(() => {
     if (user) {
       router.replace("/dashboard");
@@ -65,6 +66,7 @@ export default function AuthPage() {
           groupIds: [],
         };
 
+        // Initialize user profile in Firestore
         await setDoc(doc(db, "users", firebaseUser.uid), userProfile);
 
         toast({ title: "Account Created", description: `Welcome to Wisely, ${name}!` });
@@ -72,6 +74,7 @@ export default function AuthPage() {
         await signInWithEmailAndPassword(auth, email, password);
         toast({ title: "Welcome Back", description: "Successfully signed in." });
       }
+      // Note: We don't push to router here. The useEffect handles it once Zustand store updates.
     } catch (error: any) {
       toast({ 
         variant: "destructive", 
