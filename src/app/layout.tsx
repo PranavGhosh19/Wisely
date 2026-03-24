@@ -1,9 +1,9 @@
-
-import type {Metadata} from 'next';
+import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
+import { AuthSync } from "@/components/auth-sync";
 
 export const metadata: Metadata = {
   title: 'Wisely | Smart Expense Tracking',
@@ -38,46 +38,4 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
-
-// Internal component to sync Firebase Auth with our Zustand store
-import { useEffect } from 'react';
-import { useAuth, useFirestore } from '@/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { useStore } from '@/lib/store';
-
-function AuthSync() {
-  const auth = useAuth();
-  const db = useFirestore();
-  const { setUser, setLoading } = useStore();
-
-  useEffect(() => {
-    if (!auth || !db) return;
-
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        // Fetch additional user profile data from Firestore
-        const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
-        if (userDoc.exists()) {
-          setUser(userDoc.data() as any);
-        } else {
-          // Fallback if doc doesn't exist yet (e.g. during sign up process)
-          setUser({
-            uid: firebaseUser.uid,
-            name: firebaseUser.displayName || 'User',
-            email: firebaseUser.email || '',
-            groupIds: [],
-          });
-        }
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [auth, db, setUser, setLoading]);
-
-  return null;
 }
