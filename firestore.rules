@@ -28,9 +28,18 @@ service cloud.firestore {
     // =========================
     match /groups/{groupId} {
 
+      // Helper to check membership
+      function isMember() {
+        return request.auth != null && request.auth.uid in resource.data.members;
+      }
+
+      // Helper to check membership from subcollection (fetches parent)
+      function isMemberOfParent() {
+        return request.auth != null && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.members;
+      }
+
       // ✅ Only members can read group
-      allow read: if request.auth != null
-        && request.auth.uid in resource.data.members;
+      allow read: if isMember();
 
       // ✅ Create group
       allow create: if request.auth != null
@@ -38,22 +47,21 @@ service cloud.firestore {
         && request.auth.uid in request.resource.data.members;
 
       // ✅ Only members can update/delete
-      allow update, delete: if request.auth != null
-        && request.auth.uid in resource.data.members;
+      allow update, delete: if isMember();
 
       // =========================
       // 🔹 GROUP EXPENSES
       // =========================
       match /expenses/{expenseId} {
 
-        // ✅ Create expense
+        // ✅ Create expense if user is member of the parent group
         allow create: if request.auth != null
           && request.resource.data.createdById == request.auth.uid
-          && request.auth.uid in request.resource.data.groupMemberIds;
+          && isMemberOfParent();
 
-        // ✅ Read expense ONLY if user is member
-        allow read: if request.auth != null
-          && request.auth.uid in resource.data.groupMemberIds;
+        // ✅ Read expense ONLY if user is member of the parent group
+        // This avoids "Rules are not filters" errors for list operations
+        allow read: if isMemberOfParent();
 
         // ✅ Update/Delete only by creator
         allow update, delete: if request.auth != null
