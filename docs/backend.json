@@ -1,0 +1,345 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user's profile information within the SpenseFlow application, essential for personalizing experiences and linking to shared expenses.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity. This ID typically corresponds to the user's authentication ID from Firebase Auth."
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's preferred display name."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "The user's phone number, used for authentication (via OTP) and as a contact identifier. (Relationship: UserProfile 1:1 AuthSystem)"
+        },
+        "groupIds": {
+          "type": "array",
+          "description": "An array of IDs referencing the groups that this user is a member of. (Relationship: UserProfile N:N Group)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user profile was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user profile was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "phoneNumber",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Group": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Group",
+      "type": "object",
+      "description": "Represents a collective of users sharing expenses, enabling features like group expense splitting and balance calculation.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Group entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The descriptive name of the group (e.g., 'Vacation Fund', 'Roommates')."
+        },
+        "memberIds": {
+          "type": "array",
+          "description": "An array of UserProfile IDs representing all members belonging to this group. (Relationship: Group N:N UserProfile)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdById": {
+          "type": "string",
+          "description": "Reference to the UserProfile ID of the user who initially created this group. (Relationship: UserProfile 1:N Group)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the group was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the group's information was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "memberIds",
+        "createdById",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Expense": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Expense",
+      "type": "object",
+      "description": "Represents a single financial transaction or expense, detailing its amount, category, and how it's split among users or if it's personal.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Expense entity."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The total monetary amount of the expense."
+        },
+        "category": {
+          "type": "string",
+          "description": "The categorization of the expense (e.g., 'Food', 'Transport', 'Utilities')."
+        },
+        "type": {
+          "type": "string",
+          "description": "Indicates whether the expense is 'personal' or 'group'."
+        },
+        "date": {
+          "type": "string",
+          "description": "The date and time when the expense occurred or was recorded.",
+          "format": "date-time"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional: Additional notes or a detailed description for the expense."
+        },
+        "createdById": {
+          "type": "string",
+          "description": "Reference to the UserProfile ID of the user who created this expense entry. (Relationship: UserProfile 1:N Expense)"
+        },
+        "paidById": {
+          "type": "string",
+          "description": "Reference to the UserProfile ID of the user who initially paid the full amount of this expense. (Relationship: UserProfile 1:N Expense)"
+        },
+        "groupId": {
+          "type": "string",
+          "description": "Optional: Reference to the Group ID if this is a 'group' expense. It should be null or absent for 'personal' expenses. (Relationship: Group 1:N Expense)"
+        },
+        "splitType": {
+          "type": "string",
+          "description": "The method used to divide the expense among participants: 'equal', 'unequal', or 'percentage'."
+        },
+        "expenseShareIds": {
+          "type": "array",
+          "description": "An array of ExpenseShare IDs detailing how this expense is split among various users. For 'personal' expenses, this array would typically be empty or contain one share for the 'paidById'. (Relationship: Expense 1:N ExpenseShare)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the expense record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the expense record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "amount",
+        "category",
+        "type",
+        "date",
+        "createdById",
+        "paidById",
+        "splitType",
+        "expenseShareIds",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ExpenseShare": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ExpenseShare",
+      "type": "object",
+      "description": "Represents a single user's specific responsibility or share of an expense, capturing the allocated amount based on the expense's split type.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ExpenseShare entity."
+        },
+        "expenseId": {
+          "type": "string",
+          "description": "Reference to the Expense ID this share is part of. (Relationship: Expense 1:N ExpenseShare)"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile ID who is responsible for this particular share of the expense. (Relationship: UserProfile 1:N ExpenseShare)"
+        },
+        "allocatedAmount": {
+          "type": "number",
+          "description": "The specific monetary amount this user is obligated to pay or is allocated from the expense, irrespective of the original split type (equal, unequal, or percentage)."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the expense share record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the expense share record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "expenseId",
+        "userId",
+        "allocatedAmount",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores individual user profiles. Access is restricted to the owning user. The document ID (`{userId}`) must match the user's Firebase Auth UID (`request.auth.uid`).",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user, corresponding to their Firebase Authentication UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/groups/{groupId}",
+        "definition": {
+          "entityName": "Group",
+          "schema": {
+            "$ref": "#/backend/entities/Group"
+          },
+          "description": "Stores details about expense-sharing groups. Authorization relies on the `memberIds` array within the document, which must contain `request.auth.uid` for a user to have access.",
+          "params": [
+            {
+              "name": "groupId",
+              "description": "The unique identifier for the group."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/personalExpenses/{expenseId}",
+        "definition": {
+          "entityName": "Expense",
+          "schema": {
+            "$ref": "#/backend/entities/Expense"
+          },
+          "description": "Stores personal expenses. Access is restricted to the owning user. The `createdById` field in the document must match `{userId}` in the path. The `type` field must be 'personal', and `groupId` must be null or absent.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns this personal expense."
+            },
+            {
+              "name": "expenseId",
+              "description": "The unique identifier for the personal expense."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/personalExpenses/{expenseId}/shares/{shareId}",
+        "definition": {
+          "entityName": "ExpenseShare",
+          "schema": {
+            "$ref": "#/backend/entities/ExpenseShare"
+          },
+          "description": "Stores individual shares for personal expenses. Access is restricted to the owning user. The `userId` field in the share document must match `{userId}` in the path. Includes denormalized `expenseId` for clarity.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns the parent personal expense."
+            },
+            {
+              "name": "expenseId",
+              "description": "The unique identifier of the parent personal expense."
+            },
+            {
+              "name": "shareId",
+              "description": "The unique identifier for the expense share."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/groups/{groupId}/expenses/{expenseId}",
+        "definition": {
+          "entityName": "Expense",
+          "schema": {
+            "$ref": "#/backend/entities/Expense"
+          },
+          "description": "Stores expenses associated with a specific group. Access is restricted to group members. Includes denormalized `groupId` (matching path), and `groupMemberIds` (copied from the parent `Group` document's `memberIds` array) for authorization independence. The `type` field must be 'group'.",
+          "params": [
+            {
+              "name": "groupId",
+              "description": "The unique identifier of the parent group."
+            },
+            {
+              "name": "expenseId",
+              "description": "The unique identifier for the group expense."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/groups/{groupId}/expenses/{expenseId}/shares/{shareId}",
+        "definition": {
+          "entityName": "ExpenseShare",
+          "schema": {
+            "$ref": "#/backend/entities/ExpenseShare"
+          },
+          "description": "Stores individual shares for group expenses. Access is restricted to group members. Includes denormalized `groupId` (matching path), `expenseId` (matching path), and `groupMemberIds` (copied from the parent `Expense` document's `groupMemberIds` array) for authorization independence.",
+          "params": [
+            {
+              "name": "groupId",
+              "description": "The unique identifier of the grandparent group."
+            },
+            {
+              "name": "expenseId",
+              "description": "The unique identifier of the parent group expense."
+            },
+            {
+              "name": "shareId",
+              "description": "The unique identifier for the expense share."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure for SpenseFlow is designed with paramount focus on Authorization Independence, Structural Segregation, and Queryable Access Patterns (QAPs) to ensure security, scalability, and debuggability. The core strategy revolves around denormalizing authorization context and segregating data based on its security posture.\n\n**Authorization Independence via Denormalization:**\nTo eliminate the need for expensive and complex `get()` calls in Firestore security rules, crucial authorization information is denormalized directly into relevant subcollection documents. \n*   For **Group Expenses** (`/groups/{groupId}/expenses/{expenseId}`), the `memberIds` array from the parent `Group` document (`/groups/{groupId}`) is copied and stored as `groupMemberIds` within each `Expense` document. This allows security rules to instantly verify group membership without fetching the parent `Group` document.\n*   Similarly, for **Group Expense Shares** (`/groups/{groupId}/expenses/{expenseId}/shares/{shareId}`), both the `groupId` and the denormalized `groupMemberIds` from its parent `Expense` document are copied into each `ExpenseShare` document. This ensures that even deeply nested data has all necessary authorization context available within its own document, facilitating atomic operations and simplifying rule logic.\n\n**Structural Segregation for Homogeneous Security Posture:**\nData with different access requirements is separated into distinct collection paths:\n*   **User Profiles (`/users/{userId}`):** This collection stores private user data, directly accessible only by the authenticated user (`request.auth.uid == userId`). This follows the 'Private Data: Path-Based ownership' model.\n*   **Groups (`/groups/{groupId}`):** This collection holds collaborative group data. Access is granted to users whose `uid` is present in the `memberIds` array within the `Group` document. This is the 'Collaborative Data: Membership Map' model.\n*   **Personal Expenses (`/users/{userId}/personalExpenses/{expenseId}`):** Personal expenses are strictly owned by the user who created them. By nesting them under the user's path, authorization is inherently tied to the `userId` in the path, ensuring only the owner can access their personal expenses. This also includes nested `personalExpenseShares` (`/users/{userId}/personalExpenses/{expenseId}/shares/{shareId}`).\n*   **Group Expenses (`/groups/{groupId}/expenses/{expenseId}`):** Group expenses, and their respective `groupExpenseShares` (`/groups/{groupId}/expenses/{expenseId}/shares/{shareId}`), are nested under their parent group. Access is governed by the denormalized `groupMemberIds` field in each expense/share document, ensuring only authorized group members can access them.\n\n**Queryable Access Patterns (QAPs):**\nThis structure inherently supports secure `list` operations:\n*   **User Profiles:** Users can only `get` or `list` their own profile (`/users/{request.auth.uid}`). Other users' profiles are inaccessible.\n*   **Groups:** Users can list groups they are members of by querying the `/groups` collection using `where('memberIds', 'array-contains', request.auth.uid)`. This query is efficient and secure.\n*   **Personal Expenses and Shares:** Users can list their own personal expenses and their associated shares by querying `/users/{request.auth.uid}/personalExpenses` and `/users/{request.auth.uid}/personalExpenses/{expenseId}/shares` respectively. The path-based ownership makes these `list` operations implicitly secure.\n*   **Group Expenses and Shares:** Once a user has access to a `groupId` (e.g., from a prior `groups` query), they can then list expenses and shares within that specific group (`/groups/{groupId}/expenses` and `/groups/{groupId}/expenses/{expenseId}/shares`). The security rules, leveraging the denormalized `groupMemberIds`, will ensure that only actual group members can perform these `list` operations, preventing unauthorized access to group data even if the `groupId` is known.\n\nBy implementing these strategies, the Firestore structure minimizes rule complexity, enhances security by design, and ensures that the application remains scalable and easily debuggable as it grows."
+  }
+}

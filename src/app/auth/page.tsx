@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -9,11 +10,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, ArrowRight, User as UserIcon } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  updateProfile 
+} from "firebase/auth";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { useAuth, useFirestore } from "@/firebase";
 
 export default function AuthPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { setUser, user } = useStore();
+  const { user } = useStore();
+  const auth = useAuth();
+  const db = useFirestore();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,7 +31,6 @@ export default function AuthPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Centralized redirection logic: Replace history to prevent "back" to login
   useEffect(() => {
     if (user) {
       router.replace("/dashboard");
@@ -30,6 +39,8 @@ export default function AuthPage() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth || !db) return;
+    
     if (!email || !password || (isRegistering && !name)) {
       toast({ 
         variant: "destructive", 
@@ -40,23 +51,36 @@ export default function AuthPage() {
     }
 
     setLoading(true);
-    // Simulating "In-Memory" Auth for prototype purposes
-    setTimeout(() => {
-      const mockUser = {
-        uid: Math.random().toString(36).substr(2, 9),
-        name: isRegistering ? name : email.split('@')[0],
-        email: email,
-        groupIds: [],
-      };
-      
-      setUser(mockUser);
+    try {
+      if (isRegistering) {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const firebaseUser = userCredential.user;
+
+        await updateProfile(firebaseUser, { displayName: name });
+
+        const userProfile = {
+          uid: firebaseUser.uid,
+          name: name,
+          email: email,
+          groupIds: [],
+        };
+
+        await setDoc(doc(db, "users", firebaseUser.uid), userProfile);
+
+        toast({ title: "Account Created", description: `Welcome to Wisely, ${name}!` });
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+        toast({ title: "Welcome Back", description: "Successfully signed in." });
+      }
+    } catch (error: any) {
       toast({ 
-        title: isRegistering ? "Account Created" : "Welcome Back", 
-        description: `Signed in as ${mockUser.email}` 
+        variant: "destructive", 
+        title: "Authentication Failed", 
+        description: error.message || "An error occurred during sign in." 
       });
+    } finally {
       setLoading(false);
-      // Redirection is handled automatically by the useEffect above
-    }, 800);
+    }
   };
 
   return (
@@ -154,7 +178,7 @@ export default function AuthPage() {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
-          Note: This is an in-memory demo. Data will reset on refresh.
+          Securely powered by Firebase.
         </p>
       </div>
     </div>

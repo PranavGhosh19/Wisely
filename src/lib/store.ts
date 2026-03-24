@@ -29,60 +29,10 @@ const DEFAULT_CATEGORIES = [
   "Education", "Travel", "Personal Care", "Other"
 ];
 
-const MOCK_GROUPS: Group[] = [
-  {
-    id: 'g1',
-    name: 'Roommates 202',
-    members: ['default-user', 'user-2', 'user-3'],
-    createdBy: 'default-user',
-    createdAt: 1710979200000,
-  },
-  {
-    id: 'g2',
-    name: 'Europe Trip',
-    members: ['default-user', 'user-4'],
-    createdBy: 'user-4',
-    createdAt: 1711065600000,
-  }
-];
-
-const MOCK_EXPENSES: Expense[] = [
-  {
-    id: '1',
-    amount: 45.50,
-    category: 'Food & Dining',
-    type: 'PERSONAL',
-    date: 1711152000000,
-    createdBy: 'default-user',
-    paidBy: 'default-user',
-    splitBetween: [],
-    splitType: 'EQUAL',
-    notes: 'Dinner at Mario\'s'
-  },
-  {
-    id: '2',
-    amount: 120.00,
-    category: 'Utilities',
-    type: 'GROUP',
-    groupId: 'g1',
-    date: 1711238400000,
-    createdBy: 'default-user',
-    paidBy: 'default-user',
-    splitBetween: [{ userId: 'default-user', amount: 40 }, { userId: 'user-2', amount: 40 }, { userId: 'user-3', amount: 40 }],
-    splitType: 'EQUAL',
-    notes: 'Electricity bill'
-  }
-];
-
 export const useStore = create<SpenseFlowState>((set) => ({
-  user: {
-    uid: 'default-user',
-    name: 'Jane Doe',
-    email: 'jane@example.com',
-    groupIds: ['g1', 'g2']
-  },
-  expenses: MOCK_EXPENSES,
-  groups: MOCK_GROUPS,
+  user: null,
+  expenses: [],
+  groups: [],
   categories: DEFAULT_CATEGORIES,
   isLoading: true,
   installPrompt: null,
