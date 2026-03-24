@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -118,6 +119,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
         notes: formData.notes,
         date: new Date(formData.date).getTime(),
         type: expenseType,
+        createdBy: user.name,
         createdById: user.uid,
         paidBy: user.uid,
         receiptName: formData.receiptName,
@@ -128,15 +130,13 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
       let docRef;
 
       if (expenseType === "PERSONAL") {
-        // Path matches: match /users/{userId}/personalExpenses/{expenseId}
         docRef = doc(db, "users", user.uid, "personalExpenses", expenseId);
       } else {
-        // Path matches: match /groups/{groupId}/expenses/{expenseId}
         const selectedGroup = groups.find(g => g.id === formData.groupId);
         if (!selectedGroup) throw new Error("Group not found");
 
         expenseData.groupId = formData.groupId;
-        expenseData.groupMemberIds = selectedGroup.members; // Crucial for security rules
+        expenseData.groupMemberIds = selectedGroup.members; 
         
         docRef = doc(db, "groups", formData.groupId, "expenses", expenseId);
       }

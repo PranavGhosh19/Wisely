@@ -31,8 +31,10 @@ export interface Expense {
   type: ExpenseType;
   date: number; // Timestamp
   createdBy: string;
+  createdById: string; // Used for security rules
   notes?: string;
   groupId?: string;
+  groupMemberIds?: string[]; // Used for security rules in group subcollections
   paidBy: string; // User UID
   splitBetween: SplitMember[];
   splitType: SplitType;

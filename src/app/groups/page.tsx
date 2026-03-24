@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -13,12 +14,11 @@ import { collection, query, where } from "firebase/firestore";
 
 export default function GroupsPage() {
   const router = useRouter();
-  const { user } = useStore();
+  const { user, setGroups } = useStore();
   const db = useFirestore();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  // UseCollection to fetch groups where the user is a member
-  // This aligns with "allow read: if request.auth.uid in resource.data.members"
+  // Safe Fetching: Guard query with !user and align with list rule
   const groupsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -28,6 +28,13 @@ export default function GroupsPage() {
   }, [db, user]);
 
   const { data: groups, isLoading } = useCollection(groupsQuery);
+
+  // Sync groups to store for AddExpenseDialog usage
+  useEffect(() => {
+    if (groups) {
+      setGroups(groups);
+    }
+  }, [groups, setGroups]);
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row bg-background">

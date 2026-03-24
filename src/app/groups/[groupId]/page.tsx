@@ -1,3 +1,4 @@
+
 "use client";
 
 import { use, useEffect, useState } from "react";
@@ -31,7 +32,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Expense } from "@/types";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
-import { collection, query, orderBy, doc } from "firebase/firestore";
+import { collection, query, orderBy, doc, where } from "firebase/firestore";
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -57,14 +58,15 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   }, [db, groupId]);
   const { data: group, isLoading: groupLoading } = useDoc(groupRef);
 
-  // UseCollection for group expenses based on hierarchical rules
+  // UseCollection for group expenses aligned with security rules
   const groupExpensesQuery = useMemoFirebase(() => {
-    if (!db || !groupId) return null;
+    if (!db || !groupId || !user) return null;
     return query(
       collection(db, "groups", groupId, "expenses"),
+      where("groupMemberIds", "array-contains", user.uid),
       orderBy("date", "desc")
     );
-  }, [db, groupId]);
+  }, [db, groupId, user]);
   const { data: groupExpensesRaw, isLoading: expensesLoading } = useCollection(groupExpensesQuery);
 
   const groupExpenses = groupExpensesRaw?.filter(e => !e.isDeleted) || [];

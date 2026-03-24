@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -27,7 +28,7 @@ export default function Dashboard() {
     }
   }, [user, router, storeLoading]);
 
-  // UseCollection for personal expenses based on hierarchical rules
+  // Safe Fetching: Guard query with !user
   const personalExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
