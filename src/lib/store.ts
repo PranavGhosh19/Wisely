@@ -24,9 +24,13 @@ interface SpenseFlowState {
 }
 
 const DEFAULT_CATEGORIES = [
-  "Food & Dining", "Transportation", "Utilities", "Rent/Mortgage", 
-  "Shopping", "Entertainment", "Groceries", "Healthcare", 
-  "Education", "Travel", "Personal Care", "Other"
+  "Food & Dinning", 
+  "Travel", 
+  "Utilities", 
+  "Rent / Mortgage", 
+  "Shopping", 
+  "Groceries", 
+  "Others"
 ];
 
 export const useStore = create<SpenseFlowState>((set) => ({
