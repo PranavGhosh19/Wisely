@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,8 @@ import {
   Check,
   Share2,
   Edit2,
-  FileText
+  FileText,
+  UserPlus
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { AddExpenseDialog } from "@/components/expenses/AddExpenseDialog";
@@ -27,24 +28,30 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Expense } from "@/types";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
-import { collection, query, orderBy, doc } from "firebase/firestore";
+import { collection, query, orderBy, doc, updateDoc, arrayUnion } from "firebase/firestore";
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useStore();
   const db = useFirestore();
   const { toast } = useToast();
   
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
+  const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [expenseToEdit, setExpenseToEdit] = useState<Expense | undefined>(undefined);
+
+  const shouldShowJoin = searchParams.get("join") === "true";
 
   useEffect(() => {
     setMounted(true);
@@ -57,19 +64,60 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   }, [db, groupId]);
   const { data: group, isLoading: groupLoading } = useDoc(groupRef);
 
+  // Check if user is already a member
+  const isMember = group?.members?.includes(user?.uid || "");
+
+  useEffect(() => {
+    if (mounted && shouldShowJoin && group && !isMember) {
+      setIsJoinDialogOpen(true);
+    }
+  }, [mounted, shouldShowJoin, group, isMember]);
+
   // UseCollection for group expenses
-  // Query is now simplified because security rules check membership on the parent document
   const groupExpensesQuery = useMemoFirebase(() => {
-    if (!db || !groupId || !user) return null;
+    if (!db || !groupId || !user || !isMember) return null;
     return query(
       collection(db, "groups", groupId, "expenses"),
       orderBy("date", "desc")
     );
-  }, [db, groupId, user]);
+  }, [db, groupId, user, isMember]);
   const { data: groupExpensesRaw, isLoading: expensesLoading } = useCollection(groupExpensesQuery);
 
   const groupExpenses = groupExpensesRaw?.filter(e => !e.isDeleted) || [];
   const totalSpent = groupExpenses.reduce((acc, curr) => acc + curr.amount, 0);
+
+  const handleJoinGroup = async () => {
+    if (!user || !db || !groupId) return;
+    setIsJoining(true);
+    try {
+      const gRef = doc(db, "groups", groupId);
+      const uRef = doc(db, "users", user.uid);
+
+      await updateDoc(gRef, {
+        members: arrayUnion(user.uid)
+      });
+
+      await updateDoc(uRef, {
+        groupIds: arrayUnion(groupId)
+      });
+
+      toast({
+        title: "Joined!",
+        description: `Welcome to ${group?.name}!`,
+      });
+      setIsJoinDialogOpen(false);
+      // Clean up URL
+      router.replace(`/groups/${groupId}`);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error joining group",
+        description: error.message,
+      });
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/join/${groupId}` : `wisely.app/join/${groupId}`;
 
@@ -101,6 +149,28 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           <h2 className="text-2xl font-bold">Group not found</h2>
           <Button variant="link" onClick={() => router.push("/groups")}>Back to Groups</Button>
         </div>
+      </div>
+    );
+  }
+
+  // If user is not a member and join dialog is not open (and not loading), show membership required
+  if (!isMember && !isJoinDialogOpen && !isJoining) {
+    return (
+      <div className="flex min-h-screen flex-col md:flex-row bg-background">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center p-4">
+          <Card className="max-w-md w-full text-center p-8 rounded-2xl shadow-lg border-none">
+            <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-6">
+              <UserPlus className="h-8 w-8" />
+            </div>
+            <h2 className="text-2xl font-bold font-headline mb-2">Join Required</h2>
+            <p className="text-muted-foreground mb-8">You must be a member of <span className="font-bold text-foreground">"{group.name}"</span> to view its expenses.</p>
+            <div className="flex flex-col gap-3">
+              <Button onClick={() => setIsJoinDialogOpen(true)} className="h-12 rounded-xl font-bold">Join Group</Button>
+              <Button variant="ghost" onClick={() => router.push("/groups")} className="h-12 rounded-xl font-bold">Back to My Groups</Button>
+            </div>
+          </Card>
+        </main>
       </div>
     );
   }
@@ -251,6 +321,43 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           </CardContent>
         </Card>
       </main>
+
+      {/* Join Confirmation Dialog */}
+      <Dialog open={isJoinDialogOpen} onOpenChange={(open) => {
+        if (!isJoining) setIsJoinDialogOpen(open);
+      }}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl p-8 border-none shadow-2xl">
+          <DialogHeader className="text-center space-y-4">
+            <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto">
+              <UserPlus className="h-8 w-8" />
+            </div>
+            <DialogTitle className="text-2xl font-bold font-headline">Join Group?</DialogTitle>
+            <DialogDescription className="text-base">
+              Would you like to join <span className="font-bold text-foreground">"{group?.name}"</span>? You'll be able to track shared expenses and see balances.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-row gap-3 mt-6">
+            <Button 
+              variant="outline" 
+              className="flex-1 h-12 rounded-xl font-bold order-2 sm:order-1" 
+              onClick={() => {
+                setIsJoinDialogOpen(false);
+                router.push("/dashboard");
+              }}
+              disabled={isJoining}
+            >
+              No, Thanks
+            </Button>
+            <Button 
+              className="flex-1 h-12 rounded-xl font-bold bg-primary order-1 sm:order-2"
+              onClick={handleJoinGroup}
+              disabled={isJoining}
+            >
+              {isJoining ? "Joining..." : "Ok, Join"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AddExpenseDialog 
         open={isAddExpenseOpen} 
