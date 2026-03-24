@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -10,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
-import { ExpenseType, SplitType, Expense } from "@/types";
+import { ExpenseType, Expense } from "@/types";
 import { AlertCircle, Upload, X, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { useFirestore } from "@/firebase";
@@ -26,7 +25,7 @@ interface AddExpenseDialogProps {
 }
 
 export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroupId, expenseToEdit }: AddExpenseDialogProps) {
-  const { user, addExpense, deleteExpense, groups, categories } = useStore();
+  const { user, addExpense, groups, categories } = useStore();
   const db = useFirestore();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -80,10 +79,6 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
         receiptName: file.name,
         receiptUrl: fakeUrl 
       }));
-      toast({
-        title: "Receipt attached",
-        description: `${file.name} ready for upload.`,
-      });
     }
   };
 
@@ -116,7 +111,6 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
     try {
       const expenseId = expenseToEdit?.id || Math.random().toString(36).substr(2, 9);
       
-      // Construct the expense object
       const expenseData: any = {
         id: expenseId,
         amount: amount,
@@ -124,9 +118,8 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
         notes: formData.notes,
         date: new Date(formData.date).getTime(),
         type: expenseType,
-        createdById: user.uid, // Required by Security Rules
+        createdById: user.uid,
         paidBy: user.uid,
-        splitType: "EQUAL",
         receiptName: formData.receiptName,
         receiptUrl: formData.receiptUrl,
         isDeleted: false,
@@ -135,30 +128,19 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
       let docRef;
 
       if (expenseType === "PERSONAL") {
-        // Path: /users/{userId}/personalExpenses/{expenseId}
         docRef = doc(db, "users", user.uid, "personalExpenses", expenseId);
       } else {
-        // Path: /groups/{groupId}/expenses/{expenseId}
         const selectedGroup = groups.find(g => g.id === formData.groupId);
         if (!selectedGroup) throw new Error("Group not found");
 
-        // Denormalize group data for security rules performance
         expenseData.groupId = formData.groupId;
-        expenseData.groupMemberIds = selectedGroup.members; // Essential for "isMember" security rule
+        expenseData.groupMemberIds = selectedGroup.members;
         
         docRef = doc(db, "groups", formData.groupId, "expenses", expenseId);
       }
 
-      // Perform non-blocking write
       setDocumentNonBlocking(docRef, expenseData, { merge: true });
-
-      // Update local store for optimistic UI
-      if (expenseToEdit) {
-        // Handle edit (locally we just update the list)
-        addExpense(expenseData); 
-      } else {
-        addExpense(expenseData);
-      }
+      addExpense(expenseData);
       
       toast({ 
         title: "Expense Saved", 
@@ -235,7 +217,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
                 {groups.length === 0 ? (
                   <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-2 text-xs text-destructive">
                     <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                    <span>You haven't joined or created any groups yet.</span>
+                    <span>No groups found.</span>
                   </div>
                 ) : (
                   <Select 
@@ -252,17 +234,6 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
                     </SelectContent>
                   </Select>
                 )}
-              </div>
-            )}
-
-            {(defaultGroupId || expenseToEdit?.groupId) && (
-              <div className="bg-primary/5 p-3 rounded-xl border border-primary/10 mb-2">
-                <p className="text-[10px] font-bold uppercase text-primary/70 tracking-wider mb-0.5">
-                  {expenseToEdit ? "Updating Group Record" : "Adding to Group"}
-                </p>
-                <p className="font-bold text-sm text-primary">
-                  {groups.find(g => g.id === (formData.groupId || defaultGroupId))?.name || "Group Expense"}
-                </p>
               </div>
             )}
 

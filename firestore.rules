@@ -1,142 +1,73 @@
 rules_version = '2';
-
-/**
- * SpenseFlow Security Rules
- *
- * Core Philosophy: 
- * This ruleset enforces a hybrid model of strict user-ownership for personal data and 
- * collaborator-based access for shared groups. It prioritizes "Authorization Independence" 
- * by relying on denormalized membership data to ensure performant and secure access checks 
- * without redundant database lookups.
- *
- * Data Structure:
- * - /users/{userId}: Private user profiles and personal expense subcollections.
- * - /groups/{groupId}: Collaborative expense-sharing groups and their related expense subcollections.
- *
- * Key Security Decisions:
- * 1. Ownership Model: Access to paths under /users/{userId} is strictly limited to the authenticated 
- *    user whose UID matches the userId in the path.
- * 2. Group Membership: Access to groups and group-related expenses is granted based on the 
- *    presence of the user's UID within a 'memberIds' or 'groupMemberIds' array.
- * 3. Denormalization for Performance: Authorization data (like group member lists) is copied 
- *    directly into expense and share documents. This avoids the need for costly get() calls 
- *    to parent group documents during every security check.
- * 4. Structural Segregation: Personal expenses and group expenses are stored in completely 
- *    different paths, preventing accidental data leakage between private and shared contexts.
- */
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Helper Functions ---
-
-    /** Checks if the request is from a signed-in user. */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /** Checks if the authenticated user's UID matches the provided userId. */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /** Checks if the document exists and the current user is the owner. */
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
-    }
-
-    /** Checks if the authenticated user is present in a list of members. */
-    function isMember(memberList) {
-      return isSignedIn() && request.auth.uid in memberList;
-    }
-
-    /** Checks if the document exists and the current user is a member. */
-    function isExistingMember(memberList) {
-      return resource != null && isMember(memberList);
-    }
-
-    // --- Collection Rules ---
-
-    /**
-     * @description Rules for the UserProfile collection. Ensures users can only manage their own profile.
-     * @path /users/{userId}
-     * @allow User 'abc' to (get) their own document at /users/abc.
-     * @deny User 'abc' to (update) document at /users/xyz.
-     * @principle Enforces path-based ownership and validates UID consistency.
-     */
+    // =========================
+    // 🔹 USERS
+    // =========================
     match /users/{userId} {
-      allow get, list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
 
-      /**
-       * @description Rules for personal expenses nested under a user.
-       * @path /users/{userId}/personalExpenses/{expenseId}
-       * @allow User 'abc' to (create) an expense under /users/abc/personalExpenses/exp1.
-       * @deny User 'abc' to (list) expenses under /users/xyz/personalExpenses.
-       * @principle Restricts access to a user's private data tree.
-       */
+      // User can only access their own profile
+      allow create: if request.auth != null 
+        && request.auth.uid == userId;
+
+      allow read, update, delete: if request.auth != null 
+        && request.auth.uid == userId;
+
+      // =========================
+      // 🔹 PERSONAL EXPENSES
+      // =========================
       match /personalExpenses/{expenseId} {
-        allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && request.resource.data.createdById == userId;
-        allow update: if isExistingOwner(userId) && request.resource.data.createdById == resource.data.createdById;
-        allow delete: if isExistingOwner(userId);
 
-        /**
-         * @description Rules for shares of personal expenses.
-         * @path /users/{userId}/personalExpenses/{expenseId}/shares/{shareId}
-         * @allow User 'abc' to (get) a share at /users/abc/personalExpenses/exp1/shares/s1.
-         * @deny User 'abc' to (create) a share at /users/xyz/personalExpenses/exp1/shares/s1.
-         * @principle Inherits ownership from the parent user path.
-         */
-        match /shares/{shareId} {
-          allow get, list: if isOwner(userId);
-          allow create: if isOwner(userId) && request.resource.data.userId == userId;
-          allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-          allow delete: if isExistingOwner(userId);
-        }
+        allow create: if request.auth != null
+          && request.auth.uid == userId
+          && request.resource.data.createdById == request.auth.uid
+          && request.resource.data.amount is number
+          && request.resource.data.amount > 0;
+
+        allow read: if request.auth != null
+          && request.auth.uid == userId;
+
+        allow update, delete: if request.auth != null
+          && request.auth.uid == resource.data.createdById;
       }
     }
 
-    /**
-     * @description Rules for collaborative groups. Access is based on membership.
-     * @path /groups/{groupId}
-     * @allow User 'abc' to (get) group 'g1' if 'abc' is in group.memberIds.
-     * @deny User 'abc' to (update) group 'g1' if 'abc' is NOT in group.memberIds.
-     * @principle Shared access via membership list (Collaborative Data pattern).
-     */
+    // =========================
+    // 🔹 GROUPS
+    // =========================
     match /groups/{groupId} {
-      allow get, list: if isMember(resource.data.memberIds);
-      allow create: if isSignedIn() && request.resource.data.createdById == request.auth.uid;
-      allow update: if isExistingMember(resource.data.memberIds);
-      allow delete: if isExistingMember(resource.data.memberIds);
 
-      /**
-       * @description Rules for group expenses. Uses denormalized groupMemberIds for performance.
-       * @path /groups/{groupId}/expenses/{expenseId}
-       * @allow User 'abc' to (list) expenses in group 'g1' if 'abc' is in expense.groupMemberIds.
-       * @deny User 'abc' to (create) expense in group 'g1' if 'abc' is NOT in groupMemberIds.
-       * @principle Authorization independence via denormalized membership arrays.
-       */
+      // Any logged-in user can read groups
+      allow read: if request.auth != null;
+
+      // Only creator can create group
+      allow create: if request.auth != null
+        && request.resource.data.createdBy == request.auth.uid;
+
+      // Only members can update/delete group
+      allow update, delete: if request.auth != null
+        && request.auth.uid in resource.data.members;
+
+      // =========================
+      // 🔹 GROUP EXPENSES
+      // =========================
       match /expenses/{expenseId} {
-        allow get, list: if isMember(resource.data.groupMemberIds);
-        allow create: if isMember(request.resource.data.groupMemberIds) && request.resource.data.groupId == groupId;
-        allow update: if isExistingMember(resource.data.groupMemberIds) && request.resource.data.groupId == resource.data.groupId;
-        allow delete: if isExistingMember(resource.data.groupMemberIds);
 
-        /**
-         * @description Rules for shares of group expenses.
-         * @path /groups/{groupId}/expenses/{expenseId}/shares/{shareId}
-         * @allow User 'abc' to (get) share 's1' if 'abc' is in share.groupMemberIds.
-         * @principle Propagates denormalized group access to nested subcollections.
-         */
-        match /shares/{shareId} {
-          allow get, list: if isMember(resource.data.groupMemberIds);
-          allow create: if isMember(request.resource.data.groupMemberIds) && request.resource.data.expenseId == expenseId;
-          allow update: if isExistingMember(resource.data.groupMemberIds) && request.resource.data.expenseId == resource.data.expenseId;
-          allow delete: if isExistingMember(resource.data.groupMemberIds);
-        }
+        // CREATE
+        allow create: if request.auth != null
+          && request.resource.data.createdById == request.auth.uid
+          && request.auth.uid in request.resource.data.groupMemberIds
+          && request.resource.data.amount is number
+          && request.resource.data.amount > 0;
+
+        // READ
+        allow read: if request.auth != null
+          && request.auth.uid in resource.data.groupMemberIds;
+
+        // UPDATE / DELETE
+        allow update, delete: if request.auth != null
+          && request.auth.uid == resource.data.createdById;
       }
     }
   }
