@@ -13,6 +13,9 @@ import { useToast } from "@/hooks/use-toast";
 import { ExpenseType, SplitType, Expense } from "@/types";
 import { AlertCircle, Upload, X, FileText } from "lucide-react";
 import { format } from "date-fns";
+import { useFirestore } from "@/firebase";
+import { doc } from "firebase/firestore";
+import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 interface AddExpenseDialogProps {
   open: boolean;
@@ -24,6 +27,7 @@ interface AddExpenseDialogProps {
 
 export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroupId, expenseToEdit }: AddExpenseDialogProps) {
   const { user, addExpense, deleteExpense, groups, categories } = useStore();
+  const db = useFirestore();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [expenseType, setExpenseType] = useState<ExpenseType>(defaultType || "PERSONAL");
@@ -39,7 +43,6 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
     receiptUrl: "",
   });
 
-  // Sync state with props or edit object
   useEffect(() => {
     if (open) {
       if (expenseToEdit) {
@@ -71,8 +74,6 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // In a real app, we would upload this to Firebase Storage.
-      // For the demo, we'll use a local object URL to simulate success.
       const fakeUrl = URL.createObjectURL(file);
       setFormData(prev => ({ 
         ...prev, 
@@ -93,51 +94,83 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-    if (!formData.amount || !formData.category) {
-      toast({ title: "Error", description: "Please fill in all required fields." });
+    if (!user || !db) return;
+    
+    const amount = parseFloat(formData.amount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({ variant: "destructive", title: "Invalid amount", description: "Please enter a valid expense amount." });
+      return;
+    }
+
+    if (!formData.category) {
+      toast({ variant: "destructive", title: "Missing category", description: "Please select a category." });
       return;
     }
 
     if (expenseType === "GROUP" && !formData.groupId) {
-      toast({ title: "Error", description: "Please select a group for this expense." });
+      toast({ variant: "destructive", title: "Missing group", description: "Please select a group for this expense." });
       return;
     }
 
     setLoading(true);
     try {
-      const amount = parseFloat(formData.amount);
+      const expenseId = expenseToEdit?.id || Math.random().toString(36).substr(2, 9);
       
-      // If editing, mark the old one as deleted first
-      if (expenseToEdit) {
-        deleteExpense(expenseToEdit.id);
-      }
-
-      const expenseData: Expense = {
-        id: Math.random().toString(36).substr(2, 9),
+      // Construct the expense object
+      const expenseData: any = {
+        id: expenseId,
         amount: amount,
         category: formData.category,
         notes: formData.notes,
         date: new Date(formData.date).getTime(),
         type: expenseType,
-        createdBy: user.uid,
+        createdById: user.uid, // Required by Security Rules
         paidBy: user.uid,
-        groupId: expenseType === "GROUP" ? formData.groupId : undefined,
-        splitType: "EQUAL" as SplitType,
-        splitBetween: [{ userId: user.uid, amount: amount }],
+        splitType: "EQUAL",
         receiptName: formData.receiptName,
         receiptUrl: formData.receiptUrl,
+        isDeleted: false,
       };
 
-      addExpense(expenseData);
+      let docRef;
+
+      if (expenseType === "PERSONAL") {
+        // Path: /users/{userId}/personalExpenses/{expenseId}
+        docRef = doc(db, "users", user.uid, "personalExpenses", expenseId);
+      } else {
+        // Path: /groups/{groupId}/expenses/{expenseId}
+        const selectedGroup = groups.find(g => g.id === formData.groupId);
+        if (!selectedGroup) throw new Error("Group not found");
+
+        // Denormalize group data for security rules performance
+        expenseData.groupId = formData.groupId;
+        expenseData.groupMemberIds = selectedGroup.members; // Essential for "isMember" security rule
+        
+        docRef = doc(db, "groups", formData.groupId, "expenses", expenseId);
+      }
+
+      // Perform non-blocking write
+      setDocumentNonBlocking(docRef, expenseData, { merge: true });
+
+      // Update local store for optimistic UI
+      if (expenseToEdit) {
+        // Handle edit (locally we just update the list)
+        addExpense(expenseData); 
+      } else {
+        addExpense(expenseData);
+      }
       
       toast({ 
-        title: "Success", 
-        description: expenseToEdit ? "Expense updated (new record created)." : "Expense added successfully." 
+        title: "Expense Saved", 
+        description: `Successfully added ${formData.category} expense.` 
       });
       onOpenChange(false);
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to process expense." });
+    } catch (error: any) {
+      toast({ 
+        variant: "destructive",
+        title: "Error", 
+        description: error.message || "Failed to save expense." 
+      });
     } finally {
       setLoading(false);
     }
@@ -202,7 +235,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
                 {groups.length === 0 ? (
                   <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-2 text-xs text-destructive">
                     <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                    <span>You haven't joined or created any groups yet. Create one in the Groups tab first.</span>
+                    <span>You haven't joined or created any groups yet.</span>
                   </div>
                 ) : (
                   <Select 
@@ -256,7 +289,6 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
               </div>
             </div>
 
-            {/* Receipt Section */}
             <div className="space-y-2">
               <Label className="font-bold">Receipt (Optional)</Label>
               {formData.receiptName ? (
@@ -295,7 +327,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
 
             <DialogFooter className="pt-4">
               <Button type="submit" className="w-full bg-primary h-11 rounded-xl font-bold text-base" disabled={loading}>
-                {loading ? "Processing..." : (expenseToEdit ? "Update Expense" : "Add Expense")}
+                {loading ? "Saving..." : (expenseToEdit ? "Update Expense" : "Add Expense")}
               </Button>
             </DialogFooter>
           </form>
