@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Plus, Wallet, Users, AlertCircle } from "lucide-react";
 import { AddExpenseDialog } from "@/components/expenses/AddExpenseDialog";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
 

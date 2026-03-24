@@ -128,13 +128,15 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
       let docRef;
 
       if (expenseType === "PERSONAL") {
+        // Path matches: match /users/{userId}/personalExpenses/{expenseId}
         docRef = doc(db, "users", user.uid, "personalExpenses", expenseId);
       } else {
+        // Path matches: match /groups/{groupId}/expenses/{expenseId}
         const selectedGroup = groups.find(g => g.id === formData.groupId);
         if (!selectedGroup) throw new Error("Group not found");
 
         expenseData.groupId = formData.groupId;
-        expenseData.groupMemberIds = selectedGroup.members;
+        expenseData.groupMemberIds = selectedGroup.members; // Crucial for security rules
         
         docRef = doc(db, "groups", formData.groupId, "expenses", expenseId);
       }
@@ -214,7 +216,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
             {(expenseType === "GROUP" && !defaultGroupId && !expenseToEdit) && (
               <div className="space-y-2">
                 <Label htmlFor="group" className="font-bold">Select Group</Label>
-                {groups.length === 0 ? (
+                {groups?.length === 0 ? (
                   <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-2 text-xs text-destructive">
                     <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                     <span>No groups found.</span>
@@ -228,7 +230,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
                       <SelectValue placeholder="Choose a group" />
                     </SelectTrigger>
                     <SelectContent>
-                      {groups.map(group => (
+                      {groups?.map(group => (
                         <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
                       ))}
                     </SelectContent>

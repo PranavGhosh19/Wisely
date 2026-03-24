@@ -9,6 +9,9 @@ import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { Group } from "@/types";
 import { Users } from "lucide-react";
+import { useFirestore } from "@/firebase";
+import { doc } from "firebase/firestore";
+import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 interface CreateGroupDialogProps {
   open: boolean;
@@ -17,13 +20,14 @@ interface CreateGroupDialogProps {
 
 export function CreateGroupDialog({ open, onOpenChange }: CreateGroupDialogProps) {
   const { user, addGroup } = useStore();
+  const db = useFirestore();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !db) return;
     if (!name.trim()) {
       toast({ title: "Error", description: "Group name is required." });
       return;
@@ -31,14 +35,19 @@ export function CreateGroupDialog({ open, onOpenChange }: CreateGroupDialogProps
 
     setLoading(true);
     try {
+      const groupId = Math.random().toString(36).substr(2, 9);
       const newGroup: Group = {
-        id: Math.random().toString(36).substr(2, 9),
+        id: groupId,
         name: name.trim(),
-        members: [user.uid],
+        members: [user.uid], // Creator must be in members
         createdBy: user.uid,
         createdAt: Date.now(),
       };
 
+      // Create group document in root collection
+      const groupRef = doc(db, "groups", groupId);
+      setDocumentNonBlocking(groupRef, newGroup, { merge: true });
+      
       addGroup(newGroup);
       
       toast({ title: "Success", description: "Group created successfully." });

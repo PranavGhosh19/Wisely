@@ -6,30 +6,20 @@ service cloud.firestore {
     // 🔹 USERS
     // =========================
     match /users/{userId} {
-
-      // User can only access their own profile
       allow create: if request.auth != null 
         && request.auth.uid == userId;
 
       allow read, update, delete: if request.auth != null 
         && request.auth.uid == userId;
 
-      // =========================
-      // 🔹 PERSONAL EXPENSES
-      // =========================
       match /personalExpenses/{expenseId} {
-
         allow create: if request.auth != null
           && request.auth.uid == userId
-          && request.resource.data.createdById == request.auth.uid
-          && request.resource.data.amount is number
-          && request.resource.data.amount > 0;
+          && request.resource.data.createdById == request.auth.uid;
 
-        allow read: if request.auth != null
-          && request.auth.uid == userId;
+        allow read: if request.auth.uid == userId;
 
-        allow update, delete: if request.auth != null
-          && request.auth.uid == resource.data.createdById;
+        allow update, delete: if request.auth.uid == resource.data.createdById;
       }
     }
 
@@ -38,14 +28,16 @@ service cloud.firestore {
     // =========================
     match /groups/{groupId} {
 
-      // Any logged-in user can read groups
-      allow read: if request.auth != null;
+      // ✅ Only members can read group
+      allow read: if request.auth != null
+        && request.auth.uid in resource.data.members;
 
-      // Only creator can create group
+      // ✅ Create group
       allow create: if request.auth != null
-        && request.resource.data.createdBy == request.auth.uid;
+        && request.resource.data.createdBy == request.auth.uid
+        && request.auth.uid in request.resource.data.members;
 
-      // Only members can update/delete group
+      // ✅ Only members can update/delete
       allow update, delete: if request.auth != null
         && request.auth.uid in resource.data.members;
 
@@ -54,18 +46,16 @@ service cloud.firestore {
       // =========================
       match /expenses/{expenseId} {
 
-        // CREATE
+        // ✅ Create expense
         allow create: if request.auth != null
           && request.resource.data.createdById == request.auth.uid
-          && request.auth.uid in request.resource.data.groupMemberIds
-          && request.resource.data.amount is number
-          && request.resource.data.amount > 0;
+          && request.auth.uid in request.resource.data.groupMemberIds;
 
-        // READ
+        // ✅ Read expense ONLY if user is member
         allow read: if request.auth != null
           && request.auth.uid in resource.data.groupMemberIds;
 
-        // UPDATE / DELETE
+        // ✅ Update/Delete only by creator
         allow update, delete: if request.auth != null
           && request.auth.uid == resource.data.createdById;
       }

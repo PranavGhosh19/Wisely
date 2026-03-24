@@ -8,17 +8,26 @@ import { Button } from "@/components/ui/button";
 import { Plus, Users, ArrowRight, UserPlus, HelpCircle } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { CreateGroupDialog } from "@/components/groups/CreateGroupDialog";
+import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
+import { collection, query, where } from "firebase/firestore";
 
 export default function GroupsPage() {
   const router = useRouter();
-  const { groups, expenses } = useStore();
+  const { user } = useStore();
+  const db = useFirestore();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  // Helper to calculate total volume for a group
-  const getGroupBalance = (groupId: string) => {
-    const groupExpenses = expenses.filter(e => e.groupId === groupId);
-    return groupExpenses.reduce((acc, curr) => acc + curr.amount, 0);
-  };
+  // UseCollection to fetch groups where the user is a member
+  // This aligns with "allow read: if request.auth.uid in resource.data.members"
+  const groupsQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(
+      collection(db, "groups"),
+      where("members", "array-contains", user.uid)
+    );
+  }, [db, user]);
+
+  const { data: groups, isLoading } = useCollection(groupsQuery);
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row bg-background">
@@ -39,7 +48,9 @@ export default function GroupsPage() {
           </Button>
         </header>
 
-        {groups.length === 0 ? (
+        {isLoading ? (
+          <div className="py-20 flex justify-center"><div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" /></div>
+        ) : !groups || groups.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl shadow-sm border-2 border-dashed border-muted">
             <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center mb-6">
               <Users className="h-10 w-10 text-muted-foreground" />
@@ -54,41 +65,36 @@ export default function GroupsPage() {
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {groups.map((group) => {
-              const groupVolume = getGroupBalance(group.id);
-              return (
-                <Card 
-                  key={group.id} 
-                  className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-white group rounded-2xl"
-                  onClick={() => router.push(`/groups/${group.id}`)}
-                >
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="font-headline text-lg font-bold">{group.name}</CardTitle>
-                    <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-                      <Users className="h-5 w-5" />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                      <UserPlus className="h-4 w-4" />
-                      {group.members.length} Members
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Group Spending</span>
-                      <span className="text-2xl font-bold text-primary">
-                        ${groupVolume.toFixed(2)}
-                      </span>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="pt-0">
-                    <Button variant="ghost" className="w-full text-primary hover:bg-primary/5 gap-2 group-hover:translate-x-1 transition-transform font-bold rounded-xl">
-                      View Group
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </CardFooter>
-                </Card>
-              );
-            })}
+            {groups.map((group) => (
+              <Card 
+                key={group.id} 
+                className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-white group rounded-2xl"
+                onClick={() => router.push(`/groups/${group.id}`)}
+              >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="font-headline text-lg font-bold">{group.name}</CardTitle>
+                  <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                    <Users className="h-5 w-5" />
+                  </div>
+                </CardHeader>
+                <CardContent className="pb-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                    <UserPlus className="h-4 w-4" />
+                    {group.members?.length || 0} Members
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Collaboration</span>
+                    <span className="text-sm font-medium text-accent">Active tracking enabled</span>
+                  </div>
+                </CardContent>
+                <CardFooter className="pt-0">
+                  <Button variant="ghost" className="w-full text-primary hover:bg-primary/5 gap-2 group-hover:translate-x-1 transition-transform font-bold rounded-xl">
+                    View Group
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
             
             <button 
               onClick={() => setIsCreateOpen(true)}
