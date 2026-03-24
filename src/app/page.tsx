@@ -1,205 +1,244 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useStore } from "@/lib/store";
-import { Navbar } from "@/components/layout/Navbar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Wallet, Users, AlertCircle } from "lucide-react";
-import { AddExpenseDialog } from "@/components/expenses/AddExpenseDialog";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { 
+  ArrowRight, 
+  Wallet, 
+  Users, 
+  PieChart, 
+  ShieldCheck, 
+  Smartphone,
+  CheckCircle2
+} from "lucide-react";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
 
-export default function Dashboard() {
-  const router = useRouter();
-  const { user, expenses, isLoading, setLoading } = useStore();
-  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+export default function LandingPage() {
+  const { user } = useStore();
 
-  useEffect(() => {
-    setMounted(true);
-    if (!user) {
-      router.push("/auth");
-    } else {
-      setLoading(false);
-    }
-  }, [user, router, setLoading]);
-
-  // Filter out deleted expenses
-  const activeExpenses = expenses.filter(e => !e.isDeleted);
-  const totalSpent = activeExpenses.reduce((acc, curr) => acc + curr.amount, 0);
-  const youAreOwed = 0.00;
-  const youOwe = 0.00;
-
-  if (isLoading || !user) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background p-6">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="font-medium text-muted-foreground animate-pulse">Loading Wisely...</p>
-        </div>
-      </div>
-    );
-  }
+  const heroImage = PlaceHolderImages.find(img => img.id === "landing-hero");
+  const personalImage = PlaceHolderImages.find(img => img.id === "feature-personal");
+  const groupImage = PlaceHolderImages.find(img => img.id === "feature-group");
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row bg-background">
-      <Navbar />
-      
-      <main className="flex-1 p-4 md:p-8 pb-28 md:pb-8 max-w-7xl mx-auto w-full">
-        <header className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold font-headline text-primary">Overview</h2>
-            <p className="text-sm text-muted-foreground">Welcome back, {user?.name.split(" ")[0]}</p>
+    <div className="flex flex-col min-h-screen bg-background">
+      {/* Navigation */}
+      <nav className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold">W</div>
+            <span className="font-headline text-xl font-bold text-primary">Wisely</span>
           </div>
-          <Button 
-            className="bg-primary hover:bg-primary/90 gap-2 h-11 md:h-10 text-base md:text-sm font-semibold rounded-xl"
-            onClick={() => setIsAddExpenseOpen(true)}
-          >
-            <Plus className="h-5 w-5" />
-            Add Expense
-          </Button>
-        </header>
+          <div className="flex items-center gap-4">
+            {user ? (
+              <Button asChild className="rounded-xl font-bold h-10 px-6">
+                <Link href="/dashboard">Go to Dashboard</Link>
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" asChild className="hidden sm:flex rounded-xl font-bold">
+                  <Link href="/auth">Sign In</Link>
+                </Button>
+                <Button asChild className="rounded-xl font-bold h-10 px-6">
+                  <Link href="/auth">Get Started</Link>
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </nav>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-8">
-          <Card className="border-none shadow-sm bg-white overflow-hidden relative rounded-2xl">
-            <div className="absolute top-0 right-0 p-3 opacity-10">
-              <Wallet className="h-16 w-16 text-primary" />
+      {/* Hero Section */}
+      <section className="relative py-20 overflow-hidden">
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-4xl mx-auto text-center space-y-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider">
+              <Smartphone className="h-4 w-4" />
+              Now Available as a PWA
             </div>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Spent</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">${totalSpent.toFixed(2)}</div>
-              <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">Active tracking</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-sm bg-white rounded-2xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">You are owed</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-accent">${youAreOwed.toFixed(2)}</div>
-              <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">0 people</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-sm bg-white sm:col-span-2 lg:col-span-1 rounded-2xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">You owe</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-destructive">${youOwe.toFixed(2)}</div>
-              <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">0 people</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <Card className="border-none shadow-sm bg-white h-full rounded-2xl">
-              <CardHeader className="flex flex-row items-center justify-between pb-4">
-                <CardTitle className="font-headline text-lg font-bold">Recent Transactions</CardTitle>
-                <Button variant="link" className="text-accent text-sm font-bold p-0">View All</Button>
-              </CardHeader>
-              <CardContent className="px-0 sm:px-6">
-                <div className="divide-y divide-muted">
-                  {activeExpenses.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-center px-6">
-                      <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                        <AlertCircle className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                      <h3 className="text-lg font-bold">No expenses yet</h3>
-                      <p className="text-sm text-muted-foreground max-w-xs mt-1">Start tracking your spending by adding your first expense.</p>
-                    </div>
-                  ) : (
-                    activeExpenses.map((expense) => (
-                      <div key={expense.id} className="flex items-center justify-between p-4 sm:p-0 sm:py-6 first:pt-0 last:pb-0 group active:bg-primary/5 sm:active:bg-transparent transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className={cn(
-                            "h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center text-base sm:text-lg",
-                            expense.type === 'PERSONAL' ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent"
-                          )}>
-                            {expense.category[0] || "💰"}
-                          </div>
-                          <div>
-                            <p className="font-bold text-sm sm:text-base">{expense.category}</p>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="text-[11px] font-medium text-muted-foreground uppercase">
-                                {mounted ? format(expense.date, "MMM dd") : ""}
-                              </span>
-                              <span className="h-0.5 w-0.5 bg-muted-foreground rounded-full"></span>
-                              <span className={cn(
-                                "text-[10px] uppercase font-bold tracking-wider",
-                                expense.type === 'PERSONAL' ? "text-primary/70" : "text-accent/70"
-                              )}>
-                                {expense.type}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-base sm:text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
-                          {expense.notes && <p className="text-[11px] text-muted-foreground truncate max-w-[100px] sm:max-w-[150px]">{expense.notes}</p>}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <h1 className="text-5xl md:text-7xl font-bold font-headline text-primary tracking-tight leading-tight">
+              Master Your Money, <br />
+              <span className="text-accent">Personal or Shared.</span>
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Tracking expenses shouldn't be a chore. Whether you're budgeting for yourself or splitting rent with friends, Wisely makes it seamless.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+              <Button asChild size="lg" className="h-14 px-10 rounded-2xl font-bold text-lg shadow-xl shadow-primary/20 transition-all hover:scale-105">
+                <Link href="/auth">
+                  Start Tracking Free
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" className="h-14 px-10 rounded-2xl font-bold text-lg border-2">
+                <Link href="#features">See How it Works</Link>
+              </Button>
+            </div>
           </div>
 
-          <div className="space-y-6">
-            <Card className="border-none shadow-sm bg-primary text-primary-foreground rounded-2xl">
-              <CardHeader className="pb-3">
-                <CardTitle className="font-headline text-lg font-bold flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Shared Groups
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <p className="text-xs sm:text-sm opacity-90 leading-relaxed">Keep track of shared costs with friends, roommates, and travel buddies easily.</p>
-                  <Button variant="secondary" className="w-full font-bold h-10 rounded-xl" asChild>
-                    <Link href="/groups">Manage Groups</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-none shadow-sm bg-white rounded-2xl">
-              <CardHeader className="pb-3">
-                <CardTitle className="font-headline text-lg font-bold">Quick Analysis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    <span>Spending distribution</span>
-                    <span>100%</span>
-                  </div>
-                  <div className="w-full bg-muted h-2.5 rounded-full overflow-hidden">
-                    <div className="bg-primary h-full w-[100%] transition-all duration-500"></div>
-                  </div>
-                  
-                  <Button variant="outline" className="w-full mt-2 font-bold h-10 rounded-xl border-2" asChild>
-                    <Link href="/analytics">Full Report</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="mt-20 relative max-w-5xl mx-auto rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white">
+            {heroImage && (
+              <Image 
+                src={heroImage.imageUrl}
+                alt={heroImage.description}
+                width={1200}
+                height={800}
+                data-ai-hint={heroImage.imageHint}
+                className="w-full object-cover"
+              />
+            )}
           </div>
         </div>
+        
+        {/* Background blobs */}
+        <div className="absolute top-0 -left-20 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 -right-20 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
+      </section>
 
-        <AddExpenseDialog 
-          open={isAddExpenseOpen} 
-          onOpenChange={setIsAddExpenseOpen} 
-        />
-      </main>
+      {/* Features Section */}
+      <section id="features" className="py-24 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16 space-y-4">
+            <h2 className="text-3xl md:text-4xl font-bold font-headline text-primary">Everything you need to stay on track</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">Powerful features designed to give you complete visibility over your financial life.</p>
+          </div>
+
+          <div className="grid gap-12 lg:grid-cols-2 items-center">
+            <div className="space-y-6">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <Wallet className="h-6 w-6" />
+              </div>
+              <h3 className="text-3xl font-bold font-headline">Smart Personal Budgeting</h3>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Categorize your spending automatically and see where your money goes. Set custom categories and track your daily habits with ease.
+              </p>
+              <ul className="space-y-3">
+                {["Unlimited personal categories", "Real-time spending alerts", "Monthly budget goals", "Secure receipt storage"].map((item) => (
+                  <li key={item} className="flex items-center gap-3 font-medium text-foreground">
+                    <CheckCircle2 className="h-5 w-5 text-accent" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-3xl overflow-hidden shadow-xl">
+              {personalImage && (
+                <Image 
+                  src={personalImage.imageUrl}
+                  alt={personalImage.description}
+                  width={600}
+                  height={400}
+                  data-ai-hint={personalImage.imageHint}
+                  className="w-full hover:scale-105 transition-transform duration-500"
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="grid gap-12 lg:grid-cols-2 items-center mt-32">
+            <div className="lg:order-2 space-y-6">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+                <Users className="h-6 w-6" />
+              </div>
+              <h3 className="text-3xl font-bold font-headline">Seamless Group Splits</h3>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Perfect for roommates, trips, and dinners. No more awkward "who owes who" conversations. Just add the bill and let Wisely handle the math.
+              </p>
+              <ul className="space-y-3">
+                {["Instant QR code invites", "Multiple split methods", "Settlement tracking", "Group balance summaries"].map((item) => (
+                  <li key={item} className="flex items-center gap-3 font-medium text-foreground">
+                    <CheckCircle2 className="h-5 w-5 text-accent" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="lg:order-1 rounded-3xl overflow-hidden shadow-xl">
+              {groupImage && (
+                <Image 
+                  src={groupImage.imageUrl}
+                  alt={groupImage.description}
+                  width={600}
+                  height={400}
+                  data-ai-hint={groupImage.imageHint}
+                  className="w-full hover:scale-105 transition-transform duration-500"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Analytics CTA */}
+      <section className="py-24 bg-primary text-white overflow-hidden relative">
+        <div className="container mx-auto px-4 relative z-10 text-center">
+          <div className="max-w-3xl mx-auto space-y-8">
+            <PieChart className="h-16 w-16 mx-auto opacity-50" />
+            <h2 className="text-4xl md:text-5xl font-bold font-headline">Insights that actually matter</h2>
+            <p className="text-lg opacity-80 max-w-xl mx-auto">
+              Visual analytics help you identify patterns and optimize your spending. It's not just data, it's your financial freedom.
+            </p>
+            <Button asChild size="lg" variant="secondary" className="h-14 px-10 rounded-2xl font-bold text-lg shadow-xl hover:scale-105 transition-transform">
+              <Link href="/auth">Get Started Today</Link>
+            </Button>
+          </div>
+        </div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle,rgba(255,255,255,0.1)_0%,transparent_70%)]" />
+      </section>
+
+      {/* Trust Section */}
+      <section className="py-24 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-3 gap-12">
+            {[
+              { 
+                icon: ShieldCheck, 
+                title: "Bank-Level Security", 
+                desc: "Your data is encrypted and protected with industry-standard protocols." 
+              },
+              { 
+                icon: Smartphone, 
+                title: "Works Offline", 
+                desc: "Tracking expenses on the go even without an internet connection." 
+              },
+              { 
+                icon: Users, 
+                title: "Built for Privacy", 
+                desc: "We don't sell your data. Your financial life is your business." 
+              }
+            ].map((feature, i) => (
+              <div key={i} className="space-y-4 p-8 rounded-3xl bg-white shadow-sm border border-border/50">
+                <div className="h-12 w-12 rounded-xl bg-primary/5 flex items-center justify-center text-primary">
+                  <feature.icon className="h-6 w-6" />
+                </div>
+                <h4 className="text-xl font-bold font-headline">{feature.title}</h4>
+                <p className="text-muted-foreground">{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-12 border-t bg-white">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 bg-primary rounded flex items-center justify-center text-white text-[10px] font-bold">W</div>
+              <span className="font-headline font-bold text-primary">Wisely</span>
+            </div>
+            <p className="text-sm text-muted-foreground">© 2024 Wisely Finance. All rights reserved.</p>
+            <div className="flex items-center gap-6">
+              <Link href="/auth" className="text-sm font-medium hover:text-primary transition-colors">Sign In</Link>
+              <Link href="/auth" className="text-sm font-medium hover:text-primary transition-colors">Privacy</Link>
+              <Link href="/auth" className="text-sm font-medium hover:text-primary transition-colors">Terms</Link>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -11,7 +11,7 @@ import { useState, useEffect } from "react";
 import { AddExpenseDialog } from "@/components/expenses/AddExpenseDialog";
 
 const navItems = [
-  { name: "Dash", href: "/", icon: LayoutDashboard },
+  { name: "Dash", href: "/dashboard", icon: LayoutDashboard },
   { name: "Groups", href: "/groups", icon: Users },
 ];
 
@@ -40,11 +40,13 @@ export function Navbar() {
     };
   }, [setInstallPrompt]);
 
-  if (!user) return null;
+  // Don't show the main navbar on the landing page or auth page
+  const isPublicPage = pathname === "/" || pathname === "/auth";
+  if (isPublicPage || !user) return null;
 
   const handleSignOut = () => {
     logout();
-    router.push("/auth");
+    router.push("/");
   };
 
   // Detect if we are in a group context based on the URL
@@ -56,9 +58,9 @@ export function Navbar() {
       {/* Desktop Sidebar */}
       <nav className="hidden md:flex fixed top-0 left-0 z-50 h-screen w-64 flex-col justify-between border-r bg-card p-4">
         <div className="flex flex-col gap-6">
-          <div className="mb-4 px-2">
+          <Link href="/" className="mb-4 px-2 block transition-transform hover:scale-95">
             <h1 className="text-2xl font-bold font-headline text-primary tracking-tight">Wisely</h1>
-          </div>
+          </Link>
           
           <div className="flex flex-col gap-1.5">
             {[...navItems, ...rightNavItems].map((item) => {

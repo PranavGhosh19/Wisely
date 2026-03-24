@@ -1,0 +1,23 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "landing-hero",
+      "description": "A professional and clean finance dashboard visualization",
+      "imageUrl": "https://picsum.photos/seed/wisely-hero/1200/800",
+      "imageHint": "finance dashboard"
+    },
+    {
+      "id": "feature-personal",
+      "description": "Personal expense tracking interface",
+      "imageUrl": "https://picsum.photos/seed/wisely-personal/600/400",
+      "imageHint": "wallet money"
+    },
+    {
+      "id": "feature-group",
+      "description": "Friends sharing a bill and smiling",
+      "imageUrl": "https://picsum.photos/seed/wisely-group/600/400",
+      "imageHint": "friends dinner"
+    }
+  ]
+}
