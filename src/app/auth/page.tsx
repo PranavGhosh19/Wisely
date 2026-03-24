@@ -21,14 +21,21 @@ export default function AuthPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Centralized redirection logic: Replace history to prevent "back" to login
   useEffect(() => {
-    if (user) router.push("/dashboard");
+    if (user) {
+      router.replace("/dashboard");
+    }
   }, [user, router]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || (isRegistering && !name)) {
-      toast({ variant: "destructive", title: "Missing Fields", description: "Please fill in all details." });
+      toast({ 
+        variant: "destructive", 
+        title: "Missing Fields", 
+        description: "Please fill in all details." 
+      });
       return;
     }
 
@@ -43,9 +50,12 @@ export default function AuthPage() {
       };
       
       setUser(mockUser);
-      toast({ title: isRegistering ? "Account Created" : "Welcome Back", description: `Signed in as ${mockUser.email}` });
+      toast({ 
+        title: isRegistering ? "Account Created" : "Welcome Back", 
+        description: `Signed in as ${mockUser.email}` 
+      });
       setLoading(false);
-      // Redirection is handled by the useEffect above
+      // Redirection is handled automatically by the useEffect above
     }, 800);
   };
 
@@ -53,7 +63,12 @@ export default function AuthPage() {
     <div className="flex h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="font-headline text-4xl font-bold text-primary mb-2 cursor-pointer" onClick={() => router.push("/")}>Wisely</h1>
+          <h1 
+            className="font-headline text-4xl font-bold text-primary mb-2 cursor-pointer transition-transform hover:scale-95" 
+            onClick={() => router.push("/")}
+          >
+            Wisely
+          </h1>
           <p className="text-muted-foreground">Master your money, personal or shared.</p>
         </div>
 
@@ -81,6 +96,7 @@ export default function AuthPage() {
                       className="pl-10"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
+                      disabled={loading}
                     />
                   </div>
                 </div>
@@ -97,6 +113,7 @@ export default function AuthPage() {
                     className="pl-10"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -112,12 +129,13 @@ export default function AuthPage() {
                     className="pl-10"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
                   />
                 </div>
               </div>
 
               <Button className="w-full bg-primary" disabled={loading}>
-                {loading ? "Please wait..." : (isRegistering ? "Sign Up" : "Sign In")}
+                {loading ? "Authenticating..." : (isRegistering ? "Sign Up" : "Sign In")}
                 {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
 
@@ -126,6 +144,7 @@ export default function AuthPage() {
                   type="button"
                   className="text-sm text-primary hover:underline"
                   onClick={() => setIsRegistering(!isRegistering)}
+                  disabled={loading}
                 >
                   {isRegistering ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
                 </button>
