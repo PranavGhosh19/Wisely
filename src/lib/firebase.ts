@@ -3,12 +3,13 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "mock-api-key",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "spenseflow.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "spenseflow",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "spenseflow.appspot.com",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "mock-sender-id",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "mock-app-id",
+  apiKey: "AIzaSyDkA149q4bq9MohFJYbyAMok_hF_ezXZsE",
+  authDomain: "wisely-93688.firebaseapp.com",
+  projectId: "wisely-93688",
+  storageBucket: "wisely-93688.firebasestorage.app",
+  messagingSenderId: "371802334079",
+  appId: "1:371802334079:web:914749f196a7626c20b04a",
+  measurementId: "G-5WL2L7KTYQ"
 };
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);

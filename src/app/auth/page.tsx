@@ -22,7 +22,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user) router.push("/");
+    if (user) router.push("/dashboard");
   }, [user, router]);
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -33,7 +33,7 @@ export default function AuthPage() {
     }
 
     setLoading(true);
-    // Simulating "In-Memory" Auth
+    // Simulating "In-Memory" Auth for prototype purposes
     setTimeout(() => {
       const mockUser = {
         uid: Math.random().toString(36).substr(2, 9),
@@ -45,7 +45,7 @@ export default function AuthPage() {
       setUser(mockUser);
       toast({ title: isRegistering ? "Account Created" : "Welcome Back", description: `Signed in as ${mockUser.email}` });
       setLoading(false);
-      router.push("/");
+      // Redirection is handled by the useEffect above
     }, 800);
   };
 
@@ -53,7 +53,7 @@ export default function AuthPage() {
     <div className="flex h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="font-headline text-4xl font-bold text-primary mb-2">Wisely</h1>
+          <h1 className="font-headline text-4xl font-bold text-primary mb-2 cursor-pointer" onClick={() => router.push("/")}>Wisely</h1>
           <p className="text-muted-foreground">Master your money, personal or shared.</p>
         </div>
 
