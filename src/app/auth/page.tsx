@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,7 @@ import { useAuth, useFirestore } from "@/firebase";
 
 export default function AuthPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user } = useStore();
   const auth = useAuth();
@@ -31,12 +32,14 @@ export default function AuthPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Automatically redirect to dashboard once the user state is populated
+  const redirectUrl = searchParams.get("redirect") || "/dashboard";
+
+  // Automatically redirect once the user state is populated
   useEffect(() => {
     if (user) {
-      router.replace("/dashboard");
+      router.replace(redirectUrl);
     }
-  }, [user, router]);
+  }, [user, router, redirectUrl]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +77,6 @@ export default function AuthPage() {
         await signInWithEmailAndPassword(auth, email, password);
         toast({ title: "Welcome Back", description: "Successfully signed in." });
       }
-      // Note: We don't push to router here. The useEffect handles it once Zustand store updates.
     } catch (error: any) {
       toast({ 
         variant: "destructive", 

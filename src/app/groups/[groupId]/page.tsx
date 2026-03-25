@@ -1,3 +1,4 @@
+
 "use client";
 
 import { use, useEffect, useState } from "react";
@@ -346,14 +347,14 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               }}
               disabled={isJoining}
             >
-              No, Thanks
+              No
             </Button>
             <Button 
               className="flex-1 h-12 rounded-xl font-bold bg-primary order-1 sm:order-2"
               onClick={handleJoinGroup}
               disabled={isJoining}
             >
-              {isJoining ? "Joining..." : "Ok, Join"}
+              {isJoining ? "Joining..." : "Ok"}
             </Button>
           </DialogFooter>
         </DialogContent>

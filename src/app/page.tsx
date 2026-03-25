@@ -1,6 +1,8 @@
 
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useStore } from "@/lib/store";
@@ -17,7 +19,26 @@ import {
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function LandingPage() {
-  const { user } = useStore();
+  const { user, isLoading } = useStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace("/dashboard");
+    }
+  }, [user, isLoading, router]);
+
+  // Prevent flash of landing page if user is logged in or we are still checking
+  if (isLoading || user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <p className="font-medium text-muted-foreground animate-pulse">Loading Wisely...</p>
+        </div>
+      </div>
+    );
+  }
 
   const heroImage = PlaceHolderImages.find(img => img.id === "landing-hero");
   const personalImage = PlaceHolderImages.find(img => img.id === "feature-personal");
@@ -33,20 +54,12 @@ export default function LandingPage() {
             <span className="font-headline text-xl font-bold text-primary">Wisely</span>
           </div>
           <div className="flex items-center gap-4">
-            {user ? (
-              <Button asChild className="rounded-xl font-bold h-10 px-6">
-                <Link href="/dashboard">Go to Dashboard</Link>
-              </Button>
-            ) : (
-              <>
-                <Button variant="ghost" asChild className="hidden sm:flex rounded-xl font-bold">
-                  <Link href="/auth">Sign In</Link>
-                </Button>
-                <Button asChild className="rounded-xl font-bold h-10 px-6">
-                  <Link href="/auth">Get Started</Link>
-                </Button>
-              </>
-            )}
+            <Button variant="ghost" asChild className="hidden sm:flex rounded-xl font-bold">
+              <Link href="/auth">Sign In</Link>
+            </Button>
+            <Button asChild className="rounded-xl font-bold h-10 px-6">
+              <Link href="/auth">Get Started</Link>
+            </Button>
           </div>
         </div>
       </nav>
