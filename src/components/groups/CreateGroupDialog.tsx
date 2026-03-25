@@ -10,8 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Group } from "@/types";
 import { Users } from "lucide-react";
 import { useFirestore } from "@/firebase";
-import { doc } from "firebase/firestore";
-import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { doc, arrayUnion } from "firebase/firestore";
+import { setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 interface CreateGroupDialogProps {
   open: boolean;
@@ -46,7 +46,13 @@ export function CreateGroupDialog({ open, onOpenChange }: CreateGroupDialogProps
 
       // Create group document in root collection
       const groupRef = doc(db, "groups", groupId);
+      const userRef = doc(db, "users", user.uid);
+      
+      // Update both group and user profile to ensure they are linked
       setDocumentNonBlocking(groupRef, newGroup, { merge: true });
+      updateDocumentNonBlocking(userRef, {
+        groupIds: arrayUnion(groupId)
+      });
       
       addGroup(newGroup);
       
@@ -62,7 +68,7 @@ export function CreateGroupDialog({ open, onOpenChange }: CreateGroupDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] rounded-2xl">
         <DialogHeader>
           <DialogTitle className="font-headline text-xl flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
@@ -75,7 +81,7 @@ export function CreateGroupDialog({ open, onOpenChange }: CreateGroupDialogProps
         
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           <div className="space-y-2">
-            <Label htmlFor="group-name">Group Name</Label>
+            <Label htmlFor="group-name" className="font-bold">Group Name</Label>
             <Input 
               id="group-name" 
               placeholder="e.g., Summer Trip, Roommates" 
