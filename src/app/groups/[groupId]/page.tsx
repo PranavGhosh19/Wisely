@@ -73,11 +73,13 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     }
   }, [mounted, shouldShowJoin, group, isMember]);
 
-  // UseCollection for group expenses - include isDeleted filter for security rules
+  // UseCollection for group expenses
+  // Align query filters with security rules: must include groupMemberIds and isDeleted
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !groupId || !user || !isMember) return null;
     return query(
       collection(db, "groups", groupId, "expenses"),
+      where("groupMemberIds", "array-contains", user.uid),
       where("isDeleted", "==", false),
       orderBy("date", "desc")
     );

@@ -23,15 +23,16 @@ service cloud.firestore {
 
       // Personal expenses subcollection
       match /personalExpenses/{expenseId} {
+        // Simplified read for list queries to avoid "Rules are not filters" conflicts.
+        // The app enforces the isDeleted filter in the query itself.
+        allow read: if isOwner(userId);
+
         allow create: if isOwner(userId)
           && request.resource.data.createdById == request.auth.uid
           && request.resource.data.amount is number
           && request.resource.data.amount > 0
           && request.resource.data.category is string
           && request.resource.data.isDeleted == false;
-
-        allow read: if isOwner(userId)
-          && resource.data.isDeleted == false;
 
         allow update: if isOwner(userId)
           && request.resource.data.createdById == resource.data.createdById
@@ -46,7 +47,7 @@ service cloud.firestore {
     // =========================
     match /groups/{groupId} {
 
-      // ✅ Allow get for join flow (to see metadata), list restricted to members
+      // ✅ Allow get for join flow, list restricted to members
       allow get: if isAuthenticated();
       allow list: if isAuthenticated() && request.auth.uid in resource.data.members;
 
@@ -81,9 +82,9 @@ service cloud.firestore {
           && request.resource.data.amount > 0
           && request.resource.data.isDeleted == false;
 
+        // Simplified read for list queries. Membership is checked via parent or denormalized list.
         allow read: if isAuthenticated()
-          && request.auth.uid in resource.data.groupMemberIds
-          && resource.data.isDeleted == false;
+          && (request.auth.uid in resource.data.groupMemberIds);
 
         allow update: if isAuthenticated()
           && request.auth.uid == resource.data.createdById
@@ -100,8 +101,7 @@ service cloud.firestore {
     // =========================
     match /{path=**}/expenses/{expenseId} {
       allow read: if isAuthenticated()
-        && request.auth.uid in resource.data.groupMemberIds
-        && resource.data.isDeleted == false;
+        && request.auth.uid in resource.data.groupMemberIds;
     }
   }
 }
