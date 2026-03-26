@@ -1,4 +1,3 @@
-
 "use client";
 
 import { use, useEffect, useState } from "react";
@@ -34,7 +33,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Expense } from "@/types";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
-import { collection, query, orderBy, doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { collection, query, orderBy, doc, updateDoc, arrayUnion, where } from "firebase/firestore";
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -74,18 +73,18 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     }
   }, [mounted, shouldShowJoin, group, isMember]);
 
-  // UseCollection for group expenses
+  // UseCollection for group expenses - include isDeleted filter for security rules
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !groupId || !user || !isMember) return null;
     return query(
       collection(db, "groups", groupId, "expenses"),
+      where("isDeleted", "==", false),
       orderBy("date", "desc")
     );
   }, [db, groupId, user, isMember]);
-  const { data: groupExpensesRaw, isLoading: expensesLoading } = useCollection(groupExpensesQuery);
+  const { data: groupExpenses, isLoading: expensesLoading } = useCollection(groupExpensesQuery);
 
-  const groupExpenses = groupExpensesRaw?.filter(e => !e.isDeleted) || [];
-  const totalSpent = groupExpenses.reduce((acc, curr) => acc + curr.amount, 0);
+  const totalSpent = (groupExpenses || []).reduce((acc, curr) => acc + curr.amount, 0);
 
   const handleJoinGroup = async () => {
     if (!user || !db || !groupId) return;
@@ -94,6 +93,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       const gRef = doc(db, "groups", groupId);
       const uRef = doc(db, "users", user.uid);
 
+      // Secure Join: The rule permits self-join adding only current UID
       await updateDoc(gRef, {
         members: arrayUnion(user.uid)
       });
@@ -107,7 +107,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         description: `Welcome to ${group?.name}!`,
       });
       setIsJoinDialogOpen(false);
-      // Clean up URL
       router.replace(`/groups/${groupId}`);
     } catch (error: any) {
       toast({
@@ -154,7 +153,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     );
   }
 
-  // If user is not a member and join dialog is not open (and not loading), show membership required
   if (!isMember && !isJoinDialogOpen && !isJoining) {
     return (
       <div className="flex min-h-screen flex-col md:flex-row bg-background">
@@ -253,7 +251,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Txns</CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
-              <div className="text-lg sm:text-3xl font-bold text-foreground">{groupExpenses.length}</div>
+              <div className="text-lg sm:text-3xl font-bold text-foreground">{(groupExpenses || []).length}</div>
               <div className="flex items-center gap-1 mt-1 text-muted-foreground text-[9px] sm:text-[11px] font-bold uppercase">
                 <Receipt className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 Recorded
@@ -269,7 +267,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           <CardContent className="p-0">
             {expensesLoading ? (
               <div className="py-20 flex justify-center"><div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" /></div>
-            ) : groupExpenses.length === 0 ? (
+            ) : !groupExpenses || groupExpenses.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center px-4">
                 <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
                   <Receipt className="h-8 w-8 text-muted-foreground" />
@@ -323,7 +321,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         </Card>
       </main>
 
-      {/* Join Confirmation Dialog */}
       <Dialog open={isJoinDialogOpen} onOpenChange={(open) => {
         if (!isJoining) setIsJoinDialogOpen(open);
       }}>

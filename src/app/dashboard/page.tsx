@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -12,7 +11,7 @@ import { Plus, Wallet, Users, AlertCircle } from "lucide-react";
 import { AddExpenseDialog } from "@/components/expenses/AddExpenseDialog";
 import { format } from "date-fns";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
-import { collection, query, orderBy } from "firebase/firestore";
+import { collection, query, orderBy, where } from "firebase/firestore";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -28,11 +27,12 @@ export default function Dashboard() {
     }
   }, [user, router, storeLoading]);
 
-  // Safe Fetching: Guard query with !user
+  // Safe Fetching: Include isDeleted filter to match security rules
   const personalExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
       collection(db, "users", user.uid, "personalExpenses"),
+      where("isDeleted", "==", false),
       orderBy("date", "desc")
     );
   }, [db, user]);
@@ -50,7 +50,7 @@ export default function Dashboard() {
     );
   }
 
-  const activeExpenses = expenses?.filter(e => !e.isDeleted) || [];
+  const activeExpenses = expenses || [];
   const totalSpent = activeExpenses.reduce((acc, curr) => acc + curr.amount, 0);
 
   return (
