@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
@@ -10,9 +11,8 @@ import {
 } from "recharts";
 import { useStore } from "@/lib/store";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
-import { collection, collectionGroup, query, where, orderBy } from "firebase/firestore";
+import { collection, collectionGroup, query, where } from "firebase/firestore";
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
-import { Expense } from "@/types";
 
 const COLORS = ['#3D737F', '#CEC7BF', '#07161B', '#5A9BA8', '#8FBABF', '#A89E92'];
 
@@ -25,7 +25,7 @@ export default function AnalyticsPage() {
     setMounted(true);
   }, []);
 
-  // Fetch Personal Expenses
+  // Fetch Personal Expenses - scoped to the user's specific subcollection
   const personalQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -36,6 +36,7 @@ export default function AnalyticsPage() {
   const { data: personalExpenses, isLoading: loadingPersonal } = useCollection(personalQuery);
 
   // Fetch Group Expenses across all groups using Collection Group
+  // Matches the /{path=**}/expenses/{expenseId} security rule
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -46,7 +47,7 @@ export default function AnalyticsPage() {
   }, [db, user]);
   const { data: groupExpenses, isLoading: loadingGroups } = useCollection(groupExpensesQuery);
 
-  // Combine data
+  // Combine data for global insights
   const allExpenses = useMemo(() => {
     return [...(personalExpenses || []), ...(groupExpenses || [])];
   }, [personalExpenses, groupExpenses]);

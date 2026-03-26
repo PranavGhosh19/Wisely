@@ -9,7 +9,8 @@
         "uid": { "type": "string" },
         "name": { "type": "string" },
         "email": { "type": "string" },
-        "groupIds": { "type": "array", "items": { "type": "string" } }
+        "groupIds": { "type": "array", "items": { "type": "string" } },
+        "categories": { "type": "array", "items": { "type": "string" } }
       },
       "required": ["uid", "name", "email"]
     },
@@ -24,10 +25,14 @@
         "type": { "type": "string", "enum": ["PERSONAL", "GROUP"] },
         "date": { "type": "number" },
         "createdBy": { "type": "string" },
+        "createdById": { "type": "string" },
         "paidBy": { "type": "string" },
         "notes": { "type": "string" },
         "groupId": { "type": "string" },
-        "isDeleted": { "type": "boolean" }
+        "groupMemberIds": { "type": "array", "items": { "type": "string" } },
+        "isDeleted": { "type": "boolean" },
+        "receiptUrl": { "type": "string" },
+        "receiptName": { "type": "string" }
       }
     },
     "Group": {
@@ -55,9 +60,13 @@
       "schema": "Group",
       "description": "Group metadata."
     },
-    "/expenses/{expenseId}": {
+    "/groups/{groupId}/expenses/{expenseId}": {
       "schema": "Expense",
-      "description": "Transaction records."
+      "description": "Group shared expenses."
+    },
+    "/users/{userId}/personalExpenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "Private personal expenses."
     }
   }
 }
