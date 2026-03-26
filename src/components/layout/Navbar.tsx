@@ -7,8 +7,7 @@ import { LayoutDashboard, Users, PieChart, LogOut, Plus, User as UserIcon } from
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
-import { AddExpenseDialog } from "@/components/expenses/AddExpenseDialog";
+import { useEffect } from "react";
 
 const navItems = [
   { name: "Dash", href: "/dashboard", icon: LayoutDashboard },
@@ -23,13 +22,10 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout, setInstallPrompt } = useStore();
-  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      // Stash the event so it can be triggered later.
       setInstallPrompt(e);
     };
 
@@ -40,7 +36,6 @@ export function Navbar() {
     };
   }, [setInstallPrompt]);
 
-  // Don't show the main navbar on the landing page or auth page
   const isPublicPage = pathname === "/" || pathname === "/auth";
   if (isPublicPage || !user) return null;
 
@@ -49,9 +44,12 @@ export function Navbar() {
     router.push("/");
   };
 
-  // Detect if we are in a group context based on the URL
   const groupMatch = pathname.match(/^\/groups\/([^/]+)$/);
   const contextGroupId = groupMatch ? groupMatch[1] : undefined;
+  
+  const addExpenseUrl = contextGroupId 
+    ? `/expenses/add?type=GROUP&groupId=${contextGroupId}` 
+    : `/expenses/add`;
 
   return (
     <>
@@ -110,7 +108,7 @@ export function Navbar() {
           <Button 
             variant="ghost" 
             size="sm" 
-            className="justify-start gap-3 text-destructive font-bold hover:text-destructive hover:bg-destructive/5 rounded-xl"
+            className="justify-start gap-3 text-destructive font-bold hover:text-destructive hover:bg-destructive/5 rounded-xl transition-all"
             onClick={handleSignOut}
           >
             <LogOut className="h-4 w-4" />
@@ -142,11 +140,13 @@ export function Navbar() {
 
           <div className="relative -top-6">
             <Button
-              onClick={() => setIsAddExpenseOpen(true)}
-              className="h-14 w-14 rounded-full bg-primary shadow-lg shadow-primary/40 hover:scale-105 transition-transform"
+              asChild
+              className="h-14 w-14 rounded-full bg-primary shadow-lg shadow-primary/40 hover:scale-105 transition-transform active:scale-90"
               size="icon"
             >
-              <Plus className="h-8 w-8 text-white" />
+              <Link href={addExpenseUrl}>
+                <Plus className="h-8 w-8 text-white" />
+              </Link>
             </Button>
           </div>
 
@@ -185,13 +185,6 @@ export function Navbar() {
           </Link>
         </div>
       </nav>
-
-      <AddExpenseDialog 
-        open={isAddExpenseOpen} 
-        onOpenChange={setIsAddExpenseOpen} 
-        defaultType={contextGroupId ? "GROUP" : "PERSONAL"}
-        defaultGroupId={contextGroupId}
-      />
     </>
   );
 }

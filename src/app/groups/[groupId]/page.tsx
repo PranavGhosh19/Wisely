@@ -1,7 +1,9 @@
+
 "use client";
 
 import { use, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +22,6 @@ import {
   UserPlus
 } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { AddExpenseDialog } from "@/components/expenses/AddExpenseDialog";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -31,7 +32,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Expense } from "@/types";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
 import { collection, query, orderBy, doc, updateDoc, arrayUnion, where } from "firebase/firestore";
 
@@ -43,13 +43,11 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   const db = useFirestore();
   const { toast } = useToast();
   
-  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [expenseToEdit, setExpenseToEdit] = useState<Expense | undefined>(undefined);
 
   const shouldShowJoin = searchParams.get("join") === "true";
 
@@ -74,7 +72,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   }, [mounted, shouldShowJoin, group, isMember]);
 
   // UseCollection for group expenses
-  // Align query filters with security rules: must include groupMemberIds and isDeleted
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !groupId || !user || !isMember) return null;
     return query(
@@ -95,7 +92,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       const gRef = doc(db, "groups", groupId);
       const uRef = doc(db, "users", user.uid);
 
-      // Secure Join: The rule permits self-join adding only current UID
       await updateDoc(gRef, {
         members: arrayUnion(user.uid)
       });
@@ -135,11 +131,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     }
   };
 
-  const handleEditClick = (expense: Expense) => {
-    setExpenseToEdit(expense);
-    setIsAddExpenseOpen(true);
-  };
-
   if (groupLoading) {
     return <div className="flex h-screen items-center justify-center animate-pulse text-primary font-bold">Loading group details...</div>;
   }
@@ -167,7 +158,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             <h2 className="text-2xl font-bold font-headline mb-2">Join Required</h2>
             <p className="text-muted-foreground mb-8">You must be a member of <span className="font-bold text-foreground">"{group.name}"</span> to view its expenses.</p>
             <div className="flex flex-col gap-3">
-              <Button onClick={() => setIsJoinDialogOpen(true)} className="h-12 rounded-xl font-bold">Join Group</Button>
+              <Button onClick={() => setIsJoinDialogOpen(true)} className="h-12 rounded-xl font-bold transition-all active:scale-95">Join Group</Button>
               <Button variant="ghost" onClick={() => router.push("/groups")} className="h-12 rounded-xl font-bold">Back to My Groups</Button>
             </div>
           </Card>
@@ -198,7 +189,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-xl border-primary/20 bg-white hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm"
+                  className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm"
                   onClick={() => setIsQrOpen(true)}
                 >
                   <QrCode className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -210,20 +201,19 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               </div>
             </div>
             <Button 
-              className="hidden sm:flex bg-primary hover:bg-primary/90 gap-2 h-11 rounded-xl font-bold px-6"
-              onClick={() => {
-                setExpenseToEdit(undefined);
-                setIsAddExpenseOpen(true);
-              }}
+              asChild
+              className="hidden sm:flex bg-primary hover:bg-primary/90 gap-2 h-11 rounded-xl font-bold px-6 transition-all active:scale-95"
             >
-              <Plus className="h-5 w-5" />
-              Add Group Expense
+              <Link href={`/expenses/add?type=GROUP&groupId=${groupId}`}>
+                <Plus className="h-5 w-5" />
+                Add Group Expense
+              </Link>
             </Button>
           </div>
         </header>
 
         <div className="grid gap-3 sm:gap-6 grid-cols-2 lg:grid-cols-3 mb-8">
-          <Card className="border-none shadow-sm bg-white rounded-2xl col-span-2 lg:col-span-1">
+          <Card className="border-none shadow-sm bg-card rounded-2xl col-span-2 lg:col-span-1">
             <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
               <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Spending</CardTitle>
             </CardHeader>
@@ -236,7 +226,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm bg-white rounded-2xl">
+          <Card className="border-none shadow-sm bg-card rounded-2xl">
             <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
               <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Share</CardTitle>
             </CardHeader>
@@ -248,7 +238,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm bg-white rounded-2xl">
+          <Card className="border-none shadow-sm bg-card rounded-2xl">
             <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
               <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Txns</CardTitle>
             </CardHeader>
@@ -262,8 +252,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           </Card>
         </div>
 
-        <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
-          <CardHeader className="border-b bg-white px-4 sm:px-6 py-4">
+        <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
+          <CardHeader className="border-b px-4 sm:px-6 py-4">
             <CardTitle className="font-headline text-base sm:text-lg font-bold">Group Transactions</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -307,12 +297,14 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                         {expense.notes && <p className="text-[9px] sm:text-[11px] text-muted-foreground italic truncate max-w-[60px] sm:max-w-[120px]">{expense.notes}</p>}
                       </div>
                       <Button 
+                        asChild
                         variant="ghost" 
                         size="icon" 
                         className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => handleEditClick(expense)}
                       >
-                        <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
+                          <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
+                        </Link>
                       </Button>
                     </div>
                   </div>
@@ -339,7 +331,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           <DialogFooter className="flex flex-col sm:flex-row gap-3 mt-6">
             <Button 
               variant="outline" 
-              className="flex-1 h-12 rounded-xl font-bold order-2 sm:order-1" 
+              className="flex-1 h-12 rounded-xl font-bold order-2 sm:order-1 transition-all active:scale-95" 
               onClick={() => {
                 setIsJoinDialogOpen(false);
                 router.push("/dashboard");
@@ -349,7 +341,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               No
             </Button>
             <Button 
-              className="flex-1 h-12 rounded-xl font-bold bg-primary order-1 sm:order-2"
+              className="flex-1 h-12 rounded-xl font-bold bg-primary order-1 sm:order-2 transition-all active:scale-95 shadow-lg shadow-primary/20"
               onClick={handleJoinGroup}
               disabled={isJoining}
             >
@@ -358,17 +350,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <AddExpenseDialog 
-        open={isAddExpenseOpen} 
-        onOpenChange={(open) => {
-          setIsAddExpenseOpen(open);
-          if (!open) setExpenseToEdit(undefined);
-        }}
-        defaultType="GROUP"
-        defaultGroupId={groupId}
-        expenseToEdit={expenseToEdit}
-      />
 
       <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
         <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[1.5rem] p-5 sm:p-10 border-none shadow-2xl overflow-hidden">
@@ -393,7 +374,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
-              <Button className="w-full rounded-xl font-bold h-12 gap-2 text-sm bg-primary shadow-lg shadow-primary/10" onClick={copyToClipboard}>
+              <Button className="w-full rounded-xl font-bold h-12 gap-2 text-sm bg-primary shadow-lg shadow-primary/10 transition-all active:scale-95" onClick={copyToClipboard}>
                 <Share2 className="h-4 w-4" />
                 Share Group Link
               </Button>

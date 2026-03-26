@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -8,7 +9,6 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Wallet, Users, AlertCircle } from "lucide-react";
-import { AddExpenseDialog } from "@/components/expenses/AddExpenseDialog";
 import { format } from "date-fns";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, orderBy, where } from "firebase/firestore";
@@ -17,7 +17,6 @@ export default function Dashboard() {
   const router = useRouter();
   const { user, isLoading: storeLoading } = useStore();
   const db = useFirestore();
-  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -64,16 +63,18 @@ export default function Dashboard() {
             <p className="text-sm text-muted-foreground">Welcome back, {user?.name.split(" ")[0]}</p>
           </div>
           <Button 
-            className="bg-primary hover:bg-primary/90 gap-2 h-11 md:h-10 text-base md:text-sm font-semibold rounded-xl"
-            onClick={() => setIsAddExpenseOpen(true)}
+            asChild
+            className="bg-primary hover:bg-primary/90 gap-2 h-11 md:h-10 text-base md:text-sm font-semibold rounded-xl transition-all active:scale-95"
           >
-            <Plus className="h-5 w-5" />
-            Add Expense
+            <Link href="/expenses/add">
+              <Plus className="h-5 w-5" />
+              Add Expense
+            </Link>
           </Button>
         </header>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-8">
-          <Card className="border-none shadow-sm bg-white overflow-hidden relative rounded-2xl">
+          <Card className="border-none shadow-sm bg-card overflow-hidden relative rounded-2xl">
             <div className="absolute top-0 right-0 p-3 opacity-10">
               <Wallet className="h-16 w-16 text-primary" />
             </div>
@@ -86,7 +87,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm bg-white rounded-2xl">
+          <Card className="border-none shadow-sm bg-card rounded-2xl">
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Groups</CardTitle>
             </CardHeader>
@@ -99,7 +100,7 @@ export default function Dashboard() {
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <Card className="border-none shadow-sm bg-white h-full rounded-2xl">
+            <Card className="border-none shadow-sm bg-card h-full rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between pb-4">
                 <CardTitle className="font-headline text-lg font-bold">Recent Personal Activity</CardTitle>
                 <Button variant="link" className="text-accent text-sm font-bold p-0">View All</Button>
@@ -163,11 +164,6 @@ export default function Dashboard() {
             </Card>
           </div>
         </div>
-
-        <AddExpenseDialog 
-          open={isAddExpenseOpen} 
-          onOpenChange={setIsAddExpenseOpen} 
-        />
       </main>
     </div>
   );
