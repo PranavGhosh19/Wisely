@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -94,7 +93,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
     
     const amount = parseFloat(formData.amount);
     if (isNaN(amount) || amount <= 0) {
-      toast({ variant: "destructive", title: "Invalid amount", description: "Please enter a valid expense amount." });
+      toast({ variant: "destructive", title: "Invalid amount", description: "Expense amount must be greater than 0." });
       return;
     }
 
@@ -188,6 +187,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
                 id="amount" 
                 type="number" 
                 step="0.01"
+                min="0.01"
                 placeholder="0.00" 
                 value={formData.amount}
                 onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}

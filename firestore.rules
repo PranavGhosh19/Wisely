@@ -36,6 +36,8 @@ service cloud.firestore {
 
         allow update: if isOwner(userId)
           && request.resource.data.createdById == resource.data.createdById
+          && request.resource.data.amount is number
+          && request.resource.data.amount > 0
           && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['amount', 'category', 'notes', 'date', 'isDeleted', 'receiptUrl', 'receiptName']));
 
         allow delete: if isOwner(userId);
@@ -90,6 +92,8 @@ service cloud.firestore {
           && request.auth.uid == resource.data.createdById
           && request.resource.data.createdById == resource.data.createdById
           && request.resource.data.groupId == resource.data.groupId
+          && request.resource.data.amount is number
+          && request.resource.data.amount > 0
           && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['amount', 'category', 'notes', 'date', 'isDeleted', 'receiptUrl', 'receiptName', 'paidBy']));
 
         allow delete: if isAuthenticated() && request.auth.uid == resource.data.createdById;
