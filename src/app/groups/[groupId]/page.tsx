@@ -1,4 +1,3 @@
-
 "use client";
 
 import { use, useEffect, useState } from "react";
@@ -19,7 +18,8 @@ import {
   Share2,
   Edit2,
   FileText,
-  UserPlus
+  UserPlus,
+  User as UserIcon
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
@@ -34,6 +34,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
 import { collection, query, orderBy, doc, updateDoc, arrayUnion, where } from "firebase/firestore";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -45,6 +46,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
+  const [isMembersOpen, setIsMembersOpen] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -82,6 +84,16 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     );
   }, [db, groupId, user, isMember]);
   const { data: groupExpenses, isLoading: expensesLoading } = useCollection(groupExpensesQuery);
+
+  // Fetch member profiles
+  const membersQuery = useMemoFirebase(() => {
+    if (!db || !group?.members || group.members.length === 0) return null;
+    return query(
+      collection(db, "users"),
+      where("uid", "in", group.members.slice(0, 30))
+    );
+  }, [db, group?.members]);
+  const { data: memberProfiles, isLoading: membersLoading } = useCollection(membersQuery);
 
   const totalSpent = (groupExpenses || []).reduce((acc, curr) => acc + curr.amount, 0);
 
@@ -195,10 +207,13 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   <QrCode className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
               </div>
-              <div className="flex items-center gap-2 mt-1.5 text-[10px] sm:text-sm text-muted-foreground">
-                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                <span>{group.members?.length || 0} Members</span>
-              </div>
+              <button 
+                className="flex items-center gap-2 mt-1.5 text-[10px] sm:text-sm text-muted-foreground hover:text-primary transition-colors group"
+                onClick={() => setIsMembersOpen(true)}
+              >
+                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform" />
+                <span className="font-medium underline-offset-4 group-hover:underline">{group.members?.length || 0} Members</span>
+              </button>
             </div>
             <Button 
               asChild
@@ -314,6 +329,55 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           </CardContent>
         </Card>
       </main>
+
+      {/* Members Dialog */}
+      <Dialog open={isMembersOpen} onOpenChange={setIsMembersOpen}>
+        <DialogContent className="sm:max-w-[400px] rounded-2xl p-6 border-none shadow-2xl">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-xl font-bold font-headline flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Group Members
+            </DialogTitle>
+            <DialogDescription>
+              Everyone sharing expenses in <span className="font-bold text-foreground">"{group.name}"</span>.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+            {membersLoading ? (
+              <div className="py-8 flex flex-col items-center gap-2">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <span className="text-xs text-muted-foreground">Loading members...</span>
+              </div>
+            ) : memberProfiles?.map((member) => (
+              <div key={member.uid} className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl border border-border/50">
+                <Avatar className="h-10 w-10 border-2 border-background">
+                  <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                    {member.name?.[0] || <UserIcon className="h-4 w-4" />}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold truncate">{member.name} {member.uid === user?.uid && "(You)"}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{member.email}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <DialogFooter className="mt-6">
+            <Button 
+              className="w-full rounded-xl font-bold h-11 gap-2 bg-primary shadow-lg shadow-primary/10 transition-all active:scale-95"
+              onClick={() => {
+                setIsMembersOpen(false);
+                setIsQrOpen(true);
+              }}
+            >
+              <UserPlus className="h-4 w-4" />
+              Invite More Members
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isJoinDialogOpen} onOpenChange={(open) => {
         if (!isJoining) setIsJoinDialogOpen(open);

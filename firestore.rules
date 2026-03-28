@@ -19,12 +19,12 @@ service cloud.firestore {
     match /users/{userId} {
       allow create: if isOwner(userId);
 
-      allow read, update, delete: if isOwner(userId);
+      // Allow authenticated users to read profiles for group collaboration
+      allow read: if isAuthenticated();
+      allow update, delete: if isOwner(userId);
 
       // Personal expenses subcollection
       match /personalExpenses/{expenseId} {
-        // Simplified read for list queries to avoid "Rules are not filters" conflicts.
-        // The app enforces the isDeleted filter in the query itself.
         allow read: if isOwner(userId);
 
         allow create: if isOwner(userId)
@@ -49,22 +49,17 @@ service cloud.firestore {
     // =========================
     match /groups/{groupId} {
 
-      // ✅ Allow get for join flow, list restricted to members
       allow get: if isAuthenticated();
       allow list: if isAuthenticated() && request.auth.uid in resource.data.members;
 
-      // ✅ Create group (creator must be in the initial members list)
       allow create: if isAuthenticated()
         && request.resource.data.createdBy == request.auth.uid
         && request.auth.uid in request.resource.data.members
         && request.resource.data.name is string;
 
-      // ✅ Protected updates (join logic or member edits)
       allow update: if isAuthenticated() && (
-        // Case 1: Existing member updating group details
         (request.auth.uid in resource.data.members && request.resource.data.createdBy == resource.data.createdBy)
         ||
-        // Case 2: Controlled self-join (exactly one user added, and it's the requester)
         (
           request.resource.data.members.size() == resource.data.members.size() + 1
           && request.auth.uid in request.resource.data.members
@@ -84,7 +79,6 @@ service cloud.firestore {
           && request.resource.data.amount > 0
           && request.resource.data.isDeleted == false;
 
-        // Simplified read for list queries. Membership is checked via parent or denormalized list.
         allow read: if isAuthenticated()
           && (request.auth.uid in resource.data.groupMemberIds);
 
