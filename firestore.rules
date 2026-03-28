@@ -17,30 +17,13 @@ service cloud.firestore {
     // 🔹 USERS
     // =========================
     match /users/{userId} {
-      allow create: if isOwner(userId);
-
-      // Allow authenticated users to read profiles for group collaboration (e.g., selecting "Paid By")
-      allow read: if isAuthenticated();
-      allow update, delete: if isOwner(userId);
+      // Allow any authenticated user to read profiles for collaboration (selecting "Paid By")
+      allow get, list: if isAuthenticated();
+      allow create, update, delete: if isOwner(userId);
 
       // Personal expenses subcollection
       match /personalExpenses/{expenseId} {
-        allow read: if isOwner(userId);
-
-        allow create: if isOwner(userId)
-          && request.resource.data.createdById == request.auth.uid
-          && request.resource.data.amount is number
-          && request.resource.data.amount > 0
-          && request.resource.data.category is string
-          && request.resource.data.isDeleted == false;
-
-        allow update: if isOwner(userId)
-          && request.resource.data.createdById == resource.data.createdById
-          && request.resource.data.amount is number
-          && request.resource.data.amount > 0
-          && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['amount', 'category', 'notes', 'date', 'isDeleted', 'receiptUrl', 'receiptName']));
-
-        allow delete: if isOwner(userId);
+        allow read, write: if isOwner(userId);
       }
     }
 
@@ -48,23 +31,18 @@ service cloud.firestore {
     // 🔹 GROUPS
     // =========================
     match /groups/{groupId} {
-
-      allow get: if isAuthenticated();
-      allow list: if isAuthenticated() && request.auth.uid in resource.data.members;
-
+      allow read: if isAuthenticated();
+      
       allow create: if isAuthenticated()
         && request.resource.data.createdBy == request.auth.uid
-        && request.auth.uid in request.resource.data.members
-        && request.resource.data.name is string;
+        && request.auth.uid in request.resource.data.members;
 
       allow update: if isAuthenticated() && (
-        (request.auth.uid in resource.data.members && request.resource.data.createdBy == resource.data.createdBy)
-        ||
-        (
+        request.auth.uid in resource.data.members
+        || (
+          // Controlled self-join: Only one user added, and it's the requester
           request.resource.data.members.size() == resource.data.members.size() + 1
           && request.auth.uid in request.resource.data.members
-          && request.resource.data.createdBy == resource.data.createdBy
-          && request.resource.data.name == resource.data.name
         )
       );
 
@@ -72,25 +50,9 @@ service cloud.firestore {
 
       // Group expenses subcollection
       match /expenses/{expenseId} {
-        allow create: if isAuthenticated()
-          && request.resource.data.createdById == request.auth.uid
-          && request.auth.uid in request.resource.data.groupMemberIds
-          && request.resource.data.amount is number
-          && request.resource.data.amount > 0
-          && request.resource.data.isDeleted == false;
-
-        allow read: if isAuthenticated()
-          && (request.auth.uid in resource.data.groupMemberIds);
-
-        allow update: if isAuthenticated()
-          && request.auth.uid == resource.data.createdById
-          && request.resource.data.createdById == resource.data.createdById
-          && request.resource.data.groupId == resource.data.groupId
-          && request.resource.data.amount is number
-          && request.resource.data.amount > 0
-          && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['amount', 'category', 'notes', 'date', 'isDeleted', 'receiptUrl', 'receiptName', 'paidBy']));
-
-        allow delete: if isAuthenticated() && request.auth.uid == resource.data.createdById;
+        allow read, write: if isAuthenticated() && (
+          request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.members
+        );
       }
     }
 

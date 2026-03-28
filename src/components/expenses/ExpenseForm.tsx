@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -10,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
-import { ExpenseType, Expense, SplitType, SplitMember } from "@/types";
+import { ExpenseType, Expense, SplitType } from "@/types";
 import { AlertCircle, Upload, X, FileText, ArrowLeft, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase";
@@ -44,14 +43,14 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
     receiptUrl: "",
   });
 
-  // Fetch group data to get member IDs
+  // Fetch group data
   const groupRef = useMemoFirebase(() => {
     if (!db || !formData.groupId || expenseType !== "GROUP") return null;
     return doc(db, "groups", formData.groupId);
   }, [db, formData.groupId, expenseType]);
   const { data: group } = useDoc(groupRef);
 
-  // Fetch member profiles for the "Paid By" dropdown
+  // Fetch member profiles
   const membersQuery = useMemoFirebase(() => {
     if (!db || !group?.members || group.members.length === 0) return null;
     return query(
@@ -75,15 +74,13 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         receiptName: initialData.receiptName || "",
         receiptUrl: initialData.receiptUrl || "",
       });
-    } else {
-      setExpenseType(initialType || "PERSONAL");
+    } else if (user) {
       setFormData(prev => ({
         ...prev,
-        groupId: initialGroupId || "",
-        paidBy: user?.uid || "",
+        paidBy: user.uid
       }));
     }
-  }, [initialData, initialType, initialGroupId, user?.uid]);
+  }, [initialData, user]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -118,7 +115,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
     }
 
     if (expenseType === "GROUP" && !formData.groupId) {
-      toast({ variant: "destructive", title: "Missing group", description: "Please select a group for this expense." });
+      toast({ variant: "destructive", title: "Missing group", description: "Please select a group." });
       return;
     }
 
@@ -151,21 +148,15 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         if (!selectedGroup) throw new Error("Group not found");
 
         expenseData.groupId = formData.groupId;
-        expenseData.groupMemberIds = selectedGroup.members; 
+        expenseData.groupMemberIds = selectedGroup.members;
 
-        // Handle splitting logic
+        // Auto-calculate equal split if selected
         if (formData.splitType === 'EQUAL') {
           const members = selectedGroup.members || [];
-          const splitAmount = amount / (members.length || 1);
+          const splitAmount = amount / members.length;
           expenseData.splitBetween = members.map(uid => ({
             userId: uid,
             amount: parseFloat(splitAmount.toFixed(2))
-          }));
-        } else {
-          // Placeholder for complex split UI logic
-          expenseData.splitBetween = (selectedGroup.members || []).map(uid => ({
-            userId: uid,
-            amount: uid === (formData.paidBy || user.uid) ? amount : 0
           }));
         }
         
@@ -177,7 +168,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
       
       toast({ 
         title: "Expense Saved", 
-        description: `Successfully ${initialData ? "updated" : "added"} ${formData.category} expense.` 
+        description: `Successfully ${initialData ? "updated" : "added"} expense.` 
       });
       router.back();
     } catch (error: any) {
@@ -231,7 +222,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
             />
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-4 grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="category" className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Category</Label>
               <Select 
@@ -239,7 +230,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
                 onValueChange={(val) => setFormData(prev => ({ ...prev, category: val }))}
               >
                 <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-none">
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map(cat => (
@@ -266,42 +257,35 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
               {!initialGroupId && !initialData && (
                 <div className="space-y-2">
                   <Label htmlFor="group" className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Group</Label>
-                  {groups?.length === 0 ? (
-                    <div className="p-4 bg-destructive/5 border border-destructive/10 rounded-2xl flex items-start gap-3 text-sm text-destructive">
-                      <AlertCircle className="h-5 w-5 shrink-0" />
-                      <p className="font-medium">No groups found. Create a group first to split expenses.</p>
-                    </div>
-                  ) : (
-                    <Select 
-                      value={formData.groupId} 
-                      onValueChange={(val) => setFormData(prev => ({ ...prev, groupId: val }))}
-                    >
-                      <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-none">
-                        <SelectValue placeholder="Choose a group" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {groups?.map(group => (
-                          <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                  <Select 
+                    value={formData.groupId} 
+                    onValueChange={(val) => setFormData(prev => ({ ...prev, groupId: val }))}
+                  >
+                    <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-none">
+                      <SelectValue placeholder="Select Group" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {groups?.map(group => (
+                        <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 
-              <div className="grid gap-6 sm:grid-cols-2">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="paidBy" className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Paid By</Label>
                   <Select 
                     value={formData.paidBy} 
                     onValueChange={(val) => setFormData(prev => ({ ...prev, paidBy: val }))}
-                    disabled={membersLoading || !formData.groupId}
+                    disabled={!formData.groupId || membersLoading}
                   >
                     <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-none">
-                      <SelectValue placeholder={membersLoading ? "Loading members..." : "Who paid?"} />
+                      <SelectValue placeholder="Who?" />
                     </SelectTrigger>
                     <SelectContent>
-                      {memberProfiles?.filter(m => m.uid).map(member => (
+                      {memberProfiles?.map(member => (
                         <SelectItem key={member.uid} value={member.uid}>
                           {member.uid === user?.uid ? "You" : member.name}
                         </SelectItem>
@@ -318,12 +302,12 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
                     disabled={!formData.groupId}
                   >
                     <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-none">
-                      <SelectValue placeholder="How to split?" />
+                      <SelectValue placeholder="How?" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="EQUAL">Split Equally</SelectItem>
-                      <SelectItem value="PERCENTAGE">By Percentage</SelectItem>
-                      <SelectItem value="UNEQUAL">Exact Amounts</SelectItem>
+                      <SelectItem value="EQUAL">Equally</SelectItem>
+                      <SelectItem value="PERCENTAGE">By %</SelectItem>
+                      <SelectItem value="UNEQUAL">Exactly</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -335,7 +319,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
             <Label htmlFor="notes" className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Notes (Optional)</Label>
             <Input 
               id="notes" 
-              placeholder="Pizza night with the team..." 
+              placeholder="What was this for?" 
               value={formData.notes}
               onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
               className="h-12 rounded-xl bg-muted/20 border-none"
@@ -347,19 +331,14 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
             {formData.receiptName ? (
               <div className="flex items-center justify-between p-4 bg-primary/5 border border-primary/10 rounded-2xl">
                 <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                    <FileText className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold truncate">{formData.receiptName}</p>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Attached</p>
-                  </div>
+                  <FileText className="h-5 w-5 text-primary shrink-0" />
+                  <span className="text-sm font-bold truncate">{formData.receiptName}</span>
                 </div>
                 <Button 
                   type="button" 
                   variant="ghost" 
                   size="icon" 
-                  className="h-9 w-9 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  className="h-9 w-9 text-muted-foreground hover:text-destructive"
                   onClick={removeReceipt}
                 >
                   <X className="h-5 w-5" />
@@ -370,13 +349,8 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
                 className="border-2 border-dashed border-muted-foreground/20 rounded-2xl p-8 flex flex-col items-center justify-center gap-3 hover:bg-muted/30 hover:border-primary/50 cursor-pointer transition-all group"
                 onClick={() => fileInputRef.current?.click()}
               >
-                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                  <Upload className="h-6 w-6 text-muted-foreground group-hover:text-primary" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-bold">Upload Receipt</p>
-                  <p className="text-xs text-muted-foreground">Support Images and PDF</p>
-                </div>
+                <Upload className="h-6 w-6 text-muted-foreground group-hover:text-primary" />
+                <p className="text-sm font-bold">Upload Receipt</p>
                 <input 
                   type="file" 
                   ref={fileInputRef} 
@@ -392,14 +366,14 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
             <Button 
               type="button" 
               variant="outline" 
-              className="flex-1 h-12 rounded-xl font-bold border-2 transition-all active:scale-95" 
+              className="flex-1 h-12 rounded-xl font-bold" 
               onClick={() => router.back()}
               disabled={loading}
             >
-              Discard
+              Cancel
             </Button>
-            <Button type="submit" className="flex-[2] bg-primary h-12 rounded-xl font-bold text-base shadow-lg shadow-primary/20 transition-all active:scale-95" disabled={loading}>
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (initialData ? "Update Expense" : "Add Expense")}
+            <Button type="submit" className="flex-[2] h-12 rounded-xl font-bold" disabled={loading}>
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (initialData ? "Update" : "Add Expense")}
             </Button>
           </div>
         </form>

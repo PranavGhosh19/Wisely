@@ -78,7 +78,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     if (!db || !groupId || !user || !isMember) return null;
     return query(
       collection(db, "groups", groupId, "expenses"),
-      where("groupMemberIds", "array-contains", user.uid),
       where("isDeleted", "==", false),
       orderBy("date", "desc")
     );
@@ -158,27 +157,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     );
   }
 
-  if (!isMember && !isJoinDialogOpen && !isJoining) {
-    return (
-      <div className="flex min-h-screen flex-col md:flex-row bg-background">
-        <Navbar />
-        <main className="flex-1 flex items-center justify-center p-4">
-          <Card className="max-w-md w-full text-center p-8 rounded-2xl shadow-lg border-none">
-            <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-6">
-              <UserPlus className="h-8 w-8" />
-            </div>
-            <h2 className="text-2xl font-bold font-headline mb-2">Join Required</h2>
-            <p className="text-muted-foreground mb-8">You must be a member of <span className="font-bold text-foreground">"{group.name}"</span> to view its expenses.</p>
-            <div className="flex flex-col gap-3">
-              <Button onClick={() => setIsJoinDialogOpen(true)} className="h-12 rounded-xl font-bold transition-all active:scale-95">Join Group</Button>
-              <Button variant="ghost" onClick={() => router.push("/groups")} className="h-12 rounded-xl font-bold">Back to My Groups</Button>
-            </div>
-          </Card>
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div className="flex min-h-screen flex-col md:flex-row bg-background">
       <Navbar />
@@ -187,7 +165,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         <header className="mb-6">
           <Button 
             variant="ghost" 
-            className="mb-2 -ml-2 text-muted-foreground hover:text-primary gap-2 h-8 px-2 text-xs sm:text-sm"
+            className="mb-2 -ml-2 text-muted-foreground hover:text-primary gap-2"
             onClick={() => router.push("/groups")}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -195,29 +173,29 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           </Button>
           
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex-1 min-w-0">
+            <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl sm:text-3xl font-bold font-headline text-primary truncate">{group.name}</h2>
+                <h2 className="text-3xl font-bold font-headline text-primary">{group.name}</h2>
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm"
+                  className="h-9 w-9 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm"
                   onClick={() => setIsQrOpen(true)}
                 >
-                  <QrCode className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <QrCode className="h-5 w-5" />
                 </Button>
               </div>
               <button 
-                className="flex items-center gap-2 mt-1.5 text-[10px] sm:text-sm text-muted-foreground hover:text-primary transition-colors group"
+                className="flex items-center gap-2 mt-1.5 text-sm text-muted-foreground hover:text-primary transition-colors group"
                 onClick={() => setIsMembersOpen(true)}
               >
-                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform" />
+                <Users className="h-4 w-4 group-hover:scale-110 transition-transform" />
                 <span className="font-medium underline-offset-4 group-hover:underline">{group.members?.length || 0} Members</span>
               </button>
             </div>
             <Button 
               asChild
-              className="hidden sm:flex bg-primary hover:bg-primary/90 gap-2 h-11 rounded-xl font-bold px-6 transition-all active:scale-95"
+              className="bg-primary hover:bg-primary/90 gap-2 h-11 rounded-xl font-bold px-6 transition-all active:scale-95"
             >
               <Link href={`/expenses/add?type=GROUP&groupId=${groupId}`}>
                 <Plus className="h-5 w-5" />
@@ -227,40 +205,40 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           </div>
         </header>
 
-        <div className="grid gap-3 sm:gap-6 grid-cols-2 lg:grid-cols-3 mb-8">
-          <Card className="border-none shadow-sm bg-card rounded-2xl col-span-2 lg:col-span-1">
-            <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
-              <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Spending</CardTitle>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+          <Card className="border-none shadow-sm bg-card rounded-2xl">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Spending</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
-              <div className="text-2xl sm:text-3xl font-bold text-primary">${totalSpent.toFixed(2)}</div>
-              <div className="flex items-center gap-1 mt-1 text-accent text-[9px] sm:text-[11px] font-bold uppercase">
-                <TrendingUp className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <CardContent>
+              <div className="text-3xl font-bold text-primary">${totalSpent.toFixed(2)}</div>
+              <div className="flex items-center gap-1 mt-1 text-accent text-[11px] font-bold uppercase">
+                <TrendingUp className="h-3.5 w-3.5" />
                 Live Tracking
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-none shadow-sm bg-card rounded-2xl">
-            <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
-              <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Share</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Share</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
-              <div className="text-lg sm:text-3xl font-bold text-foreground">
+            <CardContent>
+              <div className="text-3xl font-bold text-foreground">
                 ${(totalSpent / (group.members?.length || 1)).toFixed(2)}
               </div>
-              <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-1 uppercase font-medium">Split Equally</p>
+              <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">Split Equally</p>
             </CardContent>
           </Card>
 
           <Card className="border-none shadow-sm bg-card rounded-2xl">
-            <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
-              <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Txns</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Transactions</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
-              <div className="text-lg sm:text-3xl font-bold text-foreground">{(groupExpenses || []).length}</div>
-              <div className="flex items-center gap-1 mt-1 text-muted-foreground text-[9px] sm:text-[11px] font-bold uppercase">
-                <Receipt className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <CardContent>
+              <div className="text-3xl font-bold text-foreground">{(groupExpenses || []).length}</div>
+              <div className="flex items-center gap-1 mt-1 text-muted-foreground text-[11px] font-bold uppercase">
+                <Receipt className="h-3.5 w-3.5" />
                 Recorded
               </div>
             </CardContent>
@@ -268,8 +246,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         </div>
 
         <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
-          <CardHeader className="border-b px-4 sm:px-6 py-4">
-            <CardTitle className="font-headline text-base sm:text-lg font-bold">Group Transactions</CardTitle>
+          <CardHeader className="border-b px-6 py-4">
+            <CardTitle className="font-headline text-lg font-bold">Group Activity</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {expensesLoading ? (
@@ -285,31 +263,31 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             ) : (
               <div className="divide-y divide-muted">
                 {groupExpenses.map((expense) => (
-                  <div key={expense.id} className="flex items-center justify-between p-4 sm:px-6 sm:py-5 hover:bg-muted/5 transition-colors group">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-base sm:text-xl shrink-0">
+                  <div key={expense.id} className="flex items-center justify-between px-6 py-5 hover:bg-muted/5 transition-colors group">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl shrink-0">
                         {expense.category[0] || "💰"}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <p className="font-bold text-xs sm:text-base truncate">{expense.category}</p>
-                          {expense.receiptUrl && <FileText className="h-3 w-3 text-accent" title="Has receipt" />}
+                          <p className="font-bold text-base truncate">{expense.category}</p>
+                          {expense.receiptUrl && <FileText className="h-3.5 w-3.5 text-accent" title="Has receipt" />}
                         </div>
-                        <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5">
-                          <span className="text-[9px] sm:text-[11px] font-medium text-muted-foreground uppercase whitespace-nowrap">
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[11px] font-medium text-muted-foreground uppercase whitespace-nowrap">
                             {mounted ? format(expense.date, "MMM dd") : ""}
                           </span>
-                          <span className="h-0.5 w-0.5 bg-muted-foreground rounded-full shrink-0"></span>
-                          <span className="text-[8px] sm:text-[10px] uppercase font-bold text-accent truncate">
+                          <span className="h-0.5 w-0.5 bg-muted-foreground rounded-full"></span>
+                          <span className="text-[10px] uppercase font-bold text-accent truncate">
                             {expense.paidBy === user?.uid ? "You paid" : "Member paid"}
                           </span>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <p className="font-bold text-sm sm:text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
-                        {expense.notes && <p className="text-[9px] sm:text-[11px] text-muted-foreground italic truncate max-w-[60px] sm:max-w-[120px]">{expense.notes}</p>}
+                        <p className="font-bold text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
+                        {expense.notes && <p className="text-[11px] text-muted-foreground italic truncate max-w-[150px]">{expense.notes}</p>}
                       </div>
                       <Button 
                         asChild
@@ -318,7 +296,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                         className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
-                          <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
+                          <Edit2 className="h-4 w-4 text-muted-foreground" />
                         </Link>
                       </Button>
                     </div>
@@ -379,6 +357,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         </DialogContent>
       </Dialog>
 
+      {/* Join Dialog */}
       <Dialog open={isJoinDialogOpen} onOpenChange={(open) => {
         if (!isJoining) setIsJoinDialogOpen(open);
       }}>
@@ -415,6 +394,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         </DialogContent>
       </Dialog>
 
+      {/* QR Code Dialog */}
       <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
         <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[1.5rem] p-5 sm:p-10 border-none shadow-2xl overflow-hidden">
           <DialogHeader className="text-center space-y-2 mb-2">
