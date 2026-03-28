@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -9,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
-import { ExpenseType, Expense } from "@/types";
+import { ExpenseType, Expense, SplitType, SplitMember } from "@/types";
 import { AlertCircle, Upload, X, FileText, ArrowLeft, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase";
@@ -38,6 +39,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
     date: format(new Date(), "yyyy-MM-dd"),
     groupId: initialGroupId || "",
     paidBy: user?.uid || "",
+    splitType: "EQUAL" as SplitType,
     receiptName: "",
     receiptUrl: "",
   });
@@ -69,6 +71,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         date: format(new Date(initialData.date), "yyyy-MM-dd"),
         groupId: initialData.groupId || "",
         paidBy: initialData.paidBy || user?.uid || "",
+        splitType: initialData.splitType || "EQUAL",
         receiptName: initialData.receiptName || "",
         receiptUrl: initialData.receiptUrl || "",
       });
@@ -133,6 +136,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         createdBy: user.name,
         createdById: user.uid,
         paidBy: formData.paidBy || user.uid,
+        splitType: formData.splitType,
         receiptName: formData.receiptName,
         receiptUrl: formData.receiptUrl,
         isDeleted: false,
@@ -148,6 +152,22 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
 
         expenseData.groupId = formData.groupId;
         expenseData.groupMemberIds = selectedGroup.members; 
+
+        // Handle splitting logic
+        if (formData.splitType === 'EQUAL') {
+          const members = selectedGroup.members || [];
+          const splitAmount = amount / (members.length || 1);
+          expenseData.splitBetween = members.map(uid => ({
+            userId: uid,
+            amount: parseFloat(splitAmount.toFixed(2))
+          }));
+        } else {
+          // Placeholder for complex split UI logic
+          expenseData.splitBetween = (selectedGroup.members || []).map(uid => ({
+            userId: uid,
+            amount: uid === (formData.paidBy || user.uid) ? amount : 0
+          }));
+        }
         
         docRef = doc(db, "groups", formData.groupId, "expenses", expenseId);
       }
@@ -242,7 +262,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
           </div>
 
           {expenseType === "GROUP" && (
-            <div className="grid gap-6 sm:grid-cols-2">
+            <div className="space-y-6">
               {!initialGroupId && !initialData && (
                 <div className="space-y-2">
                   <Label htmlFor="group" className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Group</Label>
@@ -269,24 +289,44 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="paidBy" className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Paid By</Label>
-                <Select 
-                  value={formData.paidBy} 
-                  onValueChange={(val) => setFormData(prev => ({ ...prev, paidBy: val }))}
-                  disabled={membersLoading || !formData.groupId}
-                >
-                  <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-none">
-                    <SelectValue placeholder={membersLoading ? "Loading members..." : "Who paid?"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {memberProfiles?.map(member => (
-                      <SelectItem key={member.uid} value={member.uid}>
-                        {member.uid === user?.uid ? "You" : member.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="paidBy" className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Paid By</Label>
+                  <Select 
+                    value={formData.paidBy} 
+                    onValueChange={(val) => setFormData(prev => ({ ...prev, paidBy: val }))}
+                    disabled={membersLoading || !formData.groupId}
+                  >
+                    <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-none">
+                      <SelectValue placeholder={membersLoading ? "Loading members..." : "Who paid?"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {memberProfiles?.filter(m => m.uid).map(member => (
+                        <SelectItem key={member.uid} value={member.uid}>
+                          {member.uid === user?.uid ? "You" : member.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="splitType" className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Split</Label>
+                  <Select 
+                    value={formData.splitType} 
+                    onValueChange={(val) => setFormData(prev => ({ ...prev, splitType: val as SplitType }))}
+                    disabled={!formData.groupId}
+                  >
+                    <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-none">
+                      <SelectValue placeholder="How to split?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="EQUAL">Split Equally</SelectItem>
+                      <SelectItem value="PERCENTAGE">By Percentage</SelectItem>
+                      <SelectItem value="UNEQUAL">Exact Amounts</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           )}
