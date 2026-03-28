@@ -27,21 +27,21 @@ export function SplitOptions({
   initialSplitType,
   initialSplitBetween,
 }: SplitOptionsProps) {
-  const [activeType, setActiveType] = useState<SplitType>(initialSplitType);
+  const [activeType, setActiveType] = useState<SplitType>(initialSplitType || 'EQUAL');
   
   // State for different split modes
-  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(
-    new Set(initialSplitBetween.length > 0 
-      ? initialSplitBetween.map(s => s.userId) 
-      : members.map(m => m.uid)
-    )
-  );
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(() => {
+    if (initialSplitBetween && initialSplitBetween.length > 0) {
+      return new Set(initialSplitBetween.filter(s => s.amount > 0).map(s => s.userId));
+    }
+    return new Set(members.map(m => m.uid));
+  });
 
   // Store values (amounts, percentages, or weights) for each member
   const [values, setValues] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
     members.forEach(m => {
-      const existing = initialSplitBetween.find(s => s.userId === m.uid);
+      const existing = initialSplitBetween?.find(s => s.userId === m.uid);
       if (initialSplitType === 'UNEQUAL') initial[m.uid] = existing?.amount?.toString() || "0";
       else if (initialSplitType === 'PERCENTAGE') initial[m.uid] = existing?.percentage?.toString() || "0";
       else if (initialSplitType === 'WEIGHT') initial[m.uid] = existing?.weight?.toString() || "1";
@@ -58,7 +58,6 @@ export function SplitOptions({
   ];
 
   const handleValueChange = (userId: string, val: string) => {
-    // Basic numeric validation
     if (val !== "" && isNaN(Number(val))) return;
     setValues(prev => ({ ...prev, [userId]: val }));
   };
@@ -81,15 +80,24 @@ export function SplitOptions({
     }
   };
 
-  // Calculations for Summary
+  // Calculations for Summary & Validation
   const totals = useMemo(() => {
     let sum = 0;
     Object.values(values).forEach(v => sum += Number(v || 0));
     
     const remaining = activeType === 'PERCENTAGE' ? 100 - sum : totalAmount - sum;
-    const isValid = activeType === 'EQUAL' 
-      ? selectedUserIds.size > 0 
-      : (activeType === 'PERCENTAGE' ? Math.abs(sum - 100) < 0.01 : Math.abs(sum - totalAmount) < 0.01);
+    
+    // Validation rules
+    let isValid = false;
+    if (activeType === 'EQUAL') {
+      isValid = selectedUserIds.size > 0;
+    } else if (activeType === 'PERCENTAGE') {
+      isValid = Math.abs(sum - 100) < 0.01;
+    } else if (activeType === 'UNEQUAL') {
+      isValid = Math.abs(sum - totalAmount) < 0.01;
+    } else if (activeType === 'WEIGHT') {
+      isValid = sum > 0;
+    }
     
     return { sum, remaining, isValid };
   }, [values, activeType, totalAmount, selectedUserIds]);
@@ -111,7 +119,7 @@ export function SplitOptions({
       } else if (activeType === 'PERCENTAGE') {
         amount = (val / 100) * totalAmount;
       } else if (activeType === 'WEIGHT') {
-        const totalWeight = Object.values(values).reduce((acc, v) => acc + Number(v || 0), 0);
+        const totalWeight = totals.sum;
         amount = totalWeight > 0 ? (val / totalWeight) * totalAmount : 0;
       }
 
@@ -132,7 +140,6 @@ export function SplitOptions({
 
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col animate-in slide-in-from-bottom duration-300">
-      {/* Top Navigation Bar */}
       <header className="flex items-center justify-between px-4 h-16 border-b shrink-0 bg-card">
         <button onClick={onClose} className="text-sm font-medium text-muted-foreground hover:text-foreground">
           Cancel
@@ -142,9 +149,9 @@ export function SplitOptions({
           onClick={handleDone} 
           className={cn(
             "text-sm font-bold transition-opacity", 
-            (activeType === 'EQUAL' || activeType === 'WEIGHT' || totals.isValid) ? "text-primary" : "text-muted-foreground opacity-50"
+            totals.isValid ? "text-primary" : "text-muted-foreground opacity-50"
           )}
-          disabled={activeType !== 'EQUAL' && activeType !== 'WEIGHT' && !totals.isValid}
+          disabled={!totals.isValid}
         >
           Done
         </button>
@@ -152,7 +159,6 @@ export function SplitOptions({
 
       <ScrollArea className="flex-1">
         <div className="p-6 space-y-8">
-          {/* Split Type Selector */}
           <div className="flex justify-between gap-3 overflow-x-auto pb-2 scrollbar-hide">
             {splitTypes.map((type) => {
               const Icon = type.icon;
@@ -179,16 +185,14 @@ export function SplitOptions({
             })}
           </div>
 
-          {/* Section Title */}
           <div className="text-center space-y-1">
             <h2 className="text-2xl font-bold font-headline text-foreground">{currentTypeInfo?.label}</h2>
             <p className="text-sm text-muted-foreground">{currentTypeInfo?.description}</p>
           </div>
 
-          {/* Member List */}
           <div className="space-y-4">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-2">Group Members</p>
-            <div className="space-y-2">
+            <div className="space-y-2 pb-10">
               {members.map((member) => {
                 const isSelected = selectedUserIds.has(member.uid);
                 return (
@@ -203,7 +207,7 @@ export function SplitOptions({
                     onClick={() => activeType === 'EQUAL' && toggleUser(member.uid)}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-bold">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
                         {member.name[0]}
                       </div>
                       <span className="font-bold text-sm text-foreground">
@@ -222,30 +226,30 @@ export function SplitOptions({
                       )}
 
                       {activeType === 'UNEQUAL' && (
-                        <div className="relative group">
-                          <span className="absolute left-0 bottom-1 text-xs text-muted-foreground font-bold">₹</span>
+                        <div className="flex items-center gap-1 border-b-2 border-muted focus-within:border-primary transition-colors">
+                          <span className="text-xs text-muted-foreground font-bold">₹</span>
                           <Input
                             type="number"
                             inputMode="decimal"
                             value={values[member.uid]}
                             onChange={(e) => handleValueChange(member.uid, e.target.value)}
-                            className="w-24 h-8 bg-transparent border-0 border-b-2 border-muted focus-visible:ring-0 focus-visible:border-primary rounded-none px-4 text-right font-bold text-sm"
+                            className="w-24 h-8 bg-transparent border-0 focus-visible:ring-0 rounded-none px-1 text-right font-bold text-sm"
                             placeholder="0.00"
                           />
                         </div>
                       )}
 
                       {activeType === 'PERCENTAGE' && (
-                        <div className="relative group">
+                        <div className="flex items-center gap-1 border-b-2 border-muted focus-within:border-primary transition-colors">
                           <Input
                             type="number"
                             inputMode="decimal"
                             value={values[member.uid]}
                             onChange={(e) => handleValueChange(member.uid, e.target.value)}
-                            className="w-20 h-8 bg-transparent border-0 border-b-2 border-muted focus-visible:ring-0 focus-visible:border-primary rounded-none pr-6 text-right font-bold text-sm"
+                            className="w-16 h-8 bg-transparent border-0 focus-visible:ring-0 rounded-none px-1 text-right font-bold text-sm"
                             placeholder="0"
                           />
-                          <span className="absolute right-0 bottom-1 text-xs text-muted-foreground font-bold">%</span>
+                          <span className="text-xs text-muted-foreground font-bold">%</span>
                         </div>
                       )}
 
@@ -283,7 +287,6 @@ export function SplitOptions({
         </div>
       </ScrollArea>
 
-      {/* Bottom Summary Bar */}
       <footer className="shrink-0 border-t bg-card/95 backdrop-blur-md p-6 pb-10 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
         <div className="flex flex-col gap-4 max-w-lg mx-auto">
           <div className="flex items-center justify-between">
@@ -295,7 +298,7 @@ export function SplitOptions({
                     <span className="text-xs text-muted-foreground font-medium">/person</span>
                   </div>
                   <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
-                    ({selectedUserIds.size} people selected)
+                    ({selectedUserIds.size} people)
                   </span>
                 </>
               )}
@@ -309,9 +312,9 @@ export function SplitOptions({
                     <span className="text-xs text-muted-foreground font-medium">of ₹{totalAmount.toFixed(2)}</span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    {totals.remaining !== 0 && <AlertCircle className="h-3 w-3 text-orange-500" />}
-                    <span className={cn("text-[10px] font-bold uppercase tracking-wider", totals.remaining === 0 ? "text-green-500" : "text-orange-500")}>
-                      {totals.remaining === 0 ? "Perfectly split" : `₹${Math.abs(totals.remaining).toFixed(2)} ${totals.remaining > 0 ? "left" : "over"}`}
+                    {Math.abs(totals.remaining) > 0.01 && <AlertCircle className="h-3 w-3 text-orange-500" />}
+                    <span className={cn("text-[10px] font-bold uppercase tracking-wider", Math.abs(totals.remaining) <= 0.01 ? "text-green-500" : "text-orange-500")}>
+                      {Math.abs(totals.remaining) <= 0.01 ? "Perfectly split" : `₹${Math.abs(totals.remaining).toFixed(2)} ${totals.remaining > 0 ? "left" : "over"}`}
                     </span>
                   </div>
                 </>
@@ -326,9 +329,9 @@ export function SplitOptions({
                     <span className="text-xs text-muted-foreground font-medium">of 100%</span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    {totals.remaining !== 0 && <AlertCircle className="h-3 w-3 text-orange-500" />}
-                    <span className={cn("text-[10px] font-bold uppercase tracking-wider", totals.remaining === 0 ? "text-green-500" : "text-orange-500")}>
-                      {totals.remaining === 0 ? "Total reached" : `${Math.abs(totals.remaining).toFixed(1)}% ${totals.remaining > 0 ? "left" : "over"}`}
+                    {Math.abs(totals.remaining) > 0.01 && <AlertCircle className="h-3 w-3 text-orange-500" />}
+                    <span className={cn("text-[10px] font-bold uppercase tracking-wider", Math.abs(totals.remaining) <= 0.01 ? "text-green-500" : "text-orange-500")}>
+                      {Math.abs(totals.remaining) <= 0.01 ? "Total reached" : `${Math.abs(totals.remaining).toFixed(1)}% ${totals.remaining > 0 ? "left" : "over"}`}
                     </span>
                   </div>
                 </>
@@ -339,7 +342,7 @@ export function SplitOptions({
                   <div className="flex flex-col">
                     <span className="text-2xl font-bold text-foreground">Total Shares: {totals.sum}</span>
                     <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-0.5">
-                      Amount distributed proportionally
+                      Proportional distribution
                     </span>
                   </div>
                 </>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -154,6 +153,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         expenseData.groupId = formData.groupId;
         expenseData.groupMemberIds = selectedGroup.members;
 
+        // If split hasn't been configured by user, default to equal split
         if (formData.splitBetween.length === 0) {
           const members = selectedGroup.members || [];
           const splitAmount = amount / members.length;
@@ -174,6 +174,16 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
       toast({ variant: "destructive", title: "Error", description: error.message || "Failed to save expense." });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getSplitLabel = () => {
+    switch(formData.splitType) {
+      case 'EQUAL': return 'Equally';
+      case 'PERCENTAGE': return 'By Percentage';
+      case 'WEIGHT': return 'By Shares';
+      case 'UNEQUAL': return 'Exactly';
+      default: return 'Equally';
     }
   };
 
@@ -264,7 +274,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
                       <SelectValue placeholder="Who?" />
                     </SelectTrigger>
                     <SelectContent>
-                      {memberProfiles?.map(m => (
+                      {memberProfiles?.filter(m => !!m.uid).map(m => (
                         <SelectItem key={m.uid} value={m.uid}>{m.uid === user?.uid ? "You" : m.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -282,9 +292,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
                     className="flex items-center justify-between w-full h-12 px-3 rounded-xl bg-muted/20 border-none text-left"
                   >
                     <span className="text-sm font-medium">
-                      {formData.splitType === 'EQUAL' ? 'Equally' : 
-                       formData.splitType === 'PERCENTAGE' ? 'Percentage' : 
-                       formData.splitType === 'WEIGHT' ? 'Shares' : 'Exactly'}
+                      {getSplitLabel()}
                     </span>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </button>
@@ -328,16 +336,15 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
             )}
           </div>
 
-          <div className="pt-6 flex flex-col sm:flex-row gap-3">
+          <div className="pt-6 flex flex-col sm:flex-row gap-3 pb-10">
             <Button type="button" variant="outline" className="flex-1 h-12 rounded-xl" onClick={() => router.back()}>Cancel</Button>
-            <Button type="submit" className="flex-[2] h-12 rounded-xl" disabled={loading}>
+            <Button type="submit" className="flex-[2] h-12 rounded-xl font-bold" disabled={loading}>
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (initialData ? "Update" : "Add Expense")}
             </Button>
           </div>
         </form>
       </Tabs>
 
-      {/* Split Options Dedicated View */}
       {isSplitOptionsOpen && (
         <SplitOptions
           isOpen={isSplitOptionsOpen}
