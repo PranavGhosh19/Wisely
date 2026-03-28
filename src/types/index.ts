@@ -1,6 +1,6 @@
 
 export type ExpenseType = 'PERSONAL' | 'GROUP';
-export type SplitType = 'EQUAL' | 'UNEQUAL' | 'PERCENTAGE';
+export type SplitType = 'EQUAL' | 'UNEQUAL' | 'PERCENTAGE' | 'WEIGHT';
 
 export interface User {
   uid: string;
@@ -22,6 +22,8 @@ export interface Group {
 export interface SplitMember {
   userId: string;
   amount: number;
+  percentage?: number;
+  weight?: number;
 }
 
 export interface Expense {
