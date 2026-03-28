@@ -78,6 +78,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     if (!db || !groupId || !user || !isMember) return null;
     return query(
       collection(db, "groups", groupId, "expenses"),
+      where("groupMemberIds", "array-contains", user.uid),
       where("isDeleted", "==", false),
       orderBy("date", "desc")
     );
