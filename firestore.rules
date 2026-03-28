@@ -19,7 +19,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow create: if isOwner(userId);
 
-      // Allow authenticated users to read profiles for group collaboration
+      // Allow authenticated users to read profiles for group collaboration (e.g., selecting "Paid By")
       allow read: if isAuthenticated();
       allow update, delete: if isOwner(userId);
 

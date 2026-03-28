@@ -10,10 +10,10 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { ExpenseType, Expense } from "@/types";
-import { AlertCircle, Upload, X, FileText, ArrowLeft } from "lucide-react";
+import { AlertCircle, Upload, X, FileText, ArrowLeft, Loader2 } from "lucide-react";
 import { format } from "date-fns";
-import { useFirestore } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase";
+import { doc, collection, query, where } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 interface ExpenseFormProps {
@@ -37,9 +37,27 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
     notes: "",
     date: format(new Date(), "yyyy-MM-dd"),
     groupId: initialGroupId || "",
+    paidBy: user?.uid || "",
     receiptName: "",
     receiptUrl: "",
   });
+
+  // Fetch group data to get member IDs
+  const groupRef = useMemoFirebase(() => {
+    if (!db || !formData.groupId || expenseType !== "GROUP") return null;
+    return doc(db, "groups", formData.groupId);
+  }, [db, formData.groupId, expenseType]);
+  const { data: group } = useDoc(groupRef);
+
+  // Fetch member profiles for the "Paid By" dropdown
+  const membersQuery = useMemoFirebase(() => {
+    if (!db || !group?.members || group.members.length === 0) return null;
+    return query(
+      collection(db, "users"),
+      where("uid", "in", group.members.slice(0, 30))
+    );
+  }, [db, group?.members]);
+  const { data: memberProfiles, isLoading: membersLoading } = useCollection(membersQuery);
 
   useEffect(() => {
     if (initialData) {
@@ -50,6 +68,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         notes: initialData.notes || "",
         date: format(new Date(initialData.date), "yyyy-MM-dd"),
         groupId: initialData.groupId || "",
+        paidBy: initialData.paidBy || user?.uid || "",
         receiptName: initialData.receiptName || "",
         receiptUrl: initialData.receiptUrl || "",
       });
@@ -58,9 +77,10 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
       setFormData(prev => ({
         ...prev,
         groupId: initialGroupId || "",
+        paidBy: user?.uid || "",
       }));
     }
-  }, [initialData, initialType, initialGroupId]);
+  }, [initialData, initialType, initialGroupId, user?.uid]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -112,7 +132,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         type: expenseType,
         createdBy: user.name,
         createdById: user.uid,
-        paidBy: user.uid,
+        paidBy: formData.paidBy || user.uid,
         receiptName: formData.receiptName,
         receiptUrl: formData.receiptUrl,
         isDeleted: false,
@@ -123,7 +143,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
       if (expenseType === "PERSONAL") {
         docRef = doc(db, "users", user.uid, "personalExpenses", expenseId);
       } else {
-        const selectedGroup = groups.find(g => g.id === formData.groupId);
+        const selectedGroup = groups.find(g => g.id === formData.groupId) || group;
         if (!selectedGroup) throw new Error("Group not found");
 
         expenseData.groupId = formData.groupId;
@@ -221,29 +241,53 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
             </div>
           </div>
 
-          {(expenseType === "GROUP" && !initialGroupId && !initialData) && (
-            <div className="space-y-2">
-              <Label htmlFor="group" className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Group</Label>
-              {groups?.length === 0 ? (
-                <div className="p-4 bg-destructive/5 border border-destructive/10 rounded-2xl flex items-start gap-3 text-sm text-destructive">
-                  <AlertCircle className="h-5 w-5 shrink-0" />
-                  <p className="font-medium">No groups found. Create a group first to split expenses.</p>
+          {expenseType === "GROUP" && (
+            <div className="grid gap-6 sm:grid-cols-2">
+              {!initialGroupId && !initialData && (
+                <div className="space-y-2">
+                  <Label htmlFor="group" className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Group</Label>
+                  {groups?.length === 0 ? (
+                    <div className="p-4 bg-destructive/5 border border-destructive/10 rounded-2xl flex items-start gap-3 text-sm text-destructive">
+                      <AlertCircle className="h-5 w-5 shrink-0" />
+                      <p className="font-medium">No groups found. Create a group first to split expenses.</p>
+                    </div>
+                  ) : (
+                    <Select 
+                      value={formData.groupId} 
+                      onValueChange={(val) => setFormData(prev => ({ ...prev, groupId: val }))}
+                    >
+                      <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-none">
+                        <SelectValue placeholder="Choose a group" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {groups?.map(group => (
+                          <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
-              ) : (
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="paidBy" className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Paid By</Label>
                 <Select 
-                  value={formData.groupId} 
-                  onValueChange={(val) => setFormData(prev => ({ ...prev, groupId: val }))}
+                  value={formData.paidBy} 
+                  onValueChange={(val) => setFormData(prev => ({ ...prev, paidBy: val }))}
+                  disabled={membersLoading || !formData.groupId}
                 >
                   <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-none">
-                    <SelectValue placeholder="Choose a group" />
+                    <SelectValue placeholder={membersLoading ? "Loading members..." : "Who paid?"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {groups?.map(group => (
-                      <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                    {memberProfiles?.map(member => (
+                      <SelectItem key={member.uid} value={member.uid}>
+                        {member.uid === user?.uid ? "You" : member.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              )}
+              </div>
             </div>
           )}
 
@@ -315,7 +359,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
               Discard
             </Button>
             <Button type="submit" className="flex-[2] bg-primary h-12 rounded-xl font-bold text-base shadow-lg shadow-primary/20 transition-all active:scale-95" disabled={loading}>
-              {loading ? "Saving..." : (initialData ? "Update Expense" : "Add Expense")}
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (initialData ? "Update Expense" : "Add Expense")}
             </Button>
           </div>
         </form>
