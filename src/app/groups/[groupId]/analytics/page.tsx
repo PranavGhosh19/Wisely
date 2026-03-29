@@ -1,0 +1,261 @@
+
+"use client";
+
+import { use, useMemo, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Navbar } from "@/components/layout/Navbar";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { 
+  PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, 
+  BarChart as ReBarChart, Bar, XAxis, YAxis, CartesianGrid, Legend as ReLegend
+} from "recharts";
+import { useStore } from "@/lib/store";
+import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
+import { collection, query, where, doc } from "firebase/firestore";
+import { format, isToday, isThisMonth, startOfDay, startOfMonth } from "date-fns";
+import { ArrowLeft, Filter, Loader2 } from "lucide-react";
+
+const COLORS = ['#3D737F', '#CEC7BF', '#07161B', '#5A9BA8', '#8FBABF', '#A89E92'];
+
+type TimeFilter = 'ALL' | 'MONTH' | 'TODAY';
+
+export default function GroupAnalyticsPage({ params }: { params: Promise<{ groupId: string }> }) {
+  const { groupId } = use(params);
+  const router = useRouter();
+  const { user } = useStore();
+  const db = useFirestore();
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('ALL');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Fetch Group Metadata
+  const groupRef = useMemoFirebase(() => {
+    if (!db || !groupId) return null;
+    return doc(db, "groups", groupId);
+  }, [db, groupId]);
+  const { data: group, isLoading: groupLoading } = useDoc(groupRef);
+
+  // Fetch Group Expenses
+  const groupExpensesQuery = useMemoFirebase(() => {
+    if (!db || !groupId || !user) return null;
+    return query(
+      collection(db, "groups", groupId, "expenses"),
+      where("groupMemberIds", "array-contains", user.uid),
+      where("isDeleted", "==", false)
+    );
+  }, [db, groupId, user]);
+  const { data: rawExpenses, isLoading: expensesLoading } = useCollection(groupExpensesQuery);
+
+  // Apply Filtering Logic
+  const filteredExpenses = useMemo(() => {
+    if (!rawExpenses) return [];
+    return rawExpenses.filter(exp => {
+      const date = new Date(exp.date);
+      if (timeFilter === 'TODAY') return isToday(date);
+      if (timeFilter === 'MONTH') return isThisMonth(date);
+      return true;
+    });
+  }, [rawExpenses, timeFilter]);
+
+  // Visual 1: Category Distribution (Pie)
+  const pieData = useMemo(() => {
+    const categories: Record<string, number> = {};
+    filteredExpenses.forEach(exp => {
+      categories[exp.category] = (categories[exp.category] || 0) + exp.amount;
+    });
+    return Object.entries(categories)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [filteredExpenses]);
+
+  // Visual 2: Daily/Member Spending (Bar)
+  // Let's show daily spending for context
+  const barData = useMemo(() => {
+    const daily: Record<string, number> = {};
+    filteredExpenses.forEach(exp => {
+      const day = format(new Date(exp.date), "MMM dd");
+      daily[day] = (daily[day] || 0) + exp.amount;
+    });
+    return Object.entries(daily)
+      .map(([name, amount]) => ({ name, amount: parseFloat(amount.toFixed(2)) }))
+      .slice(-7); // Last 7 unique days in current set
+  }, [filteredExpenses]);
+
+  if (!mounted) return null;
+
+  const isLoading = groupLoading || expensesLoading;
+
+  return (
+    <div className="flex min-h-screen flex-col md:flex-row bg-background">
+      <Navbar />
+      
+      <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-7xl mx-auto w-full">
+        <header className="mb-8">
+          <Button 
+            variant="ghost" 
+            className="mb-2 -ml-2 text-muted-foreground hover:text-primary gap-2"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Group
+          </Button>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-3xl font-bold font-headline text-primary">
+                {group?.name || "Group"} Insights
+              </h2>
+              <p className="text-muted-foreground">Analysing {filteredExpenses.length} transactions.</p>
+            </div>
+
+            <div className="flex items-center gap-1 bg-muted p-1 rounded-xl w-fit">
+              <Button 
+                variant={timeFilter === 'ALL' ? "secondary" : "ghost"} 
+                size="sm" 
+                className="rounded-lg h-8 text-[10px] uppercase font-bold tracking-widest"
+                onClick={() => setTimeFilter('ALL')}
+              >
+                All Time
+              </Button>
+              <Button 
+                variant={timeFilter === 'MONTH' ? "secondary" : "ghost"} 
+                size="sm" 
+                className="rounded-lg h-8 text-[10px] uppercase font-bold tracking-widest"
+                onClick={() => setTimeFilter('MONTH')}
+              >
+                This Month
+              </Button>
+              <Button 
+                variant={timeFilter === 'TODAY' ? "secondary" : "ghost"} 
+                size="sm" 
+                className="rounded-lg h-8 text-[10px] uppercase font-bold tracking-widest"
+                onClick={() => setTimeFilter('TODAY')}
+              >
+                Today
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        {isLoading ? (
+          <div className="h-[400px] flex items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground font-medium">Processing analytics...</p>
+            </div>
+          </div>
+        ) : filteredExpenses.length === 0 ? (
+          <Card className="border-none shadow-sm bg-card p-12 text-center rounded-2xl">
+            <div className="max-w-xs mx-auto space-y-4">
+              <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto">
+                <Filter className="h-8 w-8" />
+              </div>
+              <h3 className="text-xl font-bold font-headline">No matching data</h3>
+              <p className="text-sm text-muted-foreground">Try adjusting your filters or adding some shared expenses to this group.</p>
+            </div>
+          </Card>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
+              <CardHeader>
+                <CardTitle className="font-headline text-lg">Category Distribution</CardTitle>
+                <CardDescription>Total spent by category in selected period</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px] sm:h-[350px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RePieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <ReTooltip 
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: '1px solid hsl(var(--border))' }}
+                      formatter={(value: number) => [`$${value.toFixed(2)}`, 'Spent']}
+                    />
+                    <ReLegend verticalAlign="bottom" height={36}/>
+                  </RePieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
+              <CardHeader>
+                <CardTitle className="font-headline text-lg">Daily Activity</CardTitle>
+                <CardDescription>Spending breakdown for the most active days</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px] sm:h-[350px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ReBarChart data={barData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                    <XAxis 
+                      dataKey="name" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                    />
+                    <YAxis 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                      tickFormatter={(value) => `$${value}`}
+                    />
+                    <ReTooltip 
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: '1px solid hsl(var(--border))' }}
+                      formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
+                    />
+                    <Bar 
+                      dataKey="amount" 
+                      fill="hsl(var(--primary))" 
+                      radius={[4, 4, 0, 0]} 
+                      barSize={30} 
+                    />
+                  </ReBarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-sm bg-primary text-primary-foreground rounded-2xl md:col-span-2">
+              <CardHeader>
+                <CardTitle className="font-headline text-lg flex items-center gap-2">
+                  Summary Report
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                  <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
+                    <p className="text-[10px] uppercase font-bold opacity-70 tracking-widest mb-1">Total</p>
+                    <p className="text-xl font-bold">${filteredExpenses.reduce((a, b) => a + b.amount, 0).toFixed(2)}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
+                    <p className="text-[10px] uppercase font-bold opacity-70 tracking-widest mb-1">Avg/Exp</p>
+                    <p className="text-xl font-bold">${(filteredExpenses.reduce((a, b) => a + b.amount, 0) / (filteredExpenses.length || 1)).toFixed(2)}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
+                    <p className="text-[10px] uppercase font-bold opacity-70 tracking-widest mb-1">Top Cat</p>
+                    <p className="text-xl font-bold truncate">{pieData[0]?.name || "N/A"}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
+                    <p className="text-[10px] uppercase font-bold opacity-70 tracking-widest mb-1">Entries</p>
+                    <p className="text-xl font-bold">{filteredExpenses.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

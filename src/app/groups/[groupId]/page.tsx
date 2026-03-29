@@ -1,3 +1,4 @@
+
 "use client";
 
 import { use, useEffect, useState } from "react";
@@ -19,7 +20,8 @@ import {
   Edit2,
   FileText,
   UserPlus,
-  User as UserIcon
+  User as UserIcon,
+  BarChart3
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
@@ -207,9 +209,22 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         </header>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
-          <Card className="border-none shadow-sm bg-card rounded-2xl">
+          <Card className="border-none shadow-sm bg-card rounded-2xl relative overflow-hidden group/card">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Spending</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Spending</CardTitle>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  asChild
+                  className="h-7 px-2 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10 rounded-lg opacity-0 group-hover/card:opacity-100 transition-opacity"
+                >
+                  <Link href={`/groups/${groupId}/analytics`}>
+                    <BarChart3 className="h-3 w-3 mr-1" />
+                    Analyse
+                  </Link>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-primary">${totalSpent.toFixed(2)}</div>
