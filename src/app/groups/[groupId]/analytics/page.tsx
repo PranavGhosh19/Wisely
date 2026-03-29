@@ -13,12 +13,13 @@ import {
 import { useStore } from "@/lib/store";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
 import { collection, query, where, doc } from "firebase/firestore";
-import { format, isToday, isThisMonth, startOfDay, startOfMonth } from "date-fns";
-import { ArrowLeft, Filter, Loader2 } from "lucide-react";
+import { format, isToday, isThisMonth } from "date-fns";
+import { ArrowLeft, Filter, Loader2, Users, User } from "lucide-react";
 
 const COLORS = ['#3D737F', '#CEC7BF', '#07161B', '#5A9BA8', '#8FBABF', '#A89E92'];
 
 type TimeFilter = 'ALL' | 'MONTH' | 'TODAY';
+type ScopeFilter = 'GROUP' | 'MYSELF';
 
 export default function GroupAnalyticsPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -26,6 +27,7 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
   const { user } = useStore();
   const db = useFirestore();
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('ALL');
+  const [scopeFilter, setScopeFilter] = useState<ScopeFilter>('GROUP');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -55,11 +57,19 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
     if (!rawExpenses) return [];
     return rawExpenses.filter(exp => {
       const date = new Date(exp.date);
-      if (timeFilter === 'TODAY') return isToday(date);
-      if (timeFilter === 'MONTH') return isThisMonth(date);
-      return true;
+      
+      // Time check
+      let timeMatch = true;
+      if (timeFilter === 'TODAY') timeMatch = isToday(date);
+      else if (timeFilter === 'MONTH') timeMatch = isThisMonth(date);
+
+      // Scope check
+      let scopeMatch = true;
+      if (scopeFilter === 'MYSELF') scopeMatch = exp.paidBy === user?.uid;
+
+      return timeMatch && scopeMatch;
     });
-  }, [rawExpenses, timeFilter]);
+  }, [rawExpenses, timeFilter, scopeFilter, user]);
 
   // Visual 1: Category Distribution (Pie)
   const pieData = useMemo(() => {
@@ -73,7 +83,6 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
   }, [filteredExpenses]);
 
   // Visual 2: Daily/Member Spending (Bar)
-  // Let's show daily spending for context
   const barData = useMemo(() => {
     const daily: Record<string, number> = {};
     filteredExpenses.forEach(exp => {
@@ -82,7 +91,7 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
     });
     return Object.entries(daily)
       .map(([name, amount]) => ({ name, amount: parseFloat(amount.toFixed(2)) }))
-      .slice(-7); // Last 7 unique days in current set
+      .slice(-7); 
   }, [filteredExpenses]);
 
   if (!mounted) return null;
@@ -103,7 +112,7 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
             <ArrowLeft className="h-4 w-4" />
             Back to Group
           </Button>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-3xl font-bold font-headline text-primary">
                 {group?.name || "Group"} Insights
@@ -111,31 +120,54 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
               <p className="text-muted-foreground">Analysing {filteredExpenses.length} transactions.</p>
             </div>
 
-            <div className="flex items-center gap-1 bg-muted p-1 rounded-xl w-fit">
-              <Button 
-                variant={timeFilter === 'ALL' ? "secondary" : "ghost"} 
-                size="sm" 
-                className="rounded-lg h-8 text-[10px] uppercase font-bold tracking-widest"
-                onClick={() => setTimeFilter('ALL')}
-              >
-                All Time
-              </Button>
-              <Button 
-                variant={timeFilter === 'MONTH' ? "secondary" : "ghost"} 
-                size="sm" 
-                className="rounded-lg h-8 text-[10px] uppercase font-bold tracking-widest"
-                onClick={() => setTimeFilter('MONTH')}
-              >
-                This Month
-              </Button>
-              <Button 
-                variant={timeFilter === 'TODAY' ? "secondary" : "ghost"} 
-                size="sm" 
-                className="rounded-lg h-8 text-[10px] uppercase font-bold tracking-widest"
-                onClick={() => setTimeFilter('TODAY')}
-              >
-                Today
-              </Button>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-1 bg-muted p-1 rounded-xl w-fit self-end">
+                <Button 
+                  variant={scopeFilter === 'GROUP' ? "secondary" : "ghost"} 
+                  size="sm" 
+                  className="rounded-lg h-8 text-[10px] uppercase font-bold tracking-widest gap-1.5"
+                  onClick={() => setScopeFilter('GROUP')}
+                >
+                  <Users className="h-3 w-3" />
+                  Entire Group
+                </Button>
+                <Button 
+                  variant={scopeFilter === 'MYSELF' ? "secondary" : "ghost"} 
+                  size="sm" 
+                  className="rounded-lg h-8 text-[10px] uppercase font-bold tracking-widest gap-1.5"
+                  onClick={() => setScopeFilter('MYSELF')}
+                >
+                  <User className="h-3 w-3" />
+                  Only Me
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-1 bg-muted p-1 rounded-xl w-fit self-end">
+                <Button 
+                  variant={timeFilter === 'ALL' ? "secondary" : "ghost"} 
+                  size="sm" 
+                  className="rounded-lg h-8 text-[10px] uppercase font-bold tracking-widest"
+                  onClick={() => setTimeFilter('ALL')}
+                >
+                  All Time
+                </Button>
+                <Button 
+                  variant={timeFilter === 'MONTH' ? "secondary" : "ghost"} 
+                  size="sm" 
+                  className="rounded-lg h-8 text-[10px] uppercase font-bold tracking-widest"
+                  onClick={() => setTimeFilter('MONTH')}
+                >
+                  This Month
+                </Button>
+                <Button 
+                  variant={timeFilter === 'TODAY' ? "secondary" : "ghost"} 
+                  size="sm" 
+                  className="rounded-lg h-8 text-[10px] uppercase font-bold tracking-widest"
+                  onClick={() => setTimeFilter('TODAY')}
+                >
+                  Today
+                </Button>
+              </div>
             </div>
           </div>
         </header>
@@ -162,7 +194,9 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="font-headline text-lg">Category Distribution</CardTitle>
-                <CardDescription>Total spent by category in selected period</CardDescription>
+                <CardDescription>
+                  {scopeFilter === 'GROUP' ? 'Total spent' : 'Your spending'} by category
+                </CardDescription>
               </CardHeader>
               <CardContent className="h-[300px] sm:h-[350px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -193,7 +227,9 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="font-headline text-lg">Daily Activity</CardTitle>
-                <CardDescription>Spending breakdown for the most active days</CardDescription>
+                <CardDescription>
+                  {scopeFilter === 'GROUP' ? 'Group activity' : 'Your activity'} across recent dates
+                </CardDescription>
               </CardHeader>
               <CardContent className="h-[300px] sm:h-[350px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -229,7 +265,7 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
             <Card className="border-none shadow-sm bg-primary text-primary-foreground rounded-2xl md:col-span-2">
               <CardHeader>
                 <CardTitle className="font-headline text-lg flex items-center gap-2">
-                  Summary Report
+                  Summary Report {scopeFilter === 'MYSELF' && "(Personal Share)"}
                 </CardTitle>
               </CardHeader>
               <CardContent>
