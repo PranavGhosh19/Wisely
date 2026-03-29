@@ -86,16 +86,6 @@ export default function GroupsPage() {
                 </CardHeader>
               </Card>
             ))}
-            
-            <button 
-              onClick={() => setIsCreateOpen(true)}
-              className="flex items-center gap-4 px-6 h-24 rounded-2xl border-2 border-dashed border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/5 transition-all group"
-            >
-              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                <Plus className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
-              </div>
-              <p className="font-bold text-muted-foreground group-hover:text-primary">Create New Group</p>
-            </button>
           </div>
         )}
 
