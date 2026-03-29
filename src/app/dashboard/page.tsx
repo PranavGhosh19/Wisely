@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -64,7 +63,7 @@ export default function Dashboard() {
           </div>
           <Button 
             asChild
-            className="bg-primary hover:bg-primary/90 gap-2 h-11 md:h-10 text-base md:text-sm font-semibold rounded-xl transition-all active:scale-95"
+            className="hidden md:flex bg-primary hover:bg-primary/90 gap-2 h-10 text-sm font-semibold rounded-xl transition-all active:scale-95"
           >
             <Link href="/expenses/add">
               <Plus className="h-5 w-5" />

@@ -196,7 +196,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             </div>
             <Button 
               asChild
-              className="bg-primary hover:bg-primary/90 gap-2 h-11 rounded-xl font-bold px-6 transition-all active:scale-95"
+              className="hidden md:flex bg-primary hover:bg-primary/90 gap-2 h-11 rounded-xl font-bold px-6 transition-all active:scale-95"
             >
               <Link href={`/expenses/add?type=GROUP&groupId=${groupId}`}>
                 <Plus className="h-5 w-5" />
