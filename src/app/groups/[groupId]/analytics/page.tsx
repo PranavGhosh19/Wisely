@@ -52,45 +52,55 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
   }, [db, groupId, user]);
   const { data: rawExpenses, isLoading: expensesLoading } = useCollection(groupExpensesQuery);
 
-  // Apply Filtering Logic
+  // Apply Filtering and Processing Logic
   const filteredExpenses = useMemo(() => {
-    if (!rawExpenses) return [];
-    return rawExpenses.filter(exp => {
-      const date = new Date(exp.date);
-      
-      // Time check
-      let timeMatch = true;
-      if (timeFilter === 'TODAY') timeMatch = isToday(date);
-      else if (timeFilter === 'MONTH') timeMatch = isThisMonth(date);
+    if (!rawExpenses || !user) return [];
+    
+    return rawExpenses
+      .map(exp => {
+        // Calculate the user's individual share for this expense
+        const userShare = exp.splitBetween?.find((s: any) => s.userId === user.uid)?.amount || 0;
+        return {
+          ...exp,
+          displayAmount: scopeFilter === 'GROUP' ? exp.amount : userShare
+        };
+      })
+      .filter(exp => {
+        const date = new Date(exp.date);
+        
+        // Time filter check
+        let timeMatch = true;
+        if (timeFilter === 'TODAY') timeMatch = isToday(date);
+        else if (timeFilter === 'MONTH') timeMatch = isThisMonth(date);
 
-      // Scope check
-      let scopeMatch = true;
-      if (scopeFilter === 'MYSELF') scopeMatch = exp.paidBy === user?.uid;
+        // In "Only Me" mode, we only care about expenses where the user has a non-zero share
+        if (scopeFilter === 'MYSELF' && exp.displayAmount <= 0) return false;
 
-      return timeMatch && scopeMatch;
-    });
+        return timeMatch;
+      });
   }, [rawExpenses, timeFilter, scopeFilter, user]);
 
   // Visual 1: Category Distribution (Pie)
   const pieData = useMemo(() => {
     const categories: Record<string, number> = {};
     filteredExpenses.forEach(exp => {
-      categories[exp.category] = (categories[exp.category] || 0) + exp.amount;
+      categories[exp.category] = (categories[exp.category] || 0) + exp.displayAmount;
     });
     return Object.entries(categories)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
   }, [filteredExpenses]);
 
-  // Visual 2: Daily/Member Spending (Bar)
+  // Visual 2: Daily Spending (Bar)
   const barData = useMemo(() => {
     const daily: Record<string, number> = {};
     filteredExpenses.forEach(exp => {
       const day = format(new Date(exp.date), "MMM dd");
-      daily[day] = (daily[day] || 0) + exp.amount;
+      daily[day] = (daily[day] || 0) + exp.displayAmount;
     });
     return Object.entries(daily)
       .map(([name, amount]) => ({ name, amount: parseFloat(amount.toFixed(2)) }))
+      .sort((a, b) => new Date(a.name).getTime() - new Date(b.name).getTime())
       .slice(-7); 
   }, [filteredExpenses]);
 
@@ -195,7 +205,7 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
               <CardHeader>
                 <CardTitle className="font-headline text-lg">Category Distribution</CardTitle>
                 <CardDescription>
-                  {scopeFilter === 'GROUP' ? 'Total spent' : 'Your spending'} by category
+                  {scopeFilter === 'GROUP' ? 'Total spent' : 'Your share'} by category
                 </CardDescription>
               </CardHeader>
               <CardContent className="h-[300px] sm:h-[350px]">
@@ -216,7 +226,7 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
                     </Pie>
                     <ReTooltip 
                       contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: '1px solid hsl(var(--border))' }}
-                      formatter={(value: number) => [`$${value.toFixed(2)}`, 'Spent']}
+                      formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
                     />
                     <ReLegend verticalAlign="bottom" height={36}/>
                   </RePieChart>
@@ -226,9 +236,9 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
 
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
               <CardHeader>
-                <CardTitle className="font-headline text-lg">Daily Activity</CardTitle>
+                <CardTitle className="font-headline text-lg">Spending Activity</CardTitle>
                 <CardDescription>
-                  {scopeFilter === 'GROUP' ? 'Group activity' : 'Your activity'} across recent dates
+                  {scopeFilter === 'GROUP' ? 'Group activity' : 'Your individual share'} over time
                 </CardDescription>
               </CardHeader>
               <CardContent className="h-[300px] sm:h-[350px]">
@@ -265,18 +275,18 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
             <Card className="border-none shadow-sm bg-primary text-primary-foreground rounded-2xl md:col-span-2">
               <CardHeader>
                 <CardTitle className="font-headline text-lg flex items-center gap-2">
-                  Summary Report {scopeFilter === 'MYSELF' && "(Personal Share)"}
+                  Summary Report {scopeFilter === 'MYSELF' && "(Your Individual Share)"}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                   <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
                     <p className="text-[10px] uppercase font-bold opacity-70 tracking-widest mb-1">Total</p>
-                    <p className="text-xl font-bold">${filteredExpenses.reduce((a, b) => a + b.amount, 0).toFixed(2)}</p>
+                    <p className="text-xl font-bold">${filteredExpenses.reduce((a, b) => a + b.displayAmount, 0).toFixed(2)}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
                     <p className="text-[10px] uppercase font-bold opacity-70 tracking-widest mb-1">Avg/Exp</p>
-                    <p className="text-xl font-bold">${(filteredExpenses.reduce((a, b) => a + b.amount, 0) / (filteredExpenses.length || 1)).toFixed(2)}</p>
+                    <p className="text-xl font-bold">${(filteredExpenses.reduce((a, b) => a + b.displayAmount, 0) / (filteredExpenses.length || 1)).toFixed(2)}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
                     <p className="text-[10px] uppercase font-bold opacity-70 tracking-widest mb-1">Top Cat</p>
