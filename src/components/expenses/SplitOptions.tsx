@@ -29,15 +29,14 @@ export function SplitOptions({
 }: SplitOptionsProps) {
   const [activeType, setActiveType] = useState<SplitType>(initialSplitType || 'EQUAL');
   
-  // State for different split modes
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(() => {
     if (initialSplitBetween && initialSplitBetween.length > 0) {
-      return new Set(initialSplitBetween.filter(s => s.amount > 0).map(s => s.userId));
+      const active = initialSplitBetween.filter(s => s.amount > 0).map(s => s.userId);
+      return active.length > 0 ? new Set(active) : new Set(members.map(m => m.uid));
     }
     return new Set(members.map(m => m.uid));
   });
 
-  // Store values (amounts, percentages, or weights) for each member
   const [values, setValues] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
     members.forEach(m => {
@@ -80,14 +79,12 @@ export function SplitOptions({
     }
   };
 
-  // Calculations for Summary & Validation
   const totals = useMemo(() => {
     let sum = 0;
     Object.values(values).forEach(v => sum += Number(v || 0));
     
     const remaining = activeType === 'PERCENTAGE' ? 100 - sum : totalAmount - sum;
     
-    // Validation rules
     let isValid = false;
     if (activeType === 'EQUAL') {
       isValid = selectedUserIds.size > 0;
@@ -123,12 +120,19 @@ export function SplitOptions({
         amount = totalWeight > 0 ? (val / totalWeight) * totalAmount : 0;
       }
 
-      return {
+      // CRITICAL: Ensure no undefined fields are returned
+      const member: SplitMember = {
         userId: m.uid,
-        amount: parseFloat(amount.toFixed(2)),
-        percentage: activeType === 'PERCENTAGE' ? val : undefined,
-        weight: activeType === 'WEIGHT' ? val : undefined
+        amount: parseFloat(amount.toFixed(2))
       };
+
+      if (activeType === 'PERCENTAGE') {
+        member.percentage = val;
+      } else if (activeType === 'WEIGHT') {
+        member.weight = val;
+      }
+
+      return member;
     });
 
     onDone(activeType, splitBetween);
@@ -208,7 +212,7 @@ export function SplitOptions({
                   >
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                        {member.name[0]}
+                        {member.name?.[0] || "?"}
                       </div>
                       <span className="font-bold text-sm text-foreground">
                         {member.name}

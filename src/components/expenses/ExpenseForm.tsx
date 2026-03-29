@@ -131,7 +131,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         id: expenseId,
         amount: amount,
         category: formData.category,
-        notes: formData.notes,
+        notes: formData.notes || "",
         date: new Date(formData.date).getTime(),
         type: expenseType,
         createdBy: user.name,
@@ -139,8 +139,8 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         paidBy: formData.paidBy || user.uid,
         splitType: formData.splitType,
         splitBetween: formData.splitBetween,
-        receiptName: formData.receiptName,
-        receiptUrl: formData.receiptUrl,
+        receiptName: formData.receiptName || "",
+        receiptUrl: formData.receiptUrl || "",
         isDeleted: false,
       };
 
@@ -153,10 +153,9 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         expenseData.groupId = formData.groupId;
         expenseData.groupMemberIds = selectedGroup.members;
 
-        // If split hasn't been configured by user, default to equal split
         if (formData.splitBetween.length === 0) {
           const members = selectedGroup.members || [];
-          const splitAmount = amount / members.length;
+          const splitAmount = amount / (members.length || 1);
           expenseData.splitBetween = members.map(uid => ({
             userId: uid,
             amount: parseFloat(splitAmount.toFixed(2))
