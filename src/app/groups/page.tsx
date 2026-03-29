@@ -4,9 +4,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, ArrowRight, UserPlus, HelpCircle } from "lucide-react";
+import { Plus, Users, HelpCircle } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { CreateGroupDialog } from "@/components/groups/CreateGroupDialog";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
@@ -58,7 +58,7 @@ export default function GroupsPage() {
         {isLoading ? (
           <div className="py-20 flex justify-center"><div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" /></div>
         ) : !groups || groups.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl shadow-sm border-2 border-dashed border-muted">
+          <div className="flex flex-col items-center justify-center py-20 text-center bg-card rounded-2xl shadow-sm border-2 border-dashed border-muted">
             <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center mb-6">
               <Users className="h-10 w-10 text-muted-foreground" />
             </div>
@@ -71,44 +71,28 @@ export default function GroupsPage() {
             </Button>
           </div>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {groups.map((group) => (
               <Card 
                 key={group.id} 
-                className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-white group rounded-2xl"
+                className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-card group rounded-2xl h-24 flex flex-col justify-center overflow-hidden"
                 onClick={() => router.push(`/groups/${group.id}`)}
               >
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="font-headline text-lg font-bold">{group.name}</CardTitle>
-                  <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-6">
+                  <CardTitle className="font-headline text-lg font-bold text-foreground truncate max-w-[75%]">{group.name}</CardTitle>
+                  <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center text-primary shrink-0 transition-transform group-hover:scale-110">
                     <Users className="h-5 w-5" />
                   </div>
                 </CardHeader>
-                <CardContent className="pb-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                    <UserPlus className="h-4 w-4" />
-                    {group.members?.length || 0} Members
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Collaboration</span>
-                    <span className="text-sm font-medium text-accent">Active tracking enabled</span>
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-0">
-                  <Button variant="ghost" className="w-full text-primary hover:bg-primary/5 gap-2 group-hover:translate-x-1 transition-transform font-bold rounded-xl">
-                    View Group
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </CardFooter>
               </Card>
             ))}
             
             <button 
               onClick={() => setIsCreateOpen(true)}
-              className="flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/5 transition-all group min-h-[220px]"
+              className="flex items-center gap-4 px-6 h-24 rounded-2xl border-2 border-dashed border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/5 transition-all group"
             >
-              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4 group-hover:bg-primary/10 transition-colors">
-                <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary" />
+              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <Plus className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
               </div>
               <p className="font-bold text-muted-foreground group-hover:text-primary">Create New Group</p>
             </button>
