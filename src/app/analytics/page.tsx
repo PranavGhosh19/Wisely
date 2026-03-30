@@ -13,6 +13,7 @@ import { useStore } from "@/lib/store";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, collectionGroup, query, where } from "firebase/firestore";
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+import { PieChart } from "lucide-react";
 
 const COLORS = ['#3D737F', '#CEC7BF', '#07161B', '#5A9BA8', '#8FBABF', '#A89E92'];
 
