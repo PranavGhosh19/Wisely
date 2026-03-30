@@ -154,14 +154,30 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         expenseData.groupId = formData.groupId;
         expenseData.groupMemberIds = selectedGroup.members;
 
-        if (formData.splitBetween.length === 0) {
+        // Ensure splitBetween amounts are synchronized with the total amount
+        if (formData.splitType === 'EQUAL' || formData.splitBetween.length === 0) {
           const members = selectedGroup.members || [];
           const splitAmount = amount / (members.length || 1);
           expenseData.splitBetween = members.map(uid => ({
             userId: uid,
             amount: parseFloat(splitAmount.toFixed(2))
           }));
+        } else if (formData.splitType === 'PERCENTAGE') {
+          expenseData.splitBetween = formData.splitBetween.map(s => ({
+            ...s,
+            amount: parseFloat(((s.percentage || 0) / 100 * amount).toFixed(2))
+          }));
+        } else if (formData.splitType === 'WEIGHT') {
+          const totalWeight = formData.splitBetween.reduce((acc, s) => acc + (s.weight || 0), 0);
+          expenseData.splitBetween = formData.splitBetween.map(s => ({
+            ...s,
+            amount: parseFloat(((s.weight || 0) / (totalWeight || 1) * amount).toFixed(2))
+          }));
+        } else {
+          // For UNEQUAL, we trust the current amounts in splitBetween
+          expenseData.splitBetween = formData.splitBetween;
         }
+
         docRef = doc(db, "groups", formData.groupId, "expenses", expenseId);
       }
 
