@@ -1,4 +1,3 @@
-
 "use client";
 
 import { use, useEffect, useState } from "react";
@@ -282,7 +281,11 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             ) : (
               <div className="divide-y divide-muted">
                 {groupExpenses.slice(0, 10).map((expense) => (
-                  <div key={expense.id} className="flex items-center justify-between px-6 py-5 hover:bg-muted/5 transition-colors group">
+                  <Link 
+                    key={expense.id} 
+                    href={`/expenses/${expense.id}?type=${expense.type}&groupId=${groupId}`}
+                    className="flex items-center justify-between px-6 py-5 hover:bg-muted/5 transition-colors group cursor-pointer"
+                  >
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl shrink-0">
                         {expense.category[0] || "💰"}
@@ -308,18 +311,21 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                         <p className="font-bold text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
                         {expense.notes && <p className="text-[11px] text-muted-foreground italic truncate max-w-[150px]">{expense.notes}</p>}
                       </div>
-                      <Button 
-                        asChild
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
-                          <Edit2 className="h-4 w-4 text-muted-foreground" />
-                        </Link>
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          asChild
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
+                            <Edit2 className="h-4 w-4 text-muted-foreground" />
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

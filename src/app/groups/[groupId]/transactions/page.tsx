@@ -1,4 +1,3 @@
-
 "use client";
 
 import { use, useEffect, useState } from "react";
@@ -105,7 +104,11 @@ export default function GroupTransactionsPage({ params }: { params: Promise<{ gr
             ) : (
               <div className="divide-y divide-muted">
                 {filteredExpenses.map((expense) => (
-                  <div key={expense.id} className="flex items-center justify-between px-6 py-5 hover:bg-muted/5 transition-colors group">
+                  <Link 
+                    key={expense.id} 
+                    href={`/expenses/${expense.id}?type=${expense.type}&groupId=${groupId}`}
+                    className="flex items-center justify-between px-6 py-5 hover:bg-muted/5 transition-colors group cursor-pointer"
+                  >
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl shrink-0">
                         {expense.category[0] || "💰"}
@@ -136,13 +139,14 @@ export default function GroupTransactionsPage({ params }: { params: Promise<{ gr
                         variant="ghost" 
                         size="icon" 
                         className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
                           <Edit2 className="h-4 w-4 text-muted-foreground" />
                         </Link>
                       </Button>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

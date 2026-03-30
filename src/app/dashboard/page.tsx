@@ -102,7 +102,9 @@ export default function Dashboard() {
             <Card className="border-none shadow-sm bg-card h-full rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between pb-4">
                 <CardTitle className="font-headline text-lg font-bold">Recent Personal Activity</CardTitle>
-                <Button variant="link" className="text-accent text-sm font-bold p-0">View All</Button>
+                <Button variant="link" className="text-accent text-sm font-bold p-0" asChild>
+                   <Link href="/analytics">View All</Link>
+                </Button>
               </CardHeader>
               <CardContent className="px-0 sm:px-6">
                 <div className="divide-y divide-muted">
@@ -118,7 +120,11 @@ export default function Dashboard() {
                     </div>
                   ) : (
                     activeExpenses.map((expense) => (
-                      <div key={expense.id} className="flex items-center justify-between p-4 sm:p-0 sm:py-6 first:pt-0 last:pb-0 group transition-colors">
+                      <Link 
+                        key={expense.id} 
+                        href={`/expenses/${expense.id}?type=${expense.type}`}
+                        className="flex items-center justify-between p-4 sm:p-0 sm:py-6 first:pt-0 last:pb-0 group transition-colors hover:bg-muted/5 cursor-pointer"
+                      >
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center bg-primary/10 text-primary">
                             {expense.category[0] || "💰"}
@@ -136,7 +142,7 @@ export default function Dashboard() {
                           <p className="font-bold text-base sm:text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
                           {expense.notes && <p className="text-[11px] text-muted-foreground truncate max-w-[100px] sm:max-w-[150px]">{expense.notes}</p>}
                         </div>
-                      </div>
+                      </Link>
                     ))
                   )}
                 </div>
