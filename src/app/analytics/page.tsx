@@ -16,6 +16,49 @@ import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from "d
 
 const COLORS = ['#3D737F', '#CEC7BF', '#07161B', '#5A9BA8', '#8FBABF', '#A89E92'];
 
+/**
+ * Custom label renderer for the Pie chart to show labels outside with connecting lines.
+ */
+const renderCustomizedLabel = (props: any) => {
+  const { cx, cy, midAngle, outerRadius, index, name, value } = props;
+  const RADIAN = Math.PI / 180;
+  const sin = Math.sin(-RADIAN * midAngle);
+  const cos = Math.cos(-RADIAN * midAngle);
+  const sx = cx + (outerRadius + 5) * cos;
+  const sy = cy + (outerRadius + 5) * sin;
+  const mx = cx + (outerRadius + 20) * cos;
+  const my = cy + (outerRadius + 20) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 22;
+  const ey = my;
+  const textAnchor = cos >= 0 ? 'start' : 'end';
+
+  return (
+    <g>
+      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={COLORS[index % COLORS.length]} fill="none" strokeWidth={1} />
+      <circle cx={ex} cy={ey} r={2} fill={COLORS[index % COLORS.length]} stroke="none" />
+      <text 
+        x={ex + (cos >= 0 ? 1 : -1) * 8} 
+        y={ey} 
+        textAnchor={textAnchor} 
+        fill="hsl(var(--foreground))" 
+        style={{ fontSize: '10px', fontWeight: 'bold' }}
+      >
+        {name}
+      </text>
+      <text 
+        x={ex + (cos >= 0 ? 1 : -1) * 8} 
+        y={ey} 
+        dy={12} 
+        textAnchor={textAnchor} 
+        fill="hsl(var(--muted-foreground))" 
+        style={{ fontSize: '9px' }}
+      >
+        {`$${value.toFixed(0)}`}
+      </text>
+    </g>
+  );
+};
+
 export default function AnalyticsPage() {
   const { user } = useStore();
   const db = useFirestore();
@@ -36,7 +79,6 @@ export default function AnalyticsPage() {
   const { data: personalExpenses, isLoading: loadingPersonal } = useCollection(personalQuery);
 
   // Fetch Group Expenses across all groups using Collection Group
-  // Matches the /{path=**}/expenses/{expenseId} security rule
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -122,7 +164,7 @@ export default function AnalyticsPage() {
           <Card className="border-none shadow-sm bg-card p-12 text-center rounded-2xl">
             <div className="max-w-xs mx-auto space-y-4">
               <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto">
-                <RePieChart className="h-8 w-8" />
+                <PieChart className="h-8 w-8" />
               </div>
               <h3 className="text-xl font-bold font-headline">No data to visualize yet</h3>
               <p className="text-sm text-muted-foreground">Add some expenses to see your spending distribution and trends here.</p>
@@ -135,9 +177,9 @@ export default function AnalyticsPage() {
                 <CardTitle className="font-headline text-lg">Category Distribution</CardTitle>
                 <CardDescription>Total spending by category across all records</CardDescription>
               </CardHeader>
-              <CardContent className="h-[300px] sm:h-[350px]">
+              <CardContent className="h-[350px] sm:h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <RePieChart>
+                  <RePieChart margin={{ top: 20, right: 30, left: 30, bottom: 20 }}>
                     <Pie
                       data={pieData}
                       cx="50%"
@@ -146,6 +188,8 @@ export default function AnalyticsPage() {
                       outerRadius={80}
                       paddingAngle={5}
                       dataKey="value"
+                      label={renderCustomizedLabel}
+                      labelLine={false}
                     >
                       {pieData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -155,7 +199,6 @@ export default function AnalyticsPage() {
                       contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: '1px solid hsl(var(--border))' }}
                       formatter={(value: number) => [`$${value.toFixed(2)}`, 'Spent']}
                     />
-                    <ReLegend verticalAlign="bottom" height={36}/>
                   </RePieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -166,7 +209,7 @@ export default function AnalyticsPage() {
                 <CardTitle className="font-headline text-lg">Spending Trend</CardTitle>
                 <CardDescription>Total monthly spending over the last 6 months</CardDescription>
               </CardHeader>
-              <CardContent className="h-[300px] sm:h-[350px]">
+              <CardContent className="h-[350px] sm:h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <ReLineChart data={trendData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
