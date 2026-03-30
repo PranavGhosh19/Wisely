@@ -47,7 +47,7 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
+      <nav className="sticky top-0 z-50 w-full border-b border-white/5 bg-background/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold">W</div>
@@ -92,7 +92,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="mt-20 relative max-w-5xl mx-auto rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white">
+          <div className="mt-20 relative max-w-5xl mx-auto rounded-[2rem] overflow-hidden shadow-2xl border-8 border-card">
             {heroImage && (
               <Image 
                 src={heroImage.imageUrl}
@@ -112,7 +112,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 bg-white">
+      <section id="features" className="py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-3xl md:text-4xl font-bold font-headline text-primary">Everything you need to stay on track</h2>
@@ -137,7 +137,7 @@ export default function LandingPage() {
                 ))}
               </ul>
             </div>
-            <div className="rounded-3xl overflow-hidden shadow-xl">
+            <div className="rounded-3xl overflow-hidden shadow-xl border border-white/5">
               {personalImage && (
                 <Image 
                   src={personalImage.imageUrl}
@@ -169,7 +169,7 @@ export default function LandingPage() {
                 ))}
               </ul>
             </div>
-            <div className="lg:order-1 rounded-3xl overflow-hidden shadow-xl">
+            <div className="lg:order-1 rounded-3xl overflow-hidden shadow-xl border border-white/5">
               {groupImage && (
                 <Image 
                   src={groupImage.imageUrl}
@@ -186,7 +186,7 @@ export default function LandingPage() {
       </section>
 
       {/* Analytics CTA */}
-      <section className="py-24 bg-primary text-white overflow-hidden relative">
+      <section className="py-24 bg-primary text-primary-foreground overflow-hidden relative">
         <div className="container mx-auto px-4 relative z-10 text-center">
           <div className="max-w-3xl mx-auto space-y-8">
             <PieChart className="h-16 w-16 mx-auto opacity-50" />
@@ -223,7 +223,7 @@ export default function LandingPage() {
                 desc: "We don't sell your data. Your financial life is your business." 
               }
             ].map((feature, i) => (
-              <div key={i} className="space-y-4 p-8 rounded-3xl bg-white shadow-sm border border-border/50">
+              <div key={i} className="space-y-4 p-8 rounded-3xl bg-card border border-white/5 shadow-sm">
                 <div className="h-12 w-12 rounded-xl bg-primary/5 flex items-center justify-center text-primary">
                   <feature.icon className="h-6 w-6" />
                 </div>
@@ -236,7 +236,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t bg-white">
+      <footer className="py-12 border-t border-white/5 bg-background">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="flex items-center gap-2">
