@@ -75,7 +75,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     }
   }, [mounted, shouldShowJoin, group, isMember]);
 
-  // UseCollection for group expenses
+  // UseCollection for group expenses - limiting to recent for summary view
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !groupId || !user || !isMember) return null;
     return query(
@@ -262,8 +262,11 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         </div>
 
         <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
-          <CardHeader className="border-b px-6 py-4">
+          <CardHeader className="border-b px-6 py-4 flex flex-row items-center justify-between">
             <CardTitle className="font-headline text-lg font-bold">Group Activity</CardTitle>
+            <Button variant="link" asChild className="text-accent font-bold p-0 h-auto">
+              <Link href={`/groups/${groupId}/transactions`}>View all transaction</Link>
+            </Button>
           </CardHeader>
           <CardContent className="p-0">
             {expensesLoading ? (
@@ -278,7 +281,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               </div>
             ) : (
               <div className="divide-y divide-muted">
-                {groupExpenses.map((expense) => (
+                {groupExpenses.slice(0, 10).map((expense) => (
                   <div key={expense.id} className="flex items-center justify-between px-6 py-5 hover:bg-muted/5 transition-colors group">
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl shrink-0">
