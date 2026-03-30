@@ -22,12 +22,14 @@ function GroupCard({ group, userId }: { group: any; userId: string }) {
   const db = useFirestore();
 
   const expensesQuery = useMemoFirebase(() => {
-    if (!db || !group.id) return null;
+    if (!db || !group.id || !userId) return null;
     return query(
       collection(db, "groups", group.id, "expenses"),
+      // Security Requirement: Must filter by groupMemberIds to match security rules for list operations
+      where("groupMemberIds", "array-contains", userId),
       where("isDeleted", "==", false)
     );
-  }, [db, group.id]);
+  }, [db, group.id, userId]);
 
   const { data: expenses, isLoading } = useCollection(expensesQuery);
 
