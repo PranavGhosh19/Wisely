@@ -47,6 +47,16 @@ export default function GroupTransactionsPage({ params }: { params: Promise<{ gr
   }, [db, groupId, user, isMember]);
   const { data: groupExpenses, isLoading } = useCollection(groupExpensesQuery);
 
+  // Fetch member profiles to show actual payer names
+  const membersQuery = useMemoFirebase(() => {
+    if (!db || !group?.members || group.members.length === 0) return null;
+    return query(
+      collection(db, "users"),
+      where("uid", "in", group.members.slice(0, 30))
+    );
+  }, [db, group?.members]);
+  const { data: memberProfiles } = useCollection(membersQuery);
+
   // Filter based on search term
   const filteredExpenses = (groupExpenses || []).filter(exp => 
     exp.category.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -104,54 +114,60 @@ export default function GroupTransactionsPage({ params }: { params: Promise<{ gr
               </div>
             ) : (
               <div className="divide-y divide-muted">
-                {filteredExpenses.map((expense) => (
-                  <div 
-                    key={expense.id} 
-                    className="group flex items-center hover:bg-muted/5 transition-colors"
-                  >
-                    <Link 
-                      href={`/expenses/${expense.id}?type=${expense.type}&groupId=${groupId}`}
-                      className="flex-1 flex items-center justify-between px-6 py-5 min-w-0"
+                {filteredExpenses.map((expense) => {
+                  const payerName = expense.paidBy === user?.uid 
+                    ? "You" 
+                    : (memberProfiles?.find(m => m.uid === expense.paidBy)?.name || "Member");
+
+                  return (
+                    <div 
+                      key={expense.id} 
+                      className="group flex items-center hover:bg-muted/5 transition-colors"
                     >
-                      <div className="flex items-center gap-4 min-w-0">
-                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl shrink-0">
-                          {expense.category[0] || "💰"}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <p className="font-bold text-base truncate">{expense.category}</p>
-                            {expense.receiptUrl && <FileText className="h-3.5 w-3.5 text-accent" title="Has receipt" />}
-                          </div>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[11px] font-medium text-muted-foreground uppercase whitespace-nowrap">
-                              {format(expense.date, "MMM dd, yyyy")}
-                            </span>
-                            <span className="h-0.5 w-0.5 bg-muted-foreground rounded-full"></span>
-                            <span className="text-[10px] uppercase font-bold text-accent truncate">
-                              {expense.paidBy === user?.uid ? "You paid" : "Member paid"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0 px-4">
-                        <p className="font-bold text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
-                        {expense.notes && <p className="text-[11px] text-muted-foreground italic truncate max-w-[150px]">{expense.notes}</p>}
-                      </div>
-                    </Link>
-                    <div className="pr-6 shrink-0">
-                      <Button 
-                        asChild
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      <Link 
+                        href={`/expenses/${expense.id}?type=${expense.type}&groupId=${groupId}`}
+                        className="flex-1 flex items-center justify-between px-6 py-5 min-w-0"
                       >
-                        <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
-                          <Edit2 className="h-4 w-4 text-muted-foreground" />
-                        </Link>
-                      </Button>
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl shrink-0">
+                            {expense.category[0] || "💰"}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-bold text-base truncate">{expense.category}</p>
+                              {expense.receiptUrl && <FileText className="h-3.5 w-3.5 text-accent" title="Has receipt" />}
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[11px] font-medium text-muted-foreground uppercase whitespace-nowrap">
+                                {format(expense.date, "MMM dd, yyyy")}
+                              </span>
+                              <span className="h-0.5 w-0.5 bg-muted-foreground rounded-full"></span>
+                              <span className="text-[10px] uppercase font-bold text-accent truncate">
+                                {payerName} paid
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0 px-4">
+                          <p className="font-bold text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
+                          {expense.notes && <p className="text-[11px] text-muted-foreground italic truncate max-w-[150px]">{expense.notes}</p>}
+                        </div>
+                      </Link>
+                      <div className="pr-6 shrink-0">
+                        <Button 
+                          asChild
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
+                            <Edit2 className="h-4 w-4 text-muted-foreground" />
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
