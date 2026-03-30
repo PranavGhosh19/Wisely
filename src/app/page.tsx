@@ -65,7 +65,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative py-20 overflow-hidden">
+      <section className="relative py-20 overflow-hidden bg-background">
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider">
@@ -106,13 +106,12 @@ export default function LandingPage() {
           </div>
         </div>
         
-        {/* Background blobs */}
         <div className="absolute top-0 -left-20 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
         <div className="absolute bottom-0 -right-20 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 bg-background">
+      <section id="features" className="py-24 bg-muted/10">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-3xl md:text-4xl font-bold font-headline text-primary">Everything you need to stay on track</h2>

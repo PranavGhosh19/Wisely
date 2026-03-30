@@ -421,7 +421,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           </DialogHeader>
           
           <div className="flex flex-col items-center gap-5 py-2">
-            <div className="bg-white p-4 sm:p-6 rounded-[1.5rem] shadow-xl shadow-primary/5 border border-primary/10">
+            <div className="bg-secondary p-4 sm:p-6 rounded-[1.5rem] shadow-xl shadow-primary/5 border border-primary/10">
               <svg viewBox="0 0 100 100" className="w-32 h-32 sm:w-48 sm:h-48 text-primary" fill="currentColor">
                 <path d="M0 0h30v10H10v20H0V0zm10 10h10v10H10V10zm60-10h30v30h-10V10H70V0zm10 10h10v10H80V10zM0 70h30v30H0V70zm10 10h10v10H10V80zm70 0h10v10H80V80zm10-10h10v10H90V70zm-10-10h10v10H80V60zm-10 10h10v10H70V70zm10 10h10v10H80V80zm-20-20h10v10H60V60zm-10 10h10v10H50V70zm10 10h10v10H60V80zm-10-10h10v10H50V70zm10-10h10v10H60V60z" />
               </svg>

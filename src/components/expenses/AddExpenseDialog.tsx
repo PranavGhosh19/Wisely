@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -175,8 +176,8 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
         >
           {!defaultGroupId && !expenseToEdit && (
             <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted p-1 rounded-xl">
-              <TabsTrigger value="PERSONAL" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:text-primary">Personal</TabsTrigger>
-              <TabsTrigger value="GROUP" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:text-primary">Group</TabsTrigger>
+              <TabsTrigger value="PERSONAL" className="rounded-lg font-bold data-[state=active]:bg-background data-[state=active]:text-primary">Personal</TabsTrigger>
+              <TabsTrigger value="GROUP" className="rounded-lg font-bold data-[state=active]:bg-background data-[state=active]:text-primary">Group</TabsTrigger>
             </TabsList>
           )}
           

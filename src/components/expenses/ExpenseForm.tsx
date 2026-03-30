@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -201,8 +202,8 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
       <Tabs value={expenseType} onValueChange={(val) => setExpenseType(val as ExpenseType)} className="w-full">
         {!initialGroupId && !initialData && (
           <TabsList className="grid w-full grid-cols-2 mb-8 bg-muted p-1 rounded-xl">
-            <TabsTrigger value="PERSONAL" className="rounded-lg font-bold">Personal</TabsTrigger>
-            <TabsTrigger value="GROUP" className="rounded-lg font-bold">Group</TabsTrigger>
+            <TabsTrigger value="PERSONAL" className="rounded-lg font-bold data-[state=active]:bg-background data-[state=active]:text-primary">Personal</TabsTrigger>
+            <TabsTrigger value="GROUP" className="rounded-lg font-bold data-[state=active]:bg-background data-[state=active]:text-primary">Group</TabsTrigger>
           </TabsList>
         )}
         
