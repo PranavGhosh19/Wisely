@@ -99,6 +99,15 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
 
   const totalSpent = (groupExpenses || []).reduce((acc, curr) => acc + curr.amount, 0);
 
+  /**
+   * Calculate the user's individual share from group transactions.
+   * Strictly uses the splitBetween data.
+   */
+  const totalUserShare = (groupExpenses || []).reduce((acc, curr) => {
+    const mySplit = curr.splitBetween?.find((s: any) => s.userId === user?.uid);
+    return acc + (mySplit?.amount || 0);
+  }, 0);
+
   const handleJoinGroup = async () => {
     if (!user || !db || !groupId) return;
     setIsJoining(true);
@@ -241,9 +250,9 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-foreground">
-                ${(totalSpent / (group.members?.length || 1)).toFixed(2)}
+                ${totalUserShare.toFixed(2)}
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">Split Equally</p>
+              <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">Actual Usage</p>
             </CardContent>
           </Card>
 
