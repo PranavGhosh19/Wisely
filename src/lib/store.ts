@@ -30,6 +30,7 @@ const DEFAULT_CATEGORIES = [
   "Rent / Mortgage", 
   "Shopping", 
   "Groceries", 
+  "Borrowed",
   "Others"
 ];
 
