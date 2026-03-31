@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -241,7 +240,7 @@ export default function ProfilePage() {
                   <div className="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500">
                     <Smartphone className="h-4 w-4" />
                   </div>
-                  <span className="text-sm font-medium">Add to Home Screen</span>
+                  <span className="text-sm font-medium">Add to Android Home Screen</span>
                 </div>
                 <div className="flex items-center gap-2">
                   {!installPrompt && <span className="text-[10px] font-bold uppercase text-muted-foreground bg-muted px-2 py-0.5 rounded">Native</span>}
