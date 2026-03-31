@@ -212,7 +212,7 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent className="h-[350px] sm:h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ReLineChart data={trendData}>
+                  <ReLineChart data={trendData} margin={{ top: 30, right: 20, left: 20, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                     <XAxis 
                       dataKey="name" 
@@ -236,7 +236,15 @@ export default function AnalyticsPage() {
                       stroke="hsl(var(--primary))" 
                       strokeWidth={3} 
                       dot={{ r: 4, fill: 'hsl(var(--primary))', strokeWidth: 2 }} 
-                      activeDot={{ r: 6, strokeWidth: 0 }} 
+                      activeDot={{ r: 6, strokeWidth: 0 }}
+                      label={{ 
+                        position: 'top', 
+                        fill: 'hsl(var(--foreground))', 
+                        fontSize: 10, 
+                        fontWeight: 600,
+                        offset: 12,
+                        formatter: (val: number) => `$${val.toFixed(0)}`
+                      }}
                     />
                   </ReLineChart>
                 </ResponsiveContainer>
