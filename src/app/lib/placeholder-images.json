@@ -1,3 +1,4 @@
+
 {
   "placeholderImages": [
     {
@@ -20,9 +21,9 @@
     },
     {
       "id": "app-icon",
-      "description": "The official Wisely brand icon, a stylized 'W' representing smart finance.",
+      "description": "A serene mountain landscape with colorful prayer flags, representing the peace of mind that comes with financial clarity.",
       "imageUrl": "https://picsum.photos/seed/wisely-app-icon/512/512",
-      "imageHint": "finance logo"
+      "imageHint": "mountain flags"
     }
   ]
 }

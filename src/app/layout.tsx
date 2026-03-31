@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   title: 'Wisely | Smart Expense Tracking',
   description: 'Manage personal and group expenses with ease.',
   icons: {
+    icon: 'https://picsum.photos/seed/wisely-app-icon/32/32',
     apple: 'https://picsum.photos/seed/wisely-app-icon/180/180',
   }
 };
