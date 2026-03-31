@@ -1,4 +1,3 @@
-
 import type { MetadataRoute } from 'next'
  
 export default function manifest(): MetadataRoute.Manifest {
@@ -8,18 +7,24 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Master your money, personal or shared.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#F8F9FC',
-    theme_color: '#432E8C',
+    background_color: '#07161B',
+    theme_color: '#3D737F',
     icons: [
       {
-        src: 'https://picsum.photos/seed/wisely192/192/192',
+        src: 'https://picsum.photos/seed/wisely-app-icon/192/192',
         sizes: '192x192',
         type: 'image/png',
       },
       {
-        src: 'https://picsum.photos/seed/wisely512/512/512',
+        src: 'https://picsum.photos/seed/wisely-app-icon/512/512',
         sizes: '512x512',
         type: 'image/png',
+      },
+      {
+        src: 'https://picsum.photos/seed/wisely-app-icon/512/512',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
       },
     ],
   }

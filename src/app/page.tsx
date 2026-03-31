@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect } from "react";
@@ -28,7 +27,6 @@ export default function LandingPage() {
     }
   }, [user, isLoading, router]);
 
-  // Prevent flash of landing page if user is logged in or we are still checking
   if (isLoading || user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -50,7 +48,7 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 w-full border-b border-white/5 bg-background/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold">W</div>
+            <div className="h-9 w-9 bg-primary rounded-xl flex items-center justify-center text-white font-bold shadow-md">W</div>
             <span className="font-headline text-xl font-bold text-primary">Wisely</span>
           </div>
           <div className="flex items-center gap-4">
@@ -239,7 +237,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="flex items-center gap-2">
-              <div className="h-6 w-6 bg-primary rounded flex items-center justify-center text-white text-[10px] font-bold">W</div>
+              <div className="h-7 w-7 bg-primary rounded-lg flex items-center justify-center text-white text-[11px] font-bold">W</div>
               <span className="font-headline font-bold text-primary">Wisely</span>
             </div>
             <p className="text-sm text-muted-foreground">© 2024 Wisely Finance. All rights reserved.</p>

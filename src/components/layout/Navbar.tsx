@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -50,7 +49,7 @@ export function Navbar() {
 
   return (
     <>
-      {/* Desktop Sidebar - Adjusted for full screens */}
+      {/* Desktop Sidebar */}
       <nav className="hidden md:flex sticky top-0 h-screen w-72 flex-col justify-between border-r bg-card/50 backdrop-blur-xl p-6 transition-all shrink-0">
         <div className="flex flex-col gap-8">
           <Link href="/dashboard" className="px-2 block transition-all hover:opacity-80">
@@ -176,10 +175,10 @@ export function Navbar() {
             )}
           >
             <div className={cn(
-              "h-5 w-5 rounded-full flex items-center justify-center border-2 transition-all overflow-hidden",
+              "h-7 w-7 rounded-lg flex items-center justify-center border-2 transition-all overflow-hidden",
               pathname === "/profile" ? "border-primary bg-primary/10" : "border-transparent bg-muted"
             )}>
-              <UserIcon className="h-3 w-3" />
+              <span className="text-[10px] font-bold">W</span>
             </div>
             <span className="text-[9px] font-bold uppercase tracking-widest">Me</span>
           </Link>

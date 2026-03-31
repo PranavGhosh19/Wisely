@@ -1,23 +1,28 @@
-
 {
   "placeholderImages": [
     {
       "id": "landing-hero",
-      "description": "A professional and clean finance dashboard visualization",
+      "description": "A sleek, modern financial analytics dashboard with clean graphs and spending overviews.",
       "imageUrl": "https://picsum.photos/seed/wisely-hero/1200/800",
-      "imageHint": "finance dashboard"
+      "imageHint": "financial dashboard"
     },
     {
       "id": "feature-personal",
-      "description": "Personal expense tracking interface",
+      "description": "A close-up of a digital wallet showing categorized personal spending.",
       "imageUrl": "https://picsum.photos/seed/wisely-personal/600/400",
-      "imageHint": "wallet money"
+      "imageHint": "mobile payment"
     },
     {
       "id": "feature-group",
-      "description": "Friends sharing a bill and smiling",
+      "description": "A group of diverse friends laughing and sharing a meal at a restaurant.",
       "imageUrl": "https://picsum.photos/seed/wisely-group/600/400",
       "imageHint": "friends dinner"
+    },
+    {
+      "id": "app-icon",
+      "description": "The official Wisely brand icon",
+      "imageUrl": "https://picsum.photos/seed/wisely-app-icon/512/512",
+      "imageHint": "abstract logo"
     }
   ]
 }
