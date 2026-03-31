@@ -10,7 +10,8 @@
         "name": { "type": "string" },
         "email": { "type": "string" },
         "groupIds": { "type": "array", "items": { "type": "string" } },
-        "categories": { "type": "array", "items": { "type": "string" } }
+        "categories": { "type": "array", "items": { "type": "string" } },
+        "currency": { "type": "string", "enum": ["USD", "EUR", "GBP", "INR"], "default": "USD" }
       },
       "required": ["uid", "name", "email"]
     },

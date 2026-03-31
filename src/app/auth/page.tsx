@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, ArrowRight, User as UserIcon, Loader2 } from "lucide-react";
+import { Mail, Lock, ArrowRight, User as UserIcon, Loader2, Globe } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { 
   signInWithEmailAndPassword, 
@@ -17,8 +17,16 @@ import {
   signInWithPopup,
   GoogleAuthProvider
 } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { useAuth, useFirestore } from "@/firebase";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const CURRENCIES = [
+  { code: "USD", label: "US Dollar ($)" },
+  { code: "EUR", label: "Euro (€)" },
+  { code: "GBP", label: "British Pound (£)" },
+  { code: "INR", label: "Indian Rupee (₹)" },
+];
 
 export default function AuthPage() {
   const router = useRouter();
@@ -33,14 +41,19 @@ export default function AuthPage() {
   const [name, setName] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Currency selection state
+  const [showCurrencyStep, setShowCurrencyStep] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState("USD");
+  const [pendingUserUid, setPendingUserUid] = useState<string | null>(null);
 
   const redirectUrl = searchParams.get("redirect") || "/dashboard";
 
   useEffect(() => {
-    if (user) {
+    if (user && !showCurrencyStep) {
       router.replace(redirectUrl);
     }
-  }, [user, router, redirectUrl]);
+  }, [user, router, redirectUrl, showCurrencyStep]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,10 +81,14 @@ export default function AuthPage() {
           name: name,
           email: email,
           groupIds: [],
+          currency: "USD", // Default, will be updated in next step
         };
 
         await setDoc(doc(db, "users", firebaseUser.uid), userProfile);
-        toast({ title: "Account Created", description: `Welcome to Wisely, ${name}!` });
+        
+        // Show currency selection
+        setPendingUserUid(firebaseUser.uid);
+        setShowCurrencyStep(true);
       } else {
         await signInWithEmailAndPassword(auth, email, password);
         toast({ title: "Welcome Back", description: "Successfully signed in." });
@@ -95,7 +112,6 @@ export default function AuthPage() {
       const result = await signInWithPopup(auth, provider);
       const firebaseUser = result.user;
 
-      // Check if user profile exists, if not create it
       const userDocRef = doc(db, "users", firebaseUser.uid);
       const userDoc = await getDoc(userDocRef);
 
@@ -105,18 +121,20 @@ export default function AuthPage() {
           name: firebaseUser.displayName || "Google User",
           email: firebaseUser.email || "",
           groupIds: [],
+          currency: "USD",
         };
         await setDoc(userDocRef, userProfile);
+        
+        // Show currency selection for new Google users
+        setPendingUserUid(firebaseUser.uid);
+        setShowCurrencyStep(true);
+      } else {
+        toast({ title: "Welcome", description: "Successfully signed in with Google." });
       }
-      
-      toast({ title: "Welcome", description: "Successfully signed in with Google." });
     } catch (error: any) {
-      // Handle the case where the user closes the popup without signing in
       if (error.code === 'auth/popup-closed-by-user') {
-        // Silently fail as the user explicitly cancelled the action
         return;
       }
-      
       toast({ 
         variant: "destructive", 
         title: "Google Sign-In Failed", 
@@ -126,6 +144,64 @@ export default function AuthPage() {
       setLoading(false);
     }
   };
+
+  const handleSetCurrency = async () => {
+    if (!db || !pendingUserUid) return;
+    setLoading(true);
+    try {
+      await updateDoc(doc(db, "users", pendingUserUid), {
+        currency: selectedCurrency
+      });
+      toast({ title: "Preferences Saved", description: `Default currency set to ${selectedCurrency}.` });
+      setShowCurrencyStep(false);
+      router.replace(redirectUrl);
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: "Could not save currency preference." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (showCurrencyStep) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background px-4">
+        <div className="w-full max-w-md space-y-8">
+          <Card className="border-none shadow-lg rounded-2xl">
+            <CardHeader className="text-center">
+              <div className="mx-auto h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4">
+                <Globe className="h-6 w-6" />
+              </div>
+              <CardTitle className="font-headline text-2xl">Choose Your Currency</CardTitle>
+              <CardDescription>
+                Select the default currency for your personal and shared expenses.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="currency">Default Currency</Label>
+                <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                  <SelectTrigger id="currency" className="h-11 rounded-xl">
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleSetCurrency} className="w-full bg-primary h-11 rounded-xl font-bold" disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "Finish Setup"}
+                {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen items-center justify-center bg-background px-4">
