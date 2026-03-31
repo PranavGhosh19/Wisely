@@ -64,7 +64,7 @@ export function SplitOptions({
   const toggleUser = (userId: string) => {
     const next = new Set(selectedUserIds);
     if (next.has(userId)) {
-      if (next.size > 1) next.delete(userId);
+      next.delete(userId);
     } else {
       next.add(userId);
     }
@@ -120,7 +120,6 @@ export function SplitOptions({
         amount = totalWeight > 0 ? (val / totalWeight) * totalAmount : 0;
       }
 
-      // CRITICAL: Ensure no undefined fields are returned
       const member: SplitMember = {
         userId: m.uid,
         amount: parseFloat(amount.toFixed(2))
@@ -231,7 +230,7 @@ export function SplitOptions({
 
                       {activeType === 'UNEQUAL' && (
                         <div className="flex items-center gap-1 border-b-2 border-muted focus-within:border-primary transition-colors">
-                          <span className="text-xs text-muted-foreground font-bold">₹</span>
+                          <span className="text-xs text-muted-foreground font-bold">$</span>
                           <Input
                             type="number"
                             inputMode="decimal"
@@ -298,7 +297,7 @@ export function SplitOptions({
               {activeType === 'EQUAL' && (
                 <>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold text-foreground">₹{perPersonAmount.toFixed(2)}</span>
+                    <span className="text-2xl font-bold text-foreground">${perPersonAmount.toFixed(2)}</span>
                     <span className="text-xs text-muted-foreground font-medium">/person</span>
                   </div>
                   <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
@@ -311,14 +310,14 @@ export function SplitOptions({
                 <>
                   <div className="flex items-baseline gap-1">
                     <span className={cn("text-2xl font-bold", totals.remaining === 0 ? "text-green-500" : "text-foreground")}>
-                      ₹{totals.sum.toFixed(2)}
+                      ${totals.sum.toFixed(2)}
                     </span>
-                    <span className="text-xs text-muted-foreground font-medium">of ₹{totalAmount.toFixed(2)}</span>
+                    <span className="text-xs text-muted-foreground font-medium">of ${totalAmount.toFixed(2)}</span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     {Math.abs(totals.remaining) > 0.01 && <AlertCircle className="h-3 w-3 text-orange-500" />}
                     <span className={cn("text-[10px] font-bold uppercase tracking-wider", Math.abs(totals.remaining) <= 0.01 ? "text-green-500" : "text-orange-500")}>
-                      {Math.abs(totals.remaining) <= 0.01 ? "Perfectly split" : `₹${Math.abs(totals.remaining).toFixed(2)} ${totals.remaining > 0 ? "left" : "over"}`}
+                      {Math.abs(totals.remaining) <= 0.01 ? "Perfectly split" : `$${Math.abs(totals.remaining).toFixed(2)} ${totals.remaining > 0 ? "left" : "over"}`}
                     </span>
                   </div>
                 </>

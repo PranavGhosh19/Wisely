@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { User, Expense, Group } from '@/types';
 
