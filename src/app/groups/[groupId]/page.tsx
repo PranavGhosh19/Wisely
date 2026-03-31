@@ -154,7 +154,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     let i = 0, j = 0;
     while (i < debtors.length && j < creditors.length) {
       const amount = Math.min(debtors[i].amount, creditors[j].amount);
-      debts.push({ from: debtors[i].uid, to: creditors[j].uid, amount });
+       debts.push({ from: debtors[i].uid, to: creditors[j].uid, amount });
       
       debtors[i].amount -= amount;
       creditors[j].amount -= amount;
@@ -672,16 +672,16 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex flex-col items-center gap-5 py-2">
+          <div className="flex flex-col items-center gap-5 py-2 overflow-x-hidden">
             <div className="bg-secondary p-4 sm:p-6 rounded-[1.5rem] shadow-xl shadow-primary/5 border border-primary/10">
-              <svg viewBox="0 0 100 100" className="w-32 h-32 sm:w-48 sm:h-48 text-primary" fill="currentColor">
+              <svg viewBox="0 0 100 100" className="w-32 h-32 sm:w-40 sm:h-40 text-primary" fill="currentColor">
                 <path d="M0 0h30v10H10v20H0V0zm10 10h10v10H10V10zm60-10h30v30h-10V10H70V0zm10 10h10v10H80V10zM0 70h30v30H0V70zm10 10h10v10H10V80zm70 0h10v10H80V80zm10-10h10v10H90V70zm-10-10h10v10H80V60zm-10 10h10v10H70V70zm10 10h10v10H80V80zm-20-20h10v10H60V60zm-10 10h10v10H50V70zm10 10h10v10H60V80zm-10-10h10v10H50V70zm10-10h10v10H60V60z" />
               </svg>
             </div>
 
             <div className="w-full space-y-3">
-              <div className="flex items-center gap-2 p-2.5 bg-muted/30 rounded-lg border border-border/40 overflow-hidden">
-                <span className="flex-1 text-[10px] sm:text-xs truncate text-muted-foreground font-mono">{shareUrl}</span>
+              <div className="flex items-center gap-2 p-2.5 bg-muted/30 rounded-lg border border-border/40 overflow-hidden w-full">
+                <span className="flex-1 text-[10px] sm:text-xs truncate text-muted-foreground font-mono block overflow-hidden">{shareUrl}</span>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-primary shrink-0 rounded-md" onClick={copyToClipboard}>
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
