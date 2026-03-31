@@ -21,9 +21,9 @@
     },
     {
       "id": "app-icon",
-      "description": "A serene mountain landscape with colorful prayer flags, representing the peace of mind that comes with financial clarity.",
-      "imageUrl": "https://picsum.photos/seed/wisely-app-icon/512/512",
-      "imageHint": "mountain flags"
+      "description": "A professional wallet icon representing financial clarity and organization.",
+      "imageUrl": "/wallet.png",
+      "imageHint": "wallet icon"
     }
   ]
 }
