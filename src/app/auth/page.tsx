@@ -50,6 +50,7 @@ export default function AuthPage() {
   const redirectUrl = searchParams.get("redirect") || "/dashboard";
 
   useEffect(() => {
+    // Only redirect if the user is authenticated AND we aren't showing the currency step
     if (user && !showCurrencyStep) {
       router.replace(redirectUrl);
     }
@@ -81,12 +82,12 @@ export default function AuthPage() {
           name: name,
           email: email,
           groupIds: [],
-          currency: "USD", // Default, will be updated in next step
+          currency: "USD", // Initial default
         };
 
         await setDoc(doc(db, "users", firebaseUser.uid), userProfile);
         
-        // Show currency selection
+        // Show currency selection for new users
         setPendingUserUid(firebaseUser.uid);
         setShowCurrencyStep(true);
       } else {
@@ -154,7 +155,7 @@ export default function AuthPage() {
       });
       toast({ title: "Preferences Saved", description: `Default currency set to ${selectedCurrency}.` });
       setShowCurrencyStep(false);
-      router.replace(redirectUrl);
+      // The useEffect will now trigger redirect as showCurrencyStep becomes false and user exists
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: "Could not save currency preference." });
     } finally {
