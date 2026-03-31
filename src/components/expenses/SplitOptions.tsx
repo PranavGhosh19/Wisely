@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -44,13 +45,13 @@ export function SplitOptions({
       if (initialSplitType === 'UNEQUAL') initial[m.uid] = existing?.amount?.toString() || "0";
       else if (initialSplitType === 'PERCENTAGE') initial[m.uid] = existing?.percentage?.toString() || "0";
       else if (initialSplitType === 'WEIGHT') initial[m.uid] = existing?.weight?.toString() || "1";
-      else initial[m.uid] = "0";
+      else initial[m.uid] = "1";
     });
     return initial;
   });
 
   const splitTypes = [
-    { id: 'EQUAL' as SplitType, label: 'Equal split', icon: Users, color: 'bg-blue-500/10 text-blue-500', description: 'Select which people owe an equal share.' },
+    { id: 'EQUAL' as SplitType, label: 'Equal split', icon: Users, color: 'bg-blue-500/10 text-blue-500', description: 'Divide equally among selected members.' },
     { id: 'UNEQUAL' as SplitType, label: 'Exact amount', icon: Hash, color: 'bg-green-500/10 text-green-500', description: 'Specify exactly how much each person owes.' },
     { id: 'PERCENTAGE' as SplitType, label: 'Percentage', icon: Percent, color: 'bg-orange-500/10 text-orange-500', description: 'Split by percentage of the total.' },
     { id: 'WEIGHT' as SplitType, label: 'Shares', icon: Scale, color: 'bg-purple-500/10 text-purple-500', description: 'Split by number of shares/weights.' },
@@ -64,7 +65,7 @@ export function SplitOptions({
   const toggleUser = (userId: string) => {
     const next = new Set(selectedUserIds);
     if (next.has(userId)) {
-      next.delete(userId);
+      if (next.size > 1) next.delete(userId); // Ensure at least one is always selected
     } else {
       next.add(userId);
     }

@@ -127,7 +127,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
     setLoading(true);
     try {
       const isEditing = !!initialData;
-      const expenseId = Math.random().toString(36).substr(2, 9);
+      const expenseId = initialData?.id || Math.random().toString(36).substr(2, 9);
       
       const expenseData: any = {
         id: expenseId,
@@ -136,8 +136,8 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         notes: formData.notes || "",
         date: new Date(formData.date).getTime(),
         type: expenseType,
-        createdBy: isEditing ? (initialData.createdBy || user.name || "User") : (user.name || "User"),
-        createdById: isEditing ? (initialData.createdById || user.uid) : user.uid,
+        createdBy: isEditing ? (initialData?.createdBy || user.name || "User") : (user.name || "User"),
+        createdById: isEditing ? (initialData?.createdById || user.uid) : user.uid,
         paidBy: formData.paidBy || user.uid,
         splitType: formData.splitType,
         splitBetween: formData.splitBetween,
@@ -152,26 +152,18 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
       }
 
       if (expenseType === "PERSONAL") {
-        if (isEditing && initialData?.id) {
-          const oldRef = doc(db, "users", user.uid, "personalExpenses", initialData.id);
-          updateDocumentNonBlocking(oldRef, { 
-            isDeleted: true, 
-            deletedBy: user.name || "User", 
-            deletedById: user.uid 
-          });
-          deleteExpense(initialData.id);
-        }
         const newRef = doc(db, "users", user.uid, "personalExpenses", expenseId);
-        setDocumentNonBlocking(newRef, expenseData, { merge: false });
+        setDocumentNonBlocking(newRef, expenseData, { merge: true });
       } else {
         const selectedGroup = groups.find(g => g.id === formData.groupId) || group;
         if (!selectedGroup) throw new Error("Group not found");
+        
         expenseData.groupId = formData.groupId;
         expenseData.groupMemberIds = selectedGroup.members;
 
         // Ensure splitBetween amounts are synchronized with the total amount
         if (formData.splitType === 'EQUAL') {
-          // If modal was opened, respect the subset. If not, split among all.
+          // Identify members selected in the split (those with an amount > 0)
           const activeMembers = formData.splitBetween.filter(s => s.amount > 0).map(s => s.userId);
           const membersToSplitWith = activeMembers.length > 0 ? activeMembers : (selectedGroup.members || []);
           
@@ -195,17 +187,8 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
           expenseData.splitBetween = formData.splitBetween;
         }
 
-        if (isEditing && initialData?.id && initialData.groupId) {
-          const oldRef = doc(db, "groups", initialData.groupId, "expenses", initialData.id);
-          updateDocumentNonBlocking(oldRef, { 
-            isDeleted: true, 
-            deletedBy: user.name || "User", 
-            deletedById: user.uid 
-          });
-          deleteExpense(initialData.id);
-        }
         const newRef = doc(db, "groups", formData.groupId, "expenses", expenseId);
-        setDocumentNonBlocking(newRef, expenseData, { merge: false });
+        setDocumentNonBlocking(newRef, expenseData, { merge: true });
       }
 
       addExpense(expenseData);

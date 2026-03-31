@@ -110,8 +110,8 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
 
     setLoading(true);
     try {
-      const expenseId = expenseToEdit?.id || Math.random().toString(36).substr(2, 9);
       const isEditing = !!expenseToEdit;
+      const expenseId = expenseToEdit?.id || Math.random().toString(36).substr(2, 9);
       
       const expenseData: any = {
         id: expenseId,
@@ -122,7 +122,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
         type: expenseType,
         createdBy: isEditing ? (expenseToEdit.createdBy || user.name || "User") : (user.name || "User"),
         createdById: isEditing ? (expenseToEdit.createdById || user.uid) : user.uid,
-        paidBy: user.uid,
+        paidBy: isEditing ? (expenseToEdit.paidBy || user.uid) : user.uid,
         receiptName: formData.receiptName || "",
         receiptUrl: formData.receiptUrl || "",
         isDeleted: false,
@@ -144,6 +144,14 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
         expenseData.groupId = formData.groupId;
         expenseData.groupMemberIds = selectedGroup.members; 
         
+        // Simple equal split default for dialog-based quick adds
+        const splitAmount = amount / (selectedGroup.members?.length || 1);
+        expenseData.splitBetween = (selectedGroup.members || []).map(uid => ({
+          userId: uid,
+          amount: parseFloat(splitAmount.toFixed(2))
+        }));
+        expenseData.splitType = 'EQUAL';
+        
         docRef = doc(db, "groups", formData.groupId, "expenses", expenseId);
       }
 
@@ -152,7 +160,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
       
       toast({ 
         title: "Expense Saved", 
-        description: `Successfully added ${formData.category} expense.` 
+        description: `Successfully ${isEditing ? "updated" : "added"} expense.` 
       });
       onOpenChange(false);
     } catch (error: any) {
