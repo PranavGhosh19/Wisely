@@ -24,7 +24,8 @@ import {
   BarChart3,
   CheckCircle2,
   Coins,
-  Info
+  Info,
+  ArrowRight
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
@@ -77,14 +78,12 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     setMounted(true);
   }, []);
 
-  // UseDoc for group metadata
   const groupRef = useMemoFirebase(() => {
     if (!db || !groupId) return null;
     return doc(db, "groups", groupId);
   }, [db, groupId]);
   const { data: group, isLoading: groupLoading } = useDoc(groupRef);
 
-  // Check if user is already a member
   const isMember = group?.members?.includes(user?.uid || "");
 
   useEffect(() => {
@@ -93,7 +92,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     }
   }, [mounted, shouldShowJoin, group, isMember]);
 
-  // UseCollection for group expenses
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !groupId || !user || !isMember) return null;
     return query(
@@ -105,7 +103,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   }, [db, groupId, user, isMember]);
   const { data: groupExpenses, isLoading: expensesLoading } = useCollection(groupExpensesQuery);
 
-  // Fetch member profiles
   const membersQuery = useMemoFirebase(() => {
     if (!db || !group?.members || group.members.length === 0) return null;
     return query(
@@ -118,26 +115,22 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   const totalSpent = (groupExpenses || []).reduce((acc, curr) => acc + curr.amount, 0);
 
   /**
-   * Calculate detailed member stats: Paid vs Share.
-   * Logic: 
-   * - Paid: Total money the user physically fronted.
-   * - Share: Total money the user 'consumed' based on split breakdown.
-   * - Net: Paid - Share.
+   * settlementInfo:
+   * stats: Aggregated Paid vs Share per member.
+   * debts: Simplified "who owes whom" array.
    */
-  const memberStats = useMemo(() => {
-    if (!group?.members || !groupExpenses) return {};
+  const settlementInfo = useMemo(() => {
+    if (!group?.members || !groupExpenses) return { stats: {}, debts: [] };
     
     const stats: Record<string, { net: number; paid: number; share: number }> = {};
     group.members.forEach(uid => stats[uid] = { net: 0, paid: 0, share: 0 });
 
     groupExpenses.forEach(exp => {
-      // Add paid amount
       if (stats[exp.paidBy]) {
         stats[exp.paidBy].paid += exp.amount;
         stats[exp.paidBy].net += exp.amount;
       }
       
-      // Subtract share
       exp.splitBetween?.forEach(split => {
         if (stats[split.userId]) {
           stats[split.userId].share += split.amount;
@@ -146,7 +139,32 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       });
     });
 
-    return stats;
+    // Debt Simplification Algorithm (Greedy approach)
+    const debtors = Object.entries(stats)
+      .filter(([_, s]) => s.net < -0.01)
+      .map(([uid, s]) => ({ uid, amount: Math.abs(s.net) }))
+      .sort((a, b) => b.amount - a.amount);
+    
+    const creditors = Object.entries(stats)
+      .filter(([_, s]) => s.net > 0.01)
+      .map(([uid, s]) => ({ uid, amount: s.net }))
+      .sort((a, b) => b.amount - a.amount);
+
+    const debts: { from: string; to: string; amount: number }[] = [];
+    
+    let i = 0, j = 0;
+    while (i < debtors.length && j < creditors.length) {
+      const amount = Math.min(debtors[i].amount, creditors[j].amount);
+      debts.push({ from: debtors[i].uid, to: creditors[j].uid, amount });
+      
+      debtors[i].amount -= amount;
+      creditors[j].amount -= amount;
+      
+      if (debtors[i].amount < 0.01) i++;
+      if (creditors[j].amount < 0.01) j++;
+    }
+
+    return { stats, debts };
   }, [group?.members, groupExpenses]);
 
   const handleJoinGroup = async () => {
@@ -186,7 +204,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     setIsSettling(true);
     
     try {
-      // Mark all current active expenses as deleted/settled
       groupExpenses.forEach(exp => {
         const docRef = doc(db, "groups", groupId, "expenses", exp.id);
         updateDocumentNonBlocking(docRef, { isDeleted: true });
@@ -290,7 +307,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   <AlertDialogHeader>
                     <AlertDialogTitle className="font-headline text-xl">Settle all balances?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will archive all current expenses in "{group.name}". Use this only after everyone has paid their dues. This action cannot be undone.
+                      This will archive all current expenses in "{group.name}". Use this only after everyone has paid their dues.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter className="gap-2">
@@ -353,7 +370,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-foreground">
-                    ${(memberStats[user?.uid || ""]?.share || 0).toFixed(2)}
+                    ${(settlementInfo.stats[user?.uid || ""]?.share || 0).toFixed(2)}
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">Actual Contribution</p>
                 </CardContent>
@@ -416,7 +433,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                             </div>
                             <div className="text-right shrink-0 px-4">
                               <p className="font-bold text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
-                              {expense.notes && <p className="text-[11px] text-muted-foreground italic truncate max-w-[150px]">{expense.notes}</p>}
                             </div>
                           </Link>
                           <div className="pr-6 shrink-0">
@@ -445,63 +461,52 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               <CardHeader className="border-b px-6 py-4">
                 <CardTitle className="font-headline text-lg font-bold flex items-center gap-2">
                   <Coins className="h-5 w-5 text-accent" />
-                  Balances
+                  Settlements
                 </CardTitle>
                 <CardDescription>Who owes what in this group</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 {membersLoading ? (
                   <div className="py-12 flex justify-center"><div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>
-                ) : !group.members || group.members.length === 0 ? (
-                  <div className="p-8 text-center text-muted-foreground text-sm">No members found.</div>
+                ) : settlementInfo.debts.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <div className="h-12 w-12 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Check className="h-6 w-6" />
+                    </div>
+                    <p className="text-sm font-bold">Everyone is settled!</p>
+                  </div>
                 ) : (
                   <div className="divide-y divide-muted">
-                    {group.members.map((memberId) => {
-                      const profile = memberProfiles?.find(m => m.uid === memberId);
-                      const stats = memberStats[memberId] || { net: 0, paid: 0, share: 0 };
-                      const isCurrentUser = memberId === user?.uid;
+                    {settlementInfo.debts.map((debt, idx) => {
+                      const fromUser = memberProfiles?.find(m => m.uid === debt.from);
+                      const toUser = memberProfiles?.find(m => m.uid === debt.to);
+                      const isFromMe = debt.from === user?.uid;
+                      const isToMe = debt.to === user?.uid;
 
                       return (
-                        <div key={memberId} className="px-6 py-4 flex flex-col gap-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-9 w-9 border-2 border-background">
-                                <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
-                                  {profile?.name?.[0] || "?"}
+                        <div key={idx} className="px-6 py-5">
+                          <div className="flex items-center gap-3">
+                            <div className="flex -space-x-3">
+                              <Avatar className="h-8 w-8 border-2 border-background">
+                                <AvatarFallback className="bg-primary/10 text-primary font-bold text-[10px]">
+                                  {fromUser?.name?.[0] || "?"}
                                 </AvatarFallback>
                               </Avatar>
-                              <div className="flex flex-col">
-                                <span className="text-sm font-bold truncate max-w-[120px]">
-                                  {isCurrentUser ? "You" : (profile?.name || "Member")}
-                                </span>
-                                <span className={cn(
-                                  "text-[10px] font-bold uppercase tracking-wider",
-                                  stats.net > 0 ? "text-green-500" : stats.net < 0 ? "text-destructive" : "text-muted-foreground"
-                                )}>
-                                  {stats.net > 0 ? "Owed" : stats.net < 0 ? "Owes" : "Settled"}
-                                </span>
-                              </div>
+                              <Avatar className="h-8 w-8 border-2 border-background">
+                                <AvatarFallback className="bg-accent/10 text-accent font-bold text-[10px]">
+                                  {toUser?.name?.[0] || "?"}
+                                </AvatarFallback>
+                              </Avatar>
                             </div>
-                            <div className="text-right">
-                              <p className={cn(
-                                "font-bold text-base",
-                                stats.net > 0 ? "text-green-500" : stats.net < 0 ? "text-destructive" : "text-foreground"
-                              )}>
-                                {stats.net === 0 ? "—" : `$${Math.abs(stats.net).toFixed(2)}`}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm leading-snug">
+                                <span className="font-bold">{isFromMe ? "You" : (fromUser?.name || "Member")}</span>
+                                <span className="text-muted-foreground mx-1">owes</span>
+                                <span className="font-black text-foreground">${debt.amount.toFixed(2)}</span>
+                                <span className="text-muted-foreground mx-1">to</span>
+                                <span className="font-bold">{isToMe ? "you" : (toUser?.name || "Member")}</span>
                               </p>
                             </div>
-                          </div>
-                          
-                          {/* Descriptive info about the member's activity */}
-                          <div className="flex justify-between text-[10px] text-muted-foreground bg-muted/20 px-3 py-1.5 rounded-lg border border-border/30">
-                            <span className="flex items-center gap-1">
-                              <span className="opacity-60">Paid:</span> 
-                              <span className="font-bold text-foreground/80">${stats.paid.toFixed(2)}</span>
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <span className="opacity-60">Usage:</span> 
-                              <span className="font-bold text-foreground/80">${stats.share.toFixed(2)}</span>
-                            </span>
                           </div>
                         </div>
                       );
@@ -517,9 +522,9 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   <Info className="h-5 w-5" />
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-sm font-bold">About Balances</h4>
+                  <h4 className="text-sm font-bold">Balance Information</h4>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    We calculate who owes what by comparing how much each person paid versus their individual share of all group expenses.
+                    This breakdown shows the most efficient way to settle all group debts based on everyone's contributions and usage.
                   </p>
                 </div>
               </div>
@@ -588,7 +593,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             </div>
             <DialogTitle className="text-2xl font-bold font-headline">Join Group?</DialogTitle>
             <DialogDescription className="text-base">
-              Would you like to join <span className="font-bold text-foreground">"{group?.name}"</span>? You'll be able to track shared expenses and see balances.
+              Would you like to join <span className="font-bold text-foreground">"{group?.name}"</span>?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex flex-col sm:flex-row gap-3 mt-6">
