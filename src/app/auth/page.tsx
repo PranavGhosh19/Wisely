@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, ArrowRight, User as UserIcon } from "lucide-react";
+import { Mail, Lock, ArrowRight, User as UserIcon, Loader2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { 
   signInWithEmailAndPassword, 
@@ -111,10 +111,16 @@ export default function AuthPage() {
       
       toast({ title: "Welcome", description: "Successfully signed in with Google." });
     } catch (error: any) {
+      // Handle the case where the user closes the popup without signing in
+      if (error.code === 'auth/popup-closed-by-user') {
+        // Silently fail as the user explicitly cancelled the action
+        return;
+      }
+      
       toast({ 
         variant: "destructive", 
         title: "Google Sign-In Failed", 
-        description: error.message || "An error occurred." 
+        description: error.message || "An error occurred during Google sign-in." 
       });
     } finally {
       setLoading(false);
@@ -134,7 +140,7 @@ export default function AuthPage() {
           <p className="text-muted-foreground">Master your money, personal or shared.</p>
         </div>
 
-        <Card className="border-none shadow-lg">
+        <Card className="border-none shadow-lg rounded-2xl">
           <CardHeader>
             <CardTitle className="font-headline text-2xl">
               {isRegistering ? "Create Account" : "Sign In"}
@@ -155,7 +161,7 @@ export default function AuthPage() {
                     <Input 
                       id="name" 
                       placeholder="John Doe" 
-                      className="pl-10"
+                      className="pl-10 h-11 rounded-xl"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       disabled={loading}
@@ -172,7 +178,7 @@ export default function AuthPage() {
                     id="email" 
                     type="email"
                     placeholder="name@example.com" 
-                    className="pl-10"
+                    className="pl-10 h-11 rounded-xl"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
@@ -188,7 +194,7 @@ export default function AuthPage() {
                     id="password" 
                     type="password"
                     placeholder="••••••••" 
-                    className="pl-10"
+                    className="pl-10 h-11 rounded-xl"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={loading}
@@ -196,8 +202,12 @@ export default function AuthPage() {
                 </div>
               </div>
 
-              <Button className="w-full bg-primary" disabled={loading}>
-                {loading ? "Authenticating..." : (isRegistering ? "Sign Up" : "Sign In")}
+              <Button className="w-full bg-primary h-11 rounded-xl font-bold" disabled={loading}>
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  isRegistering ? "Sign Up" : "Sign In"
+                )}
                 {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </form>
@@ -213,20 +223,24 @@ export default function AuthPage() {
 
             <Button 
               variant="outline" 
-              className="w-full" 
+              className="w-full h-11 rounded-xl font-bold border-2" 
               onClick={handleGoogleSignIn} 
               disabled={loading}
             >
-              <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
-                <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
-              </svg>
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+                  <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
+                </svg>
+              )}
               Google
             </Button>
 
             <div className="text-center mt-4">
               <button 
                 type="button"
-                className="text-sm text-primary hover:underline"
+                className="text-sm text-primary hover:underline font-medium"
                 onClick={() => setIsRegistering(!isRegistering)}
                 disabled={loading}
               >
