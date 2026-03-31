@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -7,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
+import { useAuth } from "@/firebase";
+import { signOut } from "firebase/auth";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -17,6 +20,7 @@ const navItems = [
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const auth = useAuth();
   const { user, logout, setInstallPrompt } = useStore();
 
   useEffect(() => {
@@ -35,7 +39,10 @@ export function Navbar() {
   const isPublicPage = pathname === "/" || pathname === "/auth";
   if (isPublicPage || !user) return null;
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    if (auth) {
+      await signOut(auth);
+    }
     logout();
     router.push("/");
   };

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -28,9 +29,12 @@ import {
   Share2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/firebase";
+import { signOut } from "firebase/auth";
 
 export default function ProfilePage() {
   const router = useRouter();
+  const auth = useAuth();
   const { user, logout, categories, addCategory, removeCategory, installPrompt, setInstallPrompt } = useStore();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
@@ -44,7 +48,10 @@ export default function ProfilePage() {
 
   if (!mounted || !user) return null;
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (auth) {
+      await signOut(auth);
+    }
     logout();
     router.push("/auth");
   };
