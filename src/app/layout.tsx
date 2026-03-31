@@ -8,6 +8,9 @@ import { AuthSync } from "@/components/auth-sync";
 export const metadata: Metadata = {
   title: 'Wisely | Smart Expense Tracking',
   description: 'Manage personal and group expenses with ease.',
+  icons: {
+    apple: 'https://picsum.photos/seed/wisely-app-icon/180/180',
+  }
 };
 
 export default function RootLayout({

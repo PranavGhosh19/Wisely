@@ -20,7 +20,7 @@
     },
     {
       "id": "app-icon",
-      "description": "The official Wisely brand icon",
+      "description": "The official Wisely brand icon used for PWA installation and branding.",
       "imageUrl": "https://picsum.photos/seed/wisely-app-icon/512/512",
       "imageHint": "abstract logo"
     }
