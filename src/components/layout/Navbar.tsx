@@ -3,19 +3,16 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, PieChart, LogOut, Plus, User as UserIcon } from "lucide-react";
+import { LayoutDashboard, Users, PieChart, LogOut, Plus, User as UserIcon, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 
 const navItems = [
-  { name: "Dash", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Groups", href: "/groups", icon: Users },
-];
-
-const rightNavItems = [
-  { name: "Stats", href: "/analytics", icon: PieChart },
+  { name: "Analytics", href: "/analytics", icon: PieChart },
 ];
 
 export function Navbar() {
@@ -53,65 +50,71 @@ export function Navbar() {
 
   return (
     <>
-      {/* Desktop Sidebar */}
-      <nav className="hidden md:flex fixed top-0 left-0 z-50 h-screen w-64 flex-col justify-between border-r bg-card p-4">
-        <div className="flex flex-col gap-6">
-          <Link href="/" className="mb-4 px-2 block transition-transform hover:scale-95">
-            <h1 className="text-2xl font-bold font-headline text-primary tracking-tight">Wisely</h1>
+      {/* Desktop Sidebar - Adjusted for full screens */}
+      <nav className="hidden md:flex sticky top-0 h-screen w-72 flex-col justify-between border-r bg-card/50 backdrop-blur-xl p-6 transition-all shrink-0">
+        <div className="flex flex-col gap-8">
+          <Link href="/dashboard" className="px-2 block transition-all hover:opacity-80">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-primary/20">W</div>
+              <h1 className="text-2xl font-bold font-headline text-primary tracking-tight">Wisely</h1>
+            </div>
           </Link>
           
-          <div className="flex flex-col gap-1.5">
-            {[...navItems, ...rightNavItems].map((item) => {
+          <div className="flex flex-col gap-2">
+            <p className="px-4 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2">Main Menu</p>
+            {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href;
+              const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all",
+                    "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all group",
                     isActive 
-                      ? "text-primary bg-primary/10" 
-                      : "text-muted-foreground hover:text-primary hover:bg-primary/5"
+                      ? "text-primary bg-primary/10 shadow-sm" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   )}
                 >
-                  <Icon className={cn("h-5 w-5", isActive && "text-primary")} />
+                  <Icon className={cn("h-5 w-5 transition-transform group-hover:scale-110", isActive && "text-primary")} />
                   <span>{item.name}</span>
                 </Link>
               );
             })}
+            
+            <p className="px-4 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mt-6 mb-2">Account</p>
             <Link
               href="/profile"
               className={cn(
-                "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all",
+                "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all group",
                 pathname === "/profile" 
-                  ? "text-primary bg-primary/10" 
-                  : "text-muted-foreground hover:text-primary hover:bg-primary/5"
+                  ? "text-primary bg-primary/10 shadow-sm" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               )}
             >
-              <UserIcon className={cn("h-5 w-5", pathname === "/profile" && "text-primary")} />
-              <span>Profile</span>
+              <Settings className={cn("h-5 w-5 transition-transform group-hover:rotate-45", pathname === "/profile" && "text-primary")} />
+              <span>Settings</span>
             </Link>
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 border-t pt-4">
-          <Link href="/profile" className="flex items-center gap-3 px-2 hover:bg-muted/50 p-2 rounded-xl transition-colors">
-            <div className="h-9 w-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold shadow-sm">
+        <div className="flex flex-col gap-4">
+          <Link href="/profile" className="flex items-center gap-4 p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-all border border-transparent hover:border-border/50">
+            <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold shadow-sm ring-2 ring-background">
               {user.name?.[0] || "?"}
             </div>
-            <div className="flex flex-col truncate">
-              <span className="text-sm font-bold truncate">{user.name}</span>
-              <span className="text-[11px] text-muted-foreground truncate">{user.email}</span>
+            <div className="flex flex-col truncate flex-1">
+              <span className="text-sm font-bold truncate leading-none mb-1">{user.name}</span>
+              <span className="text-[11px] text-muted-foreground truncate opacity-70">Personal Plan</span>
             </div>
           </Link>
           <Button 
             variant="ghost" 
             size="sm" 
-            className="justify-start gap-3 text-destructive font-bold hover:text-destructive hover:bg-destructive/5 rounded-xl transition-all"
+            className="w-full justify-start gap-3 text-destructive font-bold hover:text-destructive hover:bg-destructive/5 rounded-2xl transition-all h-12 px-4"
             onClick={handleSignOut}
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-5 w-5" />
             Sign Out
           </Button>
         </div>
@@ -119,29 +122,33 @@ export function Navbar() {
 
       {/* Mobile Bottom Bar */}
       <nav className="fixed bottom-0 left-0 z-50 w-full border-t bg-background/95 backdrop-blur-md safe-area-bottom md:hidden h-20">
-        <div className="relative flex h-full items-center justify-around px-4">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "flex flex-col items-center gap-1 transition-all",
-                  isActive ? "text-primary" : "text-muted-foreground"
-                )}
-              >
-                <Icon className="h-6 w-6" />
-                <span className="text-[10px] font-bold uppercase tracking-widest">{item.name}</span>
-              </Link>
-            );
-          })}
+        <div className="relative flex h-full items-center justify-around px-2">
+          <Link
+            href="/dashboard"
+            className={cn(
+              "flex flex-col items-center gap-1 flex-1 transition-all",
+              pathname === "/dashboard" ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            <LayoutDashboard className="h-5 w-5" />
+            <span className="text-[9px] font-bold uppercase tracking-widest">Dash</span>
+          </Link>
+          
+          <Link
+            href="/groups"
+            className={cn(
+              "flex flex-col items-center gap-1 flex-1 transition-all",
+              pathname.startsWith("/groups") ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            <Users className="h-5 w-5" />
+            <span className="text-[9px] font-bold uppercase tracking-widest">Groups</span>
+          </Link>
 
-          <div className="relative -top-6">
+          <div className="relative -top-6 px-2">
             <Button
               asChild
-              className="h-14 w-14 rounded-full bg-primary shadow-lg shadow-primary/40 hover:scale-105 transition-transform active:scale-90"
+              className="h-14 w-14 rounded-full bg-primary shadow-xl shadow-primary/40 hover:scale-105 transition-transform active:scale-90 border-4 border-background"
               size="icon"
             >
               <Link href={addExpenseUrl}>
@@ -150,38 +157,31 @@ export function Navbar() {
             </Button>
           </div>
 
-          {rightNavItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "flex flex-col items-center gap-1 transition-all",
-                  isActive ? "text-primary" : "text-muted-foreground"
-                )}
-              >
-                <Icon className="h-6 w-6" />
-                <span className="text-[10px] font-bold uppercase tracking-widest">{item.name}</span>
-              </Link>
-            );
-          })}
+          <Link
+            href="/analytics"
+            className={cn(
+              "flex flex-col items-center gap-1 flex-1 transition-all",
+              pathname === "/analytics" ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            <PieChart className="h-5 w-5" />
+            <span className="text-[9px] font-bold uppercase tracking-widest">Stats</span>
+          </Link>
 
           <Link
             href="/profile"
             className={cn(
-              "flex flex-col items-center gap-1 transition-all",
+              "flex flex-col items-center gap-1 flex-1 transition-all",
               pathname === "/profile" ? "text-primary" : "text-muted-foreground"
             )}
           >
             <div className={cn(
-              "h-6 w-6 rounded-full flex items-center justify-center border-2 transition-all",
+              "h-5 w-5 rounded-full flex items-center justify-center border-2 transition-all overflow-hidden",
               pathname === "/profile" ? "border-primary bg-primary/10" : "border-transparent bg-muted"
             )}>
-              <UserIcon className="h-4 w-4" />
+              <UserIcon className="h-3 w-3" />
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-widest">Me</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest">Me</span>
           </Link>
         </div>
       </nav>
