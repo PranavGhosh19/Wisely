@@ -25,7 +25,8 @@ import {
   Tag,
   Plus,
   Trash2,
-  Smartphone
+  Smartphone,
+  Share2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -92,6 +93,13 @@ export default function ProfilePage() {
         description: "Wisely has been added to your home screen.",
       });
     }
+  };
+
+  const handleIosInstall = () => {
+    toast({
+      title: "Install on iOS",
+      description: "Tap the 'Share' icon in Safari (the square with an up arrow) and then select 'Add to Home Screen'.",
+    });
   };
 
   const appearanceOptions = [
@@ -239,6 +247,19 @@ export default function ProfilePage() {
                   {!installPrompt && <span className="text-[10px] font-bold uppercase text-muted-foreground bg-muted px-2 py-0.5 rounded">Native</span>}
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
+              </button>
+
+              <button 
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
+                onClick={handleIosInstall}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500">
+                    <Share2 className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-medium">Add to iOS Home Screen</span>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
 
               <button className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50">
