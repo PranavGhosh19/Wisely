@@ -21,7 +21,9 @@ import {
   FileText,
   UserPlus,
   User as UserIcon,
-  BarChart3
+  BarChart3,
+  CheckCircle2,
+  AlertTriangle
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
@@ -33,10 +35,22 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
 import { collection, query, orderBy, doc, updateDoc, arrayUnion, where } from "firebase/firestore";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -49,7 +63,9 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
   const [isMembersOpen, setIsMembersOpen] = useState(false);
+  const [isSettleDialogOpen, setIsSettleDialogOpen] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [isSettling, setIsSettling] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -75,7 +91,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     }
   }, [mounted, shouldShowJoin, group, isMember]);
 
-  // UseCollection for group expenses - limiting to recent for summary view
+  // UseCollection for group expenses
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !groupId || !user || !isMember) return null;
     return query(
@@ -137,6 +153,33 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       });
     } finally {
       setIsJoining(false);
+    }
+  };
+
+  const handleSettle = () => {
+    if (!db || !groupId || !groupExpenses) return;
+    setIsSettling(true);
+    
+    try {
+      // Mark all current active expenses as deleted/settled
+      groupExpenses.forEach(exp => {
+        const docRef = doc(db, "groups", groupId, "expenses", exp.id);
+        updateDocumentNonBlocking(docRef, { isDeleted: true });
+      });
+
+      toast({
+        title: "Balances Settled",
+        description: "All outstanding expenses have been cleared.",
+      });
+      setIsSettleDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not settle balances at this time.",
+      });
+    } finally {
+      setIsSettling(false);
     }
   };
 
@@ -205,15 +248,48 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                 <span className="font-medium underline-offset-4 group-hover:underline">{group.members?.length || 0} Members</span>
               </button>
             </div>
-            <Button 
-              asChild
-              className="hidden md:flex bg-primary hover:bg-primary/90 gap-2 h-11 rounded-xl font-bold px-6 transition-all active:scale-95"
-            >
-              <Link href={`/expenses/add?type=GROUP&groupId=${groupId}`}>
-                <Plus className="h-5 w-5" />
-                Add Group Expense
-              </Link>
-            </Button>
+            
+            <div className="flex items-center gap-2">
+              <AlertDialog open={isSettleDialogOpen} onOpenChange={setIsSettleDialogOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="outline"
+                    className="flex-1 sm:flex-none border-primary text-primary hover:bg-primary/5 gap-2 h-11 rounded-xl font-bold px-6"
+                    disabled={!groupExpenses || groupExpenses.length === 0}
+                  >
+                    <CheckCircle2 className="h-5 w-5" />
+                    Settle
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="rounded-2xl">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="font-headline text-xl">Settle all balances?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will archive all current expenses in "{group.name}". Use this only after everyone has paid their dues. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="gap-2">
+                    <AlertDialogCancel className="rounded-xl font-bold">Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      className="bg-primary hover:bg-primary/90 rounded-xl font-bold"
+                      onClick={handleSettle}
+                    >
+                      Confirm Settlement
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <Button 
+                asChild
+                className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 gap-2 h-11 rounded-xl font-bold px-6 transition-all active:scale-95"
+              >
+                <Link href={`/expenses/add?type=GROUP&groupId=${groupId}`}>
+                  <Plus className="h-5 w-5" />
+                  Add Expense
+                </Link>
+              </Button>
+            </div>
           </div>
         </header>
 
@@ -285,8 +361,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                 <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
                   <Receipt className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-bold font-headline">No expenses in this group</h3>
-                <p className="text-sm text-muted-foreground max-w-xs mt-1">Start tracking by adding your first shared transaction.</p>
+                <h3 className="text-lg font-bold font-headline">No active expenses</h3>
+                <p className="text-sm text-muted-foreground max-w-xs mt-1">Balances are settled. Start tracking by adding a new shared transaction.</p>
               </div>
             ) : (
               <div className="divide-y divide-muted">
