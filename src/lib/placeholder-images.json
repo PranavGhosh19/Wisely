@@ -17,6 +17,12 @@
       "description": "A group of diverse friends laughing and sharing a meal at a restaurant.",
       "imageUrl": "https://picsum.photos/seed/wisely-group/600/400",
       "imageHint": "friends dinner"
+    },
+    {
+      "id": "app-icon",
+      "description": "A professional wallet icon representing financial clarity and organization.",
+      "imageUrl": "/wallet.png",
+      "imageHint": "wallet icon"
     }
   ]
 }

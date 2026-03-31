@@ -3,8 +3,8 @@ import type { MetadataRoute } from 'next'
 import data from './lib/placeholder-images.json'
 
 export default function manifest(): MetadataRoute.Manifest {
-  // Use the mountain landscape icon from the source of truth
-  const appIconUrl = data.placeholderImages.find(img => img.id === "app-icon")?.imageUrl || 'https://picsum.photos/seed/wisely-app-icon/512/512';
+  // Use the wallet icon from the source of truth
+  const appIconUrl = data.placeholderImages.find(img => img.id === "app-icon")?.imageUrl || '/wallet.png';
 
   return {
     name: 'Wisely Expense Tracker',
