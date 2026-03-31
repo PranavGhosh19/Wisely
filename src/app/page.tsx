@@ -1,10 +1,8 @@
-
 "use client";
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { 
@@ -16,7 +14,6 @@ import {
   Smartphone,
   CheckCircle2
 } from "lucide-react";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function LandingPage() {
   const { user, isLoading } = useStore();
@@ -38,9 +35,6 @@ export default function LandingPage() {
       </div>
     );
   }
-
-  const personalImage = PlaceHolderImages.find(img => img.id === "feature-personal");
-  const groupImage = PlaceHolderImages.find(img => img.id === "feature-group");
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -103,65 +97,41 @@ export default function LandingPage() {
             <p className="text-muted-foreground max-w-xl mx-auto">Powerful features designed to give you complete visibility over your financial life.</p>
           </div>
 
-          <div className="grid gap-12 lg:grid-cols-2 items-center">
-            <div className="space-y-6">
+          <div className="grid gap-16 md:grid-cols-2">
+            <div className="space-y-6 bg-card/30 p-8 rounded-3xl border border-white/5">
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                 <Wallet className="h-6 w-6" />
               </div>
-              <h3 className="text-3xl font-bold font-headline">Smart Personal Budgeting</h3>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <h3 className="text-2xl font-bold font-headline">Smart Personal Budgeting</h3>
+              <p className="text-muted-foreground leading-relaxed">
                 Categorize your spending automatically and see where your money goes. Set custom categories and track your daily habits with ease.
               </p>
               <ul className="space-y-3">
                 {["Unlimited personal categories", "Real-time spending alerts", "Monthly budget goals", "Secure receipt storage"].map((item) => (
-                  <li key={item} className="flex items-center gap-3 font-medium text-foreground">
-                    <CheckCircle2 className="h-5 w-5 text-accent" />
+                  <li key={item} className="flex items-center gap-3 font-medium text-foreground text-sm">
+                    <CheckCircle2 className="h-4 w-4 text-accent" />
                     {item}
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="rounded-3xl overflow-hidden shadow-xl border border-white/5">
-              {personalImage && (
-                <Image 
-                  src={personalImage.imageUrl}
-                  alt="Personal Finance"
-                  width={600}
-                  height={400}
-                  className="w-full hover:scale-105 transition-transform duration-500"
-                />
-              )}
-            </div>
-          </div>
 
-          <div className="grid gap-12 lg:grid-cols-2 items-center mt-32">
-            <div className="lg:order-2 space-y-6">
+            <div className="space-y-6 bg-card/30 p-8 rounded-3xl border border-white/5">
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
                 <Users className="h-6 w-6" />
               </div>
-              <h3 className="text-3xl font-bold font-headline">Seamless Group Splits</h3>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <h3 className="text-2xl font-bold font-headline">Seamless Group Splits</h3>
+              <p className="text-muted-foreground leading-relaxed">
                 Perfect for roommates, trips, and dinners. No more awkward "who owes who" conversations. Just add the bill and let Wisely handle the math.
               </p>
               <ul className="space-y-3">
                 {["Instant QR code invites", "Multiple split methods", "Settlement tracking", "Group balance summaries"].map((item) => (
-                  <li key={item} className="flex items-center gap-3 font-medium text-foreground">
-                    <CheckCircle2 className="h-5 w-5 text-accent" />
+                  <li key={item} className="flex items-center gap-3 font-medium text-foreground text-sm">
+                    <CheckCircle2 className="h-4 w-4 text-accent" />
                     {item}
                   </li>
                 ))}
               </ul>
-            </div>
-            <div className="lg:order-1 rounded-3xl overflow-hidden shadow-xl border border-white/5">
-              {groupImage && (
-                <Image 
-                  src={groupImage.imageUrl}
-                  alt="Group Sharing"
-                  width={600}
-                  height={400}
-                  className="w-full hover:scale-105 transition-transform duration-500"
-                />
-              )}
             </div>
           </div>
         </div>

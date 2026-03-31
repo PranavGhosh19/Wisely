@@ -1,18 +1,6 @@
 {
   "placeholderImages": [
     {
-      "id": "landing-hero",
-      "imageUrl": "/wallet.png"
-    },
-    {
-      "id": "feature-personal",
-      "imageUrl": "/wallet.png"
-    },
-    {
-      "id": "feature-group",
-      "imageUrl": "/wallet.png"
-    },
-    {
       "id": "app-icon",
       "imageUrl": "/wallet.png"
     }
