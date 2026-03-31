@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
@@ -12,7 +13,8 @@ import { useStore } from "@/lib/store";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, collectionGroup, query, where } from "firebase/firestore";
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
-import { PieChart } from "lucide-react";
+import { PieChart, Filter, Users, User, Layers, Search } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const COLORS = ['#3D737F', '#CEC7BF', '#07161B', '#5A9BA8', '#8FBABF', '#A89E92'];
 
@@ -63,12 +65,14 @@ export default function AnalyticsPage() {
   const { user } = useStore();
   const db = useFirestore();
   const [mounted, setMounted] = useState(false);
+  const [scope, setScope] = useState<"ALL" | "PERSONAL" | "GROUP">("ALL");
+  const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Fetch Personal Expenses - scoped to the user's specific subcollection
+  // Fetch Personal Expenses
   const personalQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -78,7 +82,7 @@ export default function AnalyticsPage() {
   }, [db, user]);
   const { data: personalExpenses, isLoading: loadingPersonal } = useCollection(personalQuery);
 
-  // Fetch Group Expenses across all groups using Collection Group
+  // Fetch Group Expenses
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -89,21 +93,39 @@ export default function AnalyticsPage() {
   }, [db, user]);
   const { data: groupExpenses, isLoading: loadingGroups } = useCollection(groupExpensesQuery);
 
-  // Combine data for global insights
-  const allExpenses = useMemo(() => {
-    return [...(personalExpenses || []), ...(groupExpenses || [])];
-  }, [personalExpenses, groupExpenses]);
+  // Fetch User's Groups for the sub-filter
+  const groupsQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, "groups"), where("members", "array-contains", user.uid));
+  }, [db, user]);
+  const { data: userGroups } = useCollection(groupsQuery);
+
+  // Combine and Filter data for global insights
+  const filteredExpenses = useMemo(() => {
+    let base: any[] = [];
+    if (scope === "ALL") {
+      base = [...(personalExpenses || []), ...(groupExpenses || [])];
+    } else if (scope === "PERSONAL") {
+      base = personalExpenses || [];
+    } else if (scope === "GROUP") {
+      base = groupExpenses || [];
+      if (selectedGroupId !== "all") {
+        base = base.filter(exp => exp.groupId === selectedGroupId);
+      }
+    }
+    return base;
+  }, [personalExpenses, groupExpenses, scope, selectedGroupId]);
 
   // Visual 1: Category Distribution
   const pieData = useMemo(() => {
     const categories: Record<string, number> = {};
-    allExpenses.forEach(exp => {
+    filteredExpenses.forEach(exp => {
       categories[exp.category] = (categories[exp.category] || 0) + exp.amount;
     });
     return Object.entries(categories)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
-  }, [allExpenses]);
+  }, [filteredExpenses]);
 
   // Visual 2: Spending Trend (Last 6 Months)
   const trendData = useMemo(() => {
@@ -117,7 +139,7 @@ export default function AnalyticsPage() {
       };
     });
 
-    allExpenses.forEach(exp => {
+    filteredExpenses.forEach(exp => {
       const expDate = new Date(exp.date);
       months.forEach(month => {
         if (isWithinInterval(expDate, { start: month.start, end: month.end })) {
@@ -127,7 +149,7 @@ export default function AnalyticsPage() {
     });
 
     return months.map(m => ({ name: m.name, amount: parseFloat(m.amount.toFixed(2)) }));
-  }, [allExpenses]);
+  }, [filteredExpenses]);
 
   // Visual 3: Personal vs Group
   const splitData = useMemo(() => {
@@ -148,9 +170,65 @@ export default function AnalyticsPage() {
       <Navbar />
       
       <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-7xl mx-auto w-full">
-        <header className="mb-8">
-          <h2 className="text-3xl font-bold font-headline text-primary">Overall Analytics</h2>
-          <p className="text-muted-foreground">Detailed insights into your spending patterns.</p>
+        <header className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-3xl font-bold font-headline text-primary">Overall Analytics</h2>
+            <p className="text-muted-foreground">Detailed insights into your spending patterns.</p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
+                <Layers className="h-3 w-3" />
+                View Scope
+              </label>
+              <Select value={scope} onValueChange={(val: any) => setScope(val)}>
+                <SelectTrigger className="w-[180px] h-10 rounded-xl bg-card border-none shadow-sm">
+                  <SelectValue placeholder="Select Scope" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">
+                    <div className="flex items-center gap-2">
+                      <Layers className="h-4 w-4" />
+                      All Activity
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="PERSONAL">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Personal Only
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="GROUP">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Group Shared
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {scope === "GROUP" && (
+              <div className="space-y-1.5 animate-in fade-in slide-in-from-right-4 duration-300">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
+                  <Users className="h-3 w-3" />
+                  Select Group
+                </label>
+                <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
+                  <SelectTrigger className="w-[180px] h-10 rounded-xl bg-card border-none shadow-sm">
+                    <SelectValue placeholder="Which Group?" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Groups</SelectItem>
+                    {userGroups?.map(g => (
+                      <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
         </header>
 
         {isLoading ? (
@@ -160,7 +238,7 @@ export default function AnalyticsPage() {
               <p className="text-sm text-muted-foreground font-medium">Crunching your numbers...</p>
             </div>
           </div>
-        ) : allExpenses.length === 0 ? (
+        ) : filteredExpenses.length === 0 ? (
           <Card className="border-none shadow-sm bg-card p-12 text-center rounded-2xl">
             <div className="max-w-xs mx-auto space-y-4">
               <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto">
@@ -175,7 +253,9 @@ export default function AnalyticsPage() {
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="font-headline text-lg">Category Distribution</CardTitle>
-                <CardDescription>Total spending by category across all records</CardDescription>
+                <CardDescription>
+                  {scope === "ALL" ? "Combined" : scope === "PERSONAL" ? "Personal" : "Group"} spending by category
+                </CardDescription>
               </CardHeader>
               <CardContent className="h-[350px] sm:h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -207,7 +287,7 @@ export default function AnalyticsPage() {
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="font-headline text-lg">Spending Trend</CardTitle>
-                <CardDescription>Total monthly spending over the last 6 months</CardDescription>
+                <CardDescription>Monthly movement across selected scope</CardDescription>
               </CardHeader>
               <CardContent className="h-[350px] sm:h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
