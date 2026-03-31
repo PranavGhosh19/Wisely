@@ -128,7 +128,6 @@ export default function Dashboard() {
               <span className="text-[10px] font-bold uppercase tracking-widest opacity-80 leading-tight">Total Outstanding</span>
             </div>
             <div className="text-xl font-bold relative z-10 shrink-0">{symbol}{totalOverallSpent.toFixed(2)}</div>
-            <CreditCard className="absolute -right-4 -bottom-4 h-16 w-16 opacity-10 rotate-12 transition-transform group-hover:scale-110" />
           </Card>
         </div>
 
