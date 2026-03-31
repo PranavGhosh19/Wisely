@@ -138,8 +138,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       });
     });
 
-    // Debt Simplification Algorithm
-    // We separate those who are owed money (creditors) and those who owe money (debtors)
+    // Debt Simplification Algorithm (Greedy)
     const debtors = Object.entries(stats)
       .filter(([_, s]) => s.net < -0.01)
       .map(([uid, s]) => ({ uid, amount: Math.abs(s.net) }))
