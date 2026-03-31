@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -138,8 +139,6 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         type: expenseType,
         createdBy: isEditing ? (initialData.createdBy || user.name) : user.name,
         createdById: isEditing ? (initialData.createdById || user.uid) : user.uid,
-        updatedBy: isEditing ? user.name : undefined,
-        updatedById: isEditing ? user.uid : undefined,
         paidBy: formData.paidBy || user.uid,
         splitType: formData.splitType,
         splitBetween: formData.splitBetween,
@@ -147,6 +146,11 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         receiptUrl: formData.receiptUrl || "",
         isDeleted: false,
       };
+
+      if (isEditing) {
+        expenseData.updatedBy = user.name;
+        expenseData.updatedById = user.uid;
+      }
 
       if (expenseType === "PERSONAL") {
         if (isEditing && initialData?.id) {

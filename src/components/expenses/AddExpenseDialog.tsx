@@ -116,14 +116,14 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
         id: expenseId,
         amount: amount,
         category: formData.category,
-        notes: formData.notes,
+        notes: formData.notes || "",
         date: new Date(formData.date).getTime(),
         type: expenseType,
         createdBy: user.name,
         createdById: user.uid,
         paidBy: user.uid,
-        receiptName: formData.receiptName,
-        receiptUrl: formData.receiptUrl,
+        receiptName: formData.receiptName || "",
+        receiptUrl: formData.receiptUrl || "",
         isDeleted: false,
       };
 
