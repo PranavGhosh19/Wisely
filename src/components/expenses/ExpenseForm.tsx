@@ -127,7 +127,6 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
     setLoading(true);
     try {
       const isEditing = !!initialData;
-      // Always create a NEW ID for the new transaction version
       const expenseId = Math.random().toString(36).substr(2, 9);
       
       const expenseData: any = {
@@ -137,7 +136,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         notes: formData.notes || "",
         date: new Date(formData.date).getTime(),
         type: expenseType,
-        createdBy: isEditing ? (initialData.createdBy || user.name) : user.name,
+        createdBy: isEditing ? (initialData.createdBy || user.name || "User") : (user.name || "User"),
         createdById: isEditing ? (initialData.createdById || user.uid) : user.uid,
         paidBy: formData.paidBy || user.uid,
         splitType: formData.splitType,
@@ -148,7 +147,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
       };
 
       if (isEditing) {
-        expenseData.updatedBy = user.name;
+        expenseData.updatedBy = user.name || "User";
         expenseData.updatedById = user.uid;
       }
 
@@ -157,7 +156,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
           const oldRef = doc(db, "users", user.uid, "personalExpenses", initialData.id);
           updateDocumentNonBlocking(oldRef, { 
             isDeleted: true, 
-            deletedBy: user.name, 
+            deletedBy: user.name || "User", 
             deletedById: user.uid 
           });
           deleteExpense(initialData.id);
@@ -171,12 +170,15 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         expenseData.groupMemberIds = selectedGroup.members;
 
         // Ensure splitBetween amounts are synchronized with the total amount
-        if (formData.splitType === 'EQUAL' || formData.splitBetween.length === 0) {
-          const members = selectedGroup.members || [];
-          const splitAmount = amount / (members.length || 1);
-          expenseData.splitBetween = members.map(uid => ({
+        if (formData.splitType === 'EQUAL') {
+          // If modal was opened, respect the subset. If not, split among all.
+          const activeMembers = formData.splitBetween.filter(s => s.amount > 0).map(s => s.userId);
+          const membersToSplitWith = activeMembers.length > 0 ? activeMembers : (selectedGroup.members || []);
+          
+          const splitAmount = amount / (membersToSplitWith.length || 1);
+          expenseData.splitBetween = (selectedGroup.members || []).map(uid => ({
             userId: uid,
-            amount: parseFloat(splitAmount.toFixed(2))
+            amount: membersToSplitWith.includes(uid) ? parseFloat(splitAmount.toFixed(2)) : 0
           }));
         } else if (formData.splitType === 'PERCENTAGE') {
           expenseData.splitBetween = formData.splitBetween.map(s => ({
@@ -197,7 +199,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
           const oldRef = doc(db, "groups", initialData.groupId, "expenses", initialData.id);
           updateDocumentNonBlocking(oldRef, { 
             isDeleted: true, 
-            deletedBy: user.name, 
+            deletedBy: user.name || "User", 
             deletedById: user.uid 
           });
           deleteExpense(initialData.id);

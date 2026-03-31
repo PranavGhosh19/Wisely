@@ -111,6 +111,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
     setLoading(true);
     try {
       const expenseId = expenseToEdit?.id || Math.random().toString(36).substr(2, 9);
+      const isEditing = !!expenseToEdit;
       
       const expenseData: any = {
         id: expenseId,
@@ -119,13 +120,18 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
         notes: formData.notes || "",
         date: new Date(formData.date).getTime(),
         type: expenseType,
-        createdBy: user.name,
-        createdById: user.uid,
+        createdBy: isEditing ? (expenseToEdit.createdBy || user.name || "User") : (user.name || "User"),
+        createdById: isEditing ? (expenseToEdit.createdById || user.uid) : user.uid,
         paidBy: user.uid,
         receiptName: formData.receiptName || "",
         receiptUrl: formData.receiptUrl || "",
         isDeleted: false,
       };
+
+      if (isEditing) {
+        expenseData.updatedBy = user.name || "User";
+        expenseData.updatedById = user.uid;
+      }
 
       let docRef;
 
