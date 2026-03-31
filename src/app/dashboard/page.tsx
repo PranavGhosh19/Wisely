@@ -63,7 +63,12 @@ export default function Dashboard() {
 
   const activeExpenses = expenses || [];
   const totalPersonalSpent = activeExpenses.reduce((acc, curr) => acc + curr.amount, 0);
-  const totalGroupSpent = (groupExpenses || []).reduce((acc, curr) => acc + curr.amount, 0);
+  
+  // Calculate total of the user's individual shares in group expenses
+  const totalUserGroupShare = (groupExpenses || []).reduce((acc, curr) => {
+    const userShare = curr.splitBetween?.find((s: any) => s.userId === user.uid)?.amount || 0;
+    return acc + userShare;
+  }, 0);
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row bg-background">
@@ -107,7 +112,7 @@ export default function Dashboard() {
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Group Spents</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">${totalGroupSpent.toFixed(2)}</div>
+              <div className="text-3xl font-bold text-foreground">${totalUserGroupShare.toFixed(2)}</div>
             </CardContent>
           </Card>
         </div>
