@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
@@ -77,7 +78,7 @@ function CurrencyContent() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold font-headline text-primary">Default Currency</h1>
+              <h1 className="text-2xl font-bold font-headline text-primary">Default Currency</h1>
               <p className="text-muted-foreground">Select how your amounts are displayed.</p>
             </div>
           </header>
@@ -88,10 +89,10 @@ function CurrencyContent() {
             <div className="mx-auto h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mb-4">
               <Globe className="h-8 w-8" />
             </div>
-            <CardTitle className="font-headline text-2xl">
+            <CardTitle className="font-headline text-xl">
               {isSetup ? "Welcome to Wisely!" : "Change Currency"}
             </CardTitle>
-            <CardDescription className="text-base px-6">
+            <CardDescription className="text-sm px-6">
               {isSetup 
                 ? "Let's get started by picking your preferred currency for personal and shared tracking."
                 : "This updates the symbol and calculations used across all your expenses."}
@@ -103,7 +104,7 @@ function CurrencyContent() {
                 Select Currency
               </Label>
               <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-                <SelectTrigger id="currency" className="h-14 rounded-2xl bg-muted/30 border-none text-lg font-medium">
+                <SelectTrigger id="currency" className="h-14 rounded-2xl bg-muted/30 border-none text-base font-medium">
                   <SelectValue placeholder="Pick a currency..." />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl shadow-2xl border-none">
@@ -118,7 +119,7 @@ function CurrencyContent() {
 
             <Button 
               onClick={handleUpdateCurrency} 
-              className="w-full bg-primary h-14 rounded-2xl font-bold text-lg gap-2 shadow-lg shadow-primary/20 transition-all active:scale-95" 
+              className="w-full bg-primary h-14 rounded-2xl font-bold text-base gap-2 shadow-lg shadow-primary/20 transition-all active:scale-95" 
               disabled={loading || !selectedCurrency || (!isSetup && selectedCurrency === user?.currency)}
             >
               {loading ? (
