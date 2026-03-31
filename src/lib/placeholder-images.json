@@ -2,27 +2,27 @@
   "placeholderImages": [
     {
       "id": "landing-hero",
-      "description": "A sleek, modern financial analytics dashboard with clean graphs and spending overviews.",
-      "imageUrl": "https://picsum.photos/seed/wisely-hero/1200/800",
+      "description": "A sleek, modern financial analytics dashboard representing Wisely's core interface.",
+      "imageUrl": "/wallet.png",
       "imageHint": "financial dashboard"
     },
     {
       "id": "feature-personal",
-      "description": "A close-up of a digital wallet showing categorized personal spending.",
-      "imageUrl": "https://picsum.photos/seed/wisely-personal/600/400",
-      "imageHint": "mobile payment"
+      "description": "Branded icon representing personal expense tracking.",
+      "imageUrl": "/wallet.png",
+      "imageHint": "personal finance"
     },
     {
       "id": "feature-group",
-      "description": "A group of diverse friends laughing and sharing a meal at a restaurant.",
-      "imageUrl": "https://picsum.photos/seed/wisely-group/600/400",
-      "imageHint": "friends dinner"
+      "description": "Branded icon representing group expense splitting.",
+      "imageUrl": "/wallet.png",
+      "imageHint": "group sharing"
     },
     {
       "id": "app-icon",
-      "description": "A professional wallet icon representing financial clarity and organization.",
+      "description": "The official Wisely wallet icon.",
       "imageUrl": "/wallet.png",
-      "imageHint": "wallet icon"
+      "imageHint": "app icon"
     }
   ]
 }
