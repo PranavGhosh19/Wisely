@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -15,7 +14,7 @@ import { AlertCircle, Upload, X, FileText, ArrowLeft, Loader2, ChevronRight, Use
 import { format } from "date-fns";
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase";
 import { doc, collection, query, where } from "firebase/firestore";
-import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { SplitOptions } from "./SplitOptions";
 
 interface ExpenseFormProps {
@@ -26,7 +25,7 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({ initialData, initialType, initialGroupId }: ExpenseFormProps) {
   const router = useRouter();
-  const { user, addExpense, groups, categories } = useStore();
+  const { user, addExpense, deleteExpense, groups, categories } = useStore();
   const db = useFirestore();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -126,7 +125,9 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
 
     setLoading(true);
     try {
-      const expenseId = initialData?.id || Math.random().toString(36).substr(2, 9);
+      const isEditing = !!initialData;
+      // Always create a NEW ID for the new transaction version
+      const expenseId = Math.random().toString(36).substr(2, 9);
       
       const expenseData: any = {
         id: expenseId,
@@ -135,8 +136,10 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         notes: formData.notes || "",
         date: new Date(formData.date).getTime(),
         type: expenseType,
-        createdBy: user.name,
-        createdById: user.uid,
+        createdBy: isEditing ? (initialData.createdBy || user.name) : user.name,
+        createdById: isEditing ? (initialData.createdById || user.uid) : user.uid,
+        updatedBy: isEditing ? user.name : undefined,
+        updatedById: isEditing ? user.uid : undefined,
         paidBy: formData.paidBy || user.uid,
         splitType: formData.splitType,
         splitBetween: formData.splitBetween,
@@ -145,9 +148,18 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         isDeleted: false,
       };
 
-      let docRef;
       if (expenseType === "PERSONAL") {
-        docRef = doc(db, "users", user.uid, "personalExpenses", expenseId);
+        if (isEditing && initialData?.id) {
+          const oldRef = doc(db, "users", user.uid, "personalExpenses", initialData.id);
+          updateDocumentNonBlocking(oldRef, { 
+            isDeleted: true, 
+            deletedBy: user.name, 
+            deletedById: user.uid 
+          });
+          deleteExpense(initialData.id);
+        }
+        const newRef = doc(db, "users", user.uid, "personalExpenses", expenseId);
+        setDocumentNonBlocking(newRef, expenseData, { merge: false });
       } else {
         const selectedGroup = groups.find(g => g.id === formData.groupId) || group;
         if (!selectedGroup) throw new Error("Group not found");
@@ -174,17 +186,25 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
             amount: parseFloat(((s.weight || 0) / (totalWeight || 1) * amount).toFixed(2))
           }));
         } else {
-          // For UNEQUAL, we trust the current amounts in splitBetween
           expenseData.splitBetween = formData.splitBetween;
         }
 
-        docRef = doc(db, "groups", formData.groupId, "expenses", expenseId);
+        if (isEditing && initialData?.id && initialData.groupId) {
+          const oldRef = doc(db, "groups", initialData.groupId, "expenses", initialData.id);
+          updateDocumentNonBlocking(oldRef, { 
+            isDeleted: true, 
+            deletedBy: user.name, 
+            deletedById: user.uid 
+          });
+          deleteExpense(initialData.id);
+        }
+        const newRef = doc(db, "groups", formData.groupId, "expenses", expenseId);
+        setDocumentNonBlocking(newRef, expenseData, { merge: false });
       }
 
-      setDocumentNonBlocking(docRef, expenseData, { merge: true });
       addExpense(expenseData);
       
-      toast({ title: "Expense Saved", description: `Successfully ${initialData ? "updated" : "added"} expense.` });
+      toast({ title: "Expense Saved", description: `Successfully ${isEditing ? "updated" : "added"} expense.` });
       router.back();
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: error.message || "Failed to save expense." });

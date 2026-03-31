@@ -1,4 +1,3 @@
-
 export type ExpenseType = 'PERSONAL' | 'GROUP';
 export type SplitType = 'EQUAL' | 'UNEQUAL' | 'PERCENTAGE' | 'WEIGHT';
 
@@ -34,6 +33,10 @@ export interface Expense {
   date: number; // Timestamp
   createdBy: string;
   createdById: string; // Used for security rules
+  updatedBy?: string;
+  updatedById?: string;
+  deletedBy?: string;
+  deletedById?: string;
   notes?: string;
   groupId?: string;
   groupMemberIds?: string[]; // Used for security rules in group subcollections

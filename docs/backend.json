@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "UserProfile": {
@@ -26,6 +25,10 @@
         "date": { "type": "number" },
         "createdBy": { "type": "string" },
         "createdById": { "type": "string" },
+        "updatedBy": { "type": "string" },
+        "updatedById": { "type": "string" },
+        "deletedBy": { "type": "string" },
+        "deletedById": { "type": "string" },
         "paidBy": { "type": "string" },
         "notes": { "type": "string" },
         "groupId": { "type": "string" },
