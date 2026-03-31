@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -37,13 +36,14 @@ export default function AuthPage() {
   const redirectUrl = searchParams.get("redirect") || "/dashboard";
 
   useEffect(() => {
-    // Only redirect if the user is authenticated
-    if (user) {
-      // If the user doesn't have a currency set, they'll likely be caught by the currency check
-      // but the specific requirement here is handling the post-signup redirect.
-      router.replace(redirectUrl);
+    if (user && !loading) {
+      // If user exists and has a currency, go to dashboard
+      // If currency is missing, the CurrencyPage setup logic handles it
+      if (user.currency) {
+        router.replace(redirectUrl);
+      }
     }
-  }, [user, router, redirectUrl]);
+  }, [user, router, redirectUrl, loading]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,12 +71,10 @@ export default function AuthPage() {
           name: name,
           email: email,
           groupIds: [],
-          currency: "", // Leave empty to trigger selection
+          currency: "", 
         };
 
         await setDoc(doc(db, "users", firebaseUser.uid), userProfile);
-        
-        // Redirect to currency setup
         router.push("/profile/currency?setup=true");
       } else {
         await signInWithEmailAndPassword(auth, email, password);
@@ -113,14 +111,18 @@ export default function AuthPage() {
           currency: "", 
         };
         await setDoc(userDocRef, userProfile);
-        
-        // Redirect to currency setup
         router.push("/profile/currency?setup=true");
       } else {
-        toast({ title: "Welcome", description: "Successfully signed in with Google." });
+        const data = userDoc.data();
+        if (!data?.currency) {
+          router.push("/profile/currency?setup=true");
+        } else {
+          toast({ title: "Welcome", description: "Successfully signed in with Google." });
+        }
       }
     } catch (error: any) {
       if (error.code === 'auth/popup-closed-by-user') {
+        setLoading(false);
         return;
       }
       toast({ 
@@ -128,7 +130,6 @@ export default function AuthPage() {
         title: "Google Sign-In Failed", 
         description: error.message || "An error occurred during Google sign-in." 
       });
-    } finally {
       setLoading(false);
     }
   };
