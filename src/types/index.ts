@@ -44,6 +44,7 @@ export interface Expense {
   splitBetween: SplitMember[];
   splitType: SplitType;
   isDeleted?: boolean;
+  isSettled?: boolean;
   receiptUrl?: string;
   receiptName?: string;
 }

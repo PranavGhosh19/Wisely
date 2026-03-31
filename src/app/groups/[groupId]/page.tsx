@@ -51,6 +51,7 @@ import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase
 import { collection, query, orderBy, doc, updateDoc, arrayUnion, where } from "firebase/firestore";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { cn } from "@/lib/utils";
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -109,12 +110,14 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   }, [db, group?.members]);
   const { data: memberProfiles, isLoading: membersLoading } = useCollection(membersQuery);
 
-  const totalSpent = (groupExpenses || []).reduce((acc, curr) => acc + curr.amount, 0);
+  const totalSpent = (groupExpenses || [])
+    .filter(exp => !exp.isSettled)
+    .reduce((acc, curr) => acc + curr.amount, 0);
 
   /**
    * settlementInfo:
-   * stats: Aggregated Paid vs Share per member.
-   * debts: Simplified "who owes whom" array using a greedy algorithm.
+   * stats: Aggregated Paid vs Share per member for UNSETTLED transactions.
+   * debts: Simplified "who owes whom" array.
    */
   const settlementInfo = useMemo(() => {
     if (!group?.members || !groupExpenses) return { stats: {}, debts: [] };
@@ -122,7 +125,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     const stats: Record<string, { net: number; paid: number; share: number }> = {};
     group.members.forEach(uid => stats[uid] = { net: 0, paid: 0, share: 0 });
 
-    groupExpenses.forEach(exp => {
+    // ONLY calculate based on unsettled expenses
+    groupExpenses.filter(exp => !exp.isSettled).forEach(exp => {
       // Amount the user paid
       if (stats[exp.paidBy]) {
         stats[exp.paidBy].paid += exp.amount;
@@ -138,7 +142,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       });
     });
 
-    // Debt Simplification Algorithm (Greedy)
     const debtors = Object.entries(stats)
       .filter(([_, s]) => s.net < -0.01)
       .map(([uid, s]) => ({ uid, amount: Math.abs(s.net) }))
@@ -203,14 +206,15 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     setIsSettling(true);
     
     try {
-      groupExpenses.forEach(exp => {
+      // Instead of deleting, we mark them as settled to keep history
+      groupExpenses.filter(exp => !exp.isSettled).forEach(exp => {
         const docRef = doc(db, "groups", groupId, "expenses", exp.id);
-        updateDocumentNonBlocking(docRef, { isDeleted: true });
+        updateDocumentNonBlocking(docRef, { isSettled: true });
       });
 
       toast({
         title: "Balances Settled",
-        description: "All outstanding expenses have been cleared.",
+        description: "All outstanding expenses have been marked as settled.",
       });
       setIsSettleDialogOpen(false);
     } catch (error: any) {
@@ -296,17 +300,17 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   <Button 
                     variant="outline"
                     className="flex-1 sm:flex-none border-primary text-primary hover:bg-primary/5 gap-2 h-11 rounded-xl font-bold px-6"
-                    disabled={!groupExpenses || groupExpenses.length === 0}
+                    disabled={settlementInfo.debts.length === 0}
                   >
                     <CheckCircle2 className="h-5 w-5" />
-                    Settle
+                    Settle Up
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent className="rounded-2xl">
                   <AlertDialogHeader>
-                    <AlertDialogTitle className="font-headline text-xl">Settle all balances?</AlertDialogTitle>
+                    <AlertDialogTitle className="font-headline text-xl">Settle Balances?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will archive all current expenses in "{group.name}". Use this only after everyone has paid their dues.
+                      This will mark current active expenses as settled. History will be preserved, but balances will reset.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter className="gap-2">
@@ -330,7 +334,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               <Card className="border-none shadow-sm bg-card rounded-2xl relative overflow-hidden group/card">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Group Total Spending</CardTitle>
+                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active Group Spend</CardTitle>
                     <Button 
                       variant="ghost" 
                       size="sm" 
@@ -339,7 +343,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                     >
                       <Link href={`/groups/${groupId}/analytics`}>
                         <BarChart3 className="h-3 w-3 mr-1" />
-                        Analyse
+                        Details
                       </Link>
                     </Button>
                   </div>
@@ -348,29 +352,34 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   <div className="text-3xl font-bold text-primary">${totalSpent.toFixed(2)}</div>
                   <div className="flex items-center gap-1 mt-1 text-accent text-[11px] font-bold uppercase">
                     <TrendingUp className="h-3.5 w-3.5" />
-                    Live Tracking
+                    Unsettled Total
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="border-none shadow-sm bg-card rounded-2xl">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Individual Share</CardTitle>
+                  <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Net Position</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-foreground">
-                    ${(settlementInfo.stats[user?.uid || ""]?.share || 0).toFixed(2)}
+                  <div className={cn(
+                    "text-3xl font-bold",
+                    (settlementInfo.stats[user?.uid || ""]?.net || 0) > 0 ? "text-green-500" : 
+                    (settlementInfo.stats[user?.uid || ""]?.net || 0) < 0 ? "text-destructive" : 
+                    "text-foreground"
+                  )}>
+                    ${(settlementInfo.stats[user?.uid || ""]?.net || 0).toFixed(2)}
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">Actual Contribution</p>
+                  <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">Current Balance</p>
                 </CardContent>
               </Card>
             </div>
 
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
               <CardHeader className="border-b px-6 py-4 flex flex-row items-center justify-between">
-                <CardTitle className="font-headline text-lg font-bold">Group Activity</CardTitle>
+                <CardTitle className="font-headline text-lg font-bold">Group History</CardTitle>
                 <Button variant="link" asChild className="text-accent font-bold p-0 h-auto">
-                  <Link href={`/groups/${groupId}/transactions`}>View all transaction</Link>
+                  <Link href={`/groups/${groupId}/transactions`}>All Transactions</Link>
                 </Button>
               </CardHeader>
               <CardContent className="p-0">
@@ -381,8 +390,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                     <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
                       <Receipt className="h-8 w-8 text-muted-foreground" />
                     </div>
-                    <h3 className="text-lg font-bold font-headline">No active expenses</h3>
-                    <p className="text-sm text-muted-foreground max-w-xs mt-1">Balances are settled. Start tracking by adding a new shared transaction.</p>
+                    <h3 className="text-lg font-bold font-headline">No shared expenses</h3>
+                    <p className="text-sm text-muted-foreground max-w-xs mt-1">Activities will appear here once you start tracking.</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-muted">
@@ -406,8 +415,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                               </div>
                               <div className="min-w-0">
                                 <div className="flex items-center gap-1.5">
-                                  <p className="font-bold text-base truncate">{expense.category}</p>
-                                  {expense.receiptUrl && <FileText className="h-3.5 w-3.5 text-accent" title="Has receipt" />}
+                                  <p className={cn("font-bold text-base truncate", expense.isSettled && "text-muted-foreground")}>{expense.category}</p>
+                                  {expense.isSettled && <CheckCircle2 className="h-3.5 w-3.5 text-green-500" title="Settled" />}
                                 </div>
                                 <div className="flex items-center gap-2 mt-0.5">
                                   <span className="text-[11px] font-medium text-muted-foreground uppercase whitespace-nowrap">
@@ -421,20 +430,24 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                               </div>
                             </div>
                             <div className="text-right shrink-0 px-4">
-                              <p className="font-bold text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
+                              <p className={cn("font-bold text-lg", expense.isSettled ? "text-muted-foreground line-through" : "text-foreground")}>
+                                -${expense.amount.toFixed(2)}
+                              </p>
                             </div>
                           </Link>
                           <div className="pr-6 shrink-0">
-                            <Button 
-                              asChild
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
-                                <Edit2 className="h-4 w-4 text-muted-foreground" />
-                              </Link>
-                            </Button>
+                            {!expense.isSettled && (
+                              <Button 
+                                asChild
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
+                                  <Edit2 className="h-4 w-4 text-muted-foreground" />
+                                </Link>
+                              </Button>
+                            )}
                           </div>
                         </div>
                       );
@@ -450,9 +463,9 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               <CardHeader className="border-b px-6 py-4">
                 <CardTitle className="font-headline text-lg font-bold flex items-center gap-2">
                   <Coins className="h-5 w-5 text-accent" />
-                  Settlements
+                  Active Settlements
                 </CardTitle>
-                <CardDescription>Who owes what in this group</CardDescription>
+                <CardDescription>Outstanding group debts</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 {membersLoading ? (
@@ -462,7 +475,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                     <div className="h-12 w-12 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
                       <Check className="h-6 w-6" />
                     </div>
-                    <p className="text-sm font-bold">Everyone is settled!</p>
+                    <p className="text-sm font-bold">Balances are settled!</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-muted">
@@ -511,9 +524,9 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   <Info className="h-5 w-5" />
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-sm font-bold">Balance Information</h4>
+                  <h4 className="text-sm font-bold">Settlement Logic</h4>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    This breakdown shows the most efficient way to settle all group debts based on everyone's contributions and usage.
+                    Settling up clears the outstanding balance indicators but preserves the expense data in your group history and analytics.
                   </p>
                 </div>
               </div>
@@ -531,7 +544,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               Group Members
             </DialogTitle>
             <DialogDescription>
-              Everyone sharing expenses in <span className="font-bold text-foreground">"{group.name}"</span>.
+              Sharing expenses in <span className="font-bold text-foreground">"{group.name}"</span>.
             </DialogDescription>
           </DialogHeader>
           

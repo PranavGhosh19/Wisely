@@ -6,13 +6,14 @@ import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Receipt, FileText, Edit2, Search } from "lucide-react";
+import { ArrowLeft, Receipt, FileText, Edit2, Search, CheckCircle2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
 import { collection, query, orderBy, doc, where } from "firebase/firestore";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export default function GroupTransactionsPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -83,7 +84,7 @@ export default function GroupTransactionsPage({ params }: { params: Promise<{ gr
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-3xl font-bold font-headline text-primary">All Transactions</h2>
-              <p className="text-muted-foreground">{group?.name || "Group Activity"}</p>
+              <p className="text-muted-foreground">{group?.name || "Group History"}</p>
             </div>
             
             <div className="relative w-full sm:w-64">
@@ -134,7 +135,8 @@ export default function GroupTransactionsPage({ params }: { params: Promise<{ gr
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
-                              <p className="font-bold text-base truncate">{expense.category}</p>
+                              <p className={cn("font-bold text-base truncate", expense.isSettled && "text-muted-foreground")}>{expense.category}</p>
+                              {expense.isSettled && <CheckCircle2 className="h-3.5 w-3.5 text-green-500" title="Settled" />}
                               {expense.receiptUrl && <FileText className="h-3.5 w-3.5 text-accent" title="Has receipt" />}
                             </div>
                             <div className="flex items-center gap-2 mt-0.5">
@@ -149,21 +151,25 @@ export default function GroupTransactionsPage({ params }: { params: Promise<{ gr
                           </div>
                         </div>
                         <div className="text-right shrink-0 px-4">
-                          <p className="font-bold text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
+                          <p className={cn("font-bold text-lg", expense.isSettled ? "text-muted-foreground line-through" : "text-foreground")}>
+                            -${expense.amount.toFixed(2)}
+                          </p>
                           {expense.notes && <p className="text-[11px] text-muted-foreground italic truncate max-w-[150px]">{expense.notes}</p>}
                         </div>
                       </Link>
                       <div className="pr-6 shrink-0">
-                        <Button 
-                          asChild
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
-                            <Edit2 className="h-4 w-4 text-muted-foreground" />
-                          </Link>
-                        </Button>
+                        {!expense.isSettled && (
+                          <Button 
+                            asChild
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
+                              <Edit2 className="h-4 w-4 text-muted-foreground" />
+                            </Link>
+                          </Button>
+                        )}
                       </div>
                     </div>
                   );

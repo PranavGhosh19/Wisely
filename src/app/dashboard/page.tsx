@@ -8,10 +8,11 @@ import { useStore } from "@/lib/store";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Wallet, AlertCircle, Users, CreditCard } from "lucide-react";
+import { Plus, Wallet, AlertCircle, Users, CreditCard, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, orderBy, where, collectionGroup } from "firebase/firestore";
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -66,14 +67,14 @@ export default function Dashboard() {
   
   /**
    * Logic for Group Spents:
-   * We sum the user's specific share from every group transaction.
-   * We strictly use the splitBetween data. If no split exists for the user, 
-   * the share is 0. No fallback to equal split.
+   * We sum the user's specific share from every UNSETTLED group transaction.
    */
-  const totalUserGroupShare = (groupExpenses || []).reduce((acc, curr) => {
-    const mySplit = curr.splitBetween?.find((s: any) => s.userId === user.uid);
-    return acc + (mySplit?.amount || 0);
-  }, 0);
+  const totalUserGroupShare = (groupExpenses || [])
+    .filter(exp => !exp.isSettled)
+    .reduce((acc, curr) => {
+      const mySplit = curr.splitBetween?.find((s: any) => s.userId === user.uid);
+      return acc + (mySplit?.amount || 0);
+    }, 0);
 
   const totalOverallSpent = totalPersonalSpent + totalUserGroupShare;
 
@@ -116,7 +117,7 @@ export default function Dashboard() {
               <Users className="h-16 w-16 text-accent" />
             </div>
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Group Spents</CardTitle>
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active Group Share</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-foreground">${totalUserGroupShare.toFixed(2)}</div>
@@ -128,7 +129,7 @@ export default function Dashboard() {
               <CreditCard className="h-16 w-16" />
             </div>
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider opacity-80">Total Spent</CardTitle>
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider opacity-80">Total Outstanding</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">${totalOverallSpent.toFixed(2)}</div>
@@ -139,9 +140,9 @@ export default function Dashboard() {
         <div className="w-full">
           <Card className="border-none shadow-sm bg-card h-full rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <CardTitle className="font-headline text-lg font-bold">Recent Personal Activity</CardTitle>
+              <CardTitle className="font-headline text-lg font-bold">Recent Activity</CardTitle>
               <Button variant="link" className="text-accent text-sm font-bold p-0" asChild>
-                  <Link href="/analytics">View All</Link>
+                  <Link href="/analytics">View History</Link>
               </Button>
             </CardHeader>
             <CardContent className="px-0 sm:px-6">
@@ -173,11 +174,19 @@ export default function Dashboard() {
                             <span className="text-[11px] font-medium text-muted-foreground uppercase">
                               {mounted ? format(expense.date, "MMM dd") : ""}
                             </span>
+                            {expense.isSettled && (
+                              <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded">
+                                <CheckCircle2 className="h-2.5 w-2.5" />
+                                Settled
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-base sm:text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
+                        <p className={cn("font-bold text-base sm:text-lg", expense.isSettled ? "text-muted-foreground line-through" : "text-foreground")}>
+                          -${expense.amount.toFixed(2)}
+                        </p>
                         {expense.notes && <p className="text-[11px] text-muted-foreground truncate max-w-[100px] sm:max-w-[150px]">{expense.notes}</p>}
                       </div>
                     </Link>
