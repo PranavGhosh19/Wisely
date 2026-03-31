@@ -26,7 +26,8 @@ import {
   Plus,
   Trash2,
   Smartphone,
-  Share2
+  Share2,
+  Globe
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/firebase";
@@ -239,6 +240,22 @@ export default function ProfilePage() {
           <div className="space-y-2">
             <p className="text-[10px] font-bold uppercase text-muted-foreground px-2 tracking-widest">Preferences</p>
             <div className="bg-card rounded-2xl overflow-hidden shadow-sm border-none">
+              <button 
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
+                onClick={() => router.push("/profile/currency")}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                    <Globe className="h-4 w-4" />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-medium">Default Currency</span>
+                    <span className="text-[10px] text-muted-foreground font-bold uppercase">{user.currency || "USD"}</span>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+
               <button 
                 className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
                 onClick={handleAddToHomeScreen}
