@@ -85,16 +85,6 @@ export default function Dashboard() {
               <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">Tracking from private records</p>
             </CardContent>
           </Card>
-
-          <Card className="border-none shadow-sm bg-card rounded-2xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Groups</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-accent">{user.groupIds?.length || 0}</div>
-              <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">Shared spaces</p>
-            </CardContent>
-          </Card>
         </div>
 
         <div className="w-full">
