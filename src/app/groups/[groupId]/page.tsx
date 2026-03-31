@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { 
   ArrowLeft, 
-  Plus, 
   Users, 
   Receipt, 
   TrendingUp, 
@@ -24,8 +23,7 @@ import {
   BarChart3,
   CheckCircle2,
   Coins,
-  Info,
-  ArrowRight
+  Info
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
@@ -53,7 +51,6 @@ import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase
 import { collection, query, orderBy, doc, updateDoc, arrayUnion, where } from "firebase/firestore";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { cn } from "@/lib/utils";
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -117,7 +114,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   /**
    * settlementInfo:
    * stats: Aggregated Paid vs Share per member.
-   * debts: Simplified "who owes whom" array.
+   * debts: Simplified "who owes whom" array using a greedy algorithm.
    */
   const settlementInfo = useMemo(() => {
     if (!group?.members || !groupExpenses) return { stats: {}, debts: [] };
@@ -126,11 +123,13 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     group.members.forEach(uid => stats[uid] = { net: 0, paid: 0, share: 0 });
 
     groupExpenses.forEach(exp => {
+      // Amount the user paid
       if (stats[exp.paidBy]) {
         stats[exp.paidBy].paid += exp.amount;
         stats[exp.paidBy].net += exp.amount;
       }
       
+      // Amount the user is responsible for (their share)
       exp.splitBetween?.forEach(split => {
         if (stats[split.userId]) {
           stats[split.userId].share += split.amount;
@@ -139,7 +138,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       });
     });
 
-    // Debt Simplification Algorithm (Greedy approach)
+    // Debt Simplification Algorithm
+    // We separate those who are owed money (creditors) and those who owe money (debtors)
     const debtors = Object.entries(stats)
       .filter(([_, s]) => s.net < -0.01)
       .map(([uid, s]) => ({ uid, amount: Math.abs(s.net) }))
@@ -321,16 +321,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-
-              <Button 
-                asChild
-                className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 gap-2 h-11 rounded-xl font-bold px-6 transition-all active:scale-95"
-              >
-                <Link href={`/expenses/add?type=GROUP&groupId=${groupId}`}>
-                  <Plus className="h-5 w-5" />
-                  Add Expense
-                </Link>
-              </Button>
             </div>
           </div>
         </header>
