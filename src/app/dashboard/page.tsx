@@ -7,7 +7,7 @@ import { useStore } from "@/lib/store";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Wallet, Users, AlertCircle } from "lucide-react";
+import { Plus, Wallet, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, orderBy, where } from "firebase/firestore";
@@ -97,77 +97,56 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <Card className="border-none shadow-sm bg-card h-full rounded-2xl">
-              <CardHeader className="flex flex-row items-center justify-between pb-4">
-                <CardTitle className="font-headline text-lg font-bold">Recent Personal Activity</CardTitle>
-                <Button variant="link" className="text-accent text-sm font-bold p-0" asChild>
-                   <Link href="/analytics">View All</Link>
-                </Button>
-              </CardHeader>
-              <CardContent className="px-0 sm:px-6">
-                <div className="divide-y divide-muted">
-                  {expensesLoading ? (
-                    <div className="py-12 flex justify-center"><div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>
-                  ) : activeExpenses.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-center px-6">
-                      <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                        <AlertCircle className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                      <h3 className="text-lg font-bold">No private expenses</h3>
-                      <p className="text-sm text-muted-foreground max-w-xs mt-1">Your personal activity will appear here.</p>
+        <div className="w-full">
+          <Card className="border-none shadow-sm bg-card h-full rounded-2xl">
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+              <CardTitle className="font-headline text-lg font-bold">Recent Personal Activity</CardTitle>
+              <Button variant="link" className="text-accent text-sm font-bold p-0" asChild>
+                  <Link href="/analytics">View All</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="px-0 sm:px-6">
+              <div className="divide-y divide-muted">
+                {expensesLoading ? (
+                  <div className="py-12 flex justify-center"><div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>
+                ) : activeExpenses.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center px-6">
+                    <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                      <AlertCircle className="h-8 w-8 text-muted-foreground" />
                     </div>
-                  ) : (
-                    activeExpenses.map((expense) => (
-                      <Link 
-                        key={expense.id} 
-                        href={`/expenses/${expense.id}?type=${expense.type}`}
-                        className="flex items-center justify-between p-4 sm:p-0 sm:py-6 first:pt-0 last:pb-0 group transition-colors hover:bg-muted/5 cursor-pointer"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center bg-primary/10 text-primary">
-                            {expense.category[0] || "💰"}
-                          </div>
-                          <div>
-                            <p className="font-bold text-sm sm:text-base">{expense.category}</p>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="text-[11px] font-medium text-muted-foreground uppercase">
-                                {mounted ? format(expense.date, "MMM dd") : ""}
-                              </span>
-                            </div>
+                    <h3 className="text-lg font-bold">No private expenses</h3>
+                    <p className="text-sm text-muted-foreground max-w-xs mt-1">Your personal activity will appear here.</p>
+                  </div>
+                ) : (
+                  activeExpenses.map((expense) => (
+                    <Link 
+                      key={expense.id} 
+                      href={`/expenses/${expense.id}?type=${expense.type}`}
+                      className="flex items-center justify-between p-4 sm:p-0 sm:py-6 first:pt-0 last:pb-0 group transition-colors hover:bg-muted/5 cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center bg-primary/10 text-primary">
+                          {expense.category[0] || "💰"}
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm sm:text-base">{expense.category}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[11px] font-medium text-muted-foreground uppercase">
+                              {mounted ? format(expense.date, "MMM dd") : ""}
+                            </span>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-bold text-base sm:text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
-                          {expense.notes && <p className="text-[11px] text-muted-foreground truncate max-w-[100px] sm:max-w-[150px]">{expense.notes}</p>}
-                        </div>
-                      </Link>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="space-y-6">
-            <Card className="border-none shadow-sm bg-primary text-primary-foreground rounded-2xl">
-              <CardHeader className="pb-3">
-                <CardTitle className="font-headline text-lg font-bold flex items-center gap-2">
-                  <span className="bg-white/20 p-1.5 rounded-lg"><Users className="h-4 w-4" /></span>
-                  Shared Groups
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <p className="text-xs sm:text-sm opacity-90 leading-relaxed">Collaborate on shared costs with your groups.</p>
-                  <Button variant="secondary" className="w-full font-bold h-10 rounded-xl" asChild>
-                    <Link href="/groups">Manage Groups</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-base sm:text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
+                        {expense.notes && <p className="text-[11px] text-muted-foreground truncate max-w-[100px] sm:max-w-[150px]">{expense.notes}</p>}
+                      </div>
+                    </Link>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
