@@ -243,7 +243,7 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
               </CardHeader>
               <CardContent className="h-[300px] sm:h-[350px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ReBarChart data={barData}>
+                  <ReBarChart data={barData} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                     <XAxis 
                       dataKey="name" 
@@ -266,6 +266,14 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
                       fill="hsl(var(--primary))" 
                       radius={[4, 4, 0, 0]} 
                       barSize={30} 
+                      label={{ 
+                        position: 'top', 
+                        fill: 'hsl(var(--foreground))', 
+                        fontSize: 10, 
+                        fontWeight: 600,
+                        offset: 8,
+                        formatter: (val: number) => `$${val.toFixed(0)}`
+                      }}
                     />
                   </ReBarChart>
                 </ResponsiveContainer>
