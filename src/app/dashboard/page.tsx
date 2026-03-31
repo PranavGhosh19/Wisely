@@ -64,13 +64,19 @@ export default function Dashboard() {
   const activeExpenses = expenses || [];
   const totalPersonalSpent = activeExpenses.reduce((acc, curr) => acc + curr.amount, 0);
   
-  // Calculate total of the user's individual shares in group expenses
+  /**
+   * Logic for Group Spents:
+   * We sum the user's specific share from every group transaction.
+   * If splitBetween data exists, we use it. 
+   * Otherwise, we fallback to an equal split among group members.
+   */
   const totalUserGroupShare = (groupExpenses || []).reduce((acc, curr) => {
     let userShare = 0;
     if (curr.splitBetween && Array.isArray(curr.splitBetween)) {
-      userShare = curr.splitBetween.find((s: any) => s.userId === user.uid)?.amount || 0;
+      const mySplit = curr.splitBetween.find((s: any) => s.userId === user.uid);
+      userShare = mySplit?.amount || 0;
     } else {
-      // Fallback: If no split data exists, assume equal split among all group members
+      // Fallback: If no split data exists (legacy docs), assume equal split among all group members
       const memberCount = curr.groupMemberIds?.length || 1;
       userShare = curr.amount / memberCount;
     }
