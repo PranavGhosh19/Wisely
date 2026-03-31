@@ -82,7 +82,6 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-primary">${totalSpent.toFixed(2)}</div>
-              <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">Tracking from private records</p>
             </CardContent>
           </Card>
         </div>

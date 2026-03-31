@@ -1,29 +1,20 @@
-
 {
   "placeholderImages": [
     {
       "id": "landing-hero",
-      "description": "A professional wallet icon representing financial clarity and organization.",
-      "imageUrl": "/wallet.png",
-      "imageHint": "wallet branding"
+      "imageUrl": "/wallet.png"
     },
     {
       "id": "feature-personal",
-      "description": "A professional wallet icon representing financial clarity and organization.",
-      "imageUrl": "/wallet.png",
-      "imageHint": "wallet branding"
+      "imageUrl": "/wallet.png"
     },
     {
       "id": "feature-group",
-      "description": "A professional wallet icon representing financial clarity and organization.",
-      "imageUrl": "/wallet.png",
-      "imageHint": "wallet branding"
+      "imageUrl": "/wallet.png"
     },
     {
       "id": "app-icon",
-      "description": "A professional wallet icon representing financial clarity and organization.",
-      "imageUrl": "/wallet.png",
-      "imageHint": "wallet branding"
+      "imageUrl": "/wallet.png"
     }
   ]
 }
