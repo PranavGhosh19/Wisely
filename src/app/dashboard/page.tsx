@@ -68,7 +68,7 @@ export default function Dashboard() {
    * Logic for Group Spents:
    * We sum the user's specific share from every group transaction.
    * We strictly use the splitBetween data. If no split exists for the user, 
-   * the share is 0.
+   * the share is 0. No fallback to equal split.
    */
   const totalUserGroupShare = (groupExpenses || []).reduce((acc, curr) => {
     const mySplit = curr.splitBetween?.find((s: any) => s.userId === user.uid);

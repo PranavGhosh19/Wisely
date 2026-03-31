@@ -101,7 +101,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
 
   /**
    * Calculate the user's individual share from group transactions.
-   * Strictly uses the splitBetween data.
+   * Strictly uses the splitBetween data. No fallback to equal split.
    */
   const totalUserShare = (groupExpenses || []).reduce((acc, curr) => {
     const mySplit = curr.splitBetween?.find((s: any) => s.userId === user?.uid);
