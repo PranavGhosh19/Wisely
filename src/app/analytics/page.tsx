@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
@@ -13,15 +12,16 @@ import { useStore } from "@/lib/store";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, collectionGroup, query, where } from "firebase/firestore";
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
-import { PieChart, Filter, Users, User, Layers, Search } from "lucide-react";
+import { PieChart, Layers, User, Users } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getCurrencySymbol } from "@/lib/utils";
 
 const COLORS = ['#3D737F', '#CEC7BF', '#07161B', '#5A9BA8', '#8FBABF', '#A89E92'];
 
 /**
  * Custom label renderer for the Pie chart to show labels outside with connecting lines.
  */
-const renderCustomizedLabel = (props: any) => {
+const renderCustomizedLabel = (props: any, symbol: string) => {
   const { cx, cy, midAngle, outerRadius, index, name, value } = props;
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
@@ -55,7 +55,7 @@ const renderCustomizedLabel = (props: any) => {
         fill="hsl(var(--muted-foreground))" 
         style={{ fontSize: '9px' }}
       >
-        {`$${value.toFixed(0)}`}
+        {`${symbol}${value.toFixed(0)}`}
       </text>
     </g>
   );
@@ -71,6 +71,8 @@ export default function AnalyticsPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const symbol = getCurrencySymbol(user?.currency);
 
   // Fetch Personal Expenses
   const personalQuery = useMemoFirebase(() => {
@@ -268,7 +270,7 @@ export default function AnalyticsPage() {
                       outerRadius={70}
                       paddingAngle={5}
                       dataKey="value"
-                      label={renderCustomizedLabel}
+                      label={(props) => renderCustomizedLabel(props, symbol)}
                       labelLine={false}
                     >
                       {pieData.map((entry, index) => (
@@ -277,7 +279,7 @@ export default function AnalyticsPage() {
                     </Pie>
                     <ReTooltip 
                       contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: '1px solid hsl(var(--border))' }}
-                      formatter={(value: number) => [`$${value.toFixed(2)}`, 'Spent']}
+                      formatter={(value: number) => [`${symbol}${value.toFixed(2)}`, 'Spent']}
                     />
                   </RePieChart>
                 </ResponsiveContainer>
@@ -303,11 +305,11 @@ export default function AnalyticsPage() {
                       axisLine={false} 
                       tickLine={false} 
                       tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                      tickFormatter={(value) => `$${value}`}
+                      tickFormatter={(value) => `${symbol}${value}`}
                     />
                     <ReTooltip 
                       contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: '1px solid hsl(var(--border))' }}
-                      formatter={(value: number) => [`$${value.toFixed(2)}`, 'Total']}
+                      formatter={(value: number) => [`${symbol}${value.toFixed(2)}`, 'Total']}
                     />
                     <Line 
                       type="monotone" 
@@ -322,7 +324,7 @@ export default function AnalyticsPage() {
                         fontSize: 10, 
                         fontWeight: 600,
                         offset: 12,
-                        formatter: (val: number) => `$${val.toFixed(0)}`
+                        formatter: (val: number) => `${symbol}${val.toFixed(0)}`
                       }}
                     />
                   </ReLineChart>
@@ -344,7 +346,7 @@ export default function AnalyticsPage() {
                       axisLine={false} 
                       tickLine={false} 
                       tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                      tickFormatter={(value) => `$${value}`}
+                      tickFormatter={(value) => `${symbol}${value}`}
                     />
                     <YAxis 
                       dataKey="name" 
@@ -355,7 +357,7 @@ export default function AnalyticsPage() {
                     />
                     <ReTooltip 
                       contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: '1px solid hsl(var(--border))' }}
-                      formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
+                      formatter={(value: number) => [`${symbol}${value.toFixed(2)}`, 'Amount']}
                     />
                     <Bar 
                       dataKey="amount" 
@@ -368,7 +370,7 @@ export default function AnalyticsPage() {
                         fontSize: 10, 
                         fontWeight: 600,
                         offset: 8,
-                        formatter: (val: number) => `$${val.toFixed(0)}`
+                        formatter: (val: number) => `${symbol}${val.toFixed(0)}`
                       }}
                     />
                   </ReBarChart>

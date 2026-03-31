@@ -1,4 +1,3 @@
-
 "use client";
 
 import { use, useEffect, useState, useMemo } from "react";
@@ -17,7 +16,6 @@ import {
   Check,
   Share2,
   Edit2,
-  FileText,
   UserPlus,
   User as UserIcon,
   BarChart3,
@@ -51,7 +49,7 @@ import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase
 import { collection, query, orderBy, doc, updateDoc, arrayUnion, where } from "firebase/firestore";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { cn } from "@/lib/utils";
+import { cn, getCurrencySymbol } from "@/lib/utils";
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -66,7 +64,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   const [isMembersOpen, setIsMembersOpen] = useState(false);
   const [isSettleDialogOpen, setIsSettleDialogOpen] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
-  const [isSettling, setIsSettling] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -203,7 +200,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
 
   const handleSettle = () => {
     if (!db || !groupId || !groupExpenses) return;
-    setIsSettling(true);
     
     try {
       // Instead of deleting, we mark them as settled to keep history
@@ -223,8 +219,41 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         title: "Error",
         description: "Could not settle balances at this time.",
       });
-    } finally {
-      setIsSettling(false);
+    }
+  };
+
+  const handleIndividualSettle = (fromUid: string, toUid: string, amount: number) => {
+    if (!db || !groupId) return;
+    
+    try {
+      // Create a settlement payment transaction
+      const settlementId = `settle-${Date.now()}`;
+      const settlementRef = doc(db, "groups", groupId, "expenses", settlementId);
+      
+      const settlementData = {
+        id: settlementId,
+        amount: amount,
+        category: "Settlement",
+        type: "GROUP",
+        date: Date.now(),
+        createdBy: user?.name || "User",
+        createdById: user?.uid || "",
+        paidBy: fromUid, // The debtor pays
+        splitBetween: [
+          { userId: toUid, amount: amount } // The creditor receives
+        ],
+        splitType: "UNEQUAL",
+        isSettled: false, // This is an active settlement transaction that offsets existing debts
+        notes: `Individual settlement payment`,
+        groupId: groupId,
+        groupMemberIds: group?.members || [],
+        isDeleted: false
+      };
+
+      updateDoc(settlementRef, settlementData);
+      toast({ title: "Payment Recorded", description: "The balance has been updated." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to record payment." });
     }
   };
 
@@ -256,6 +285,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       </div>
     );
   }
+
+  const symbol = getCurrencySymbol(user?.currency);
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row bg-background">
@@ -349,7 +380,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-primary">${totalSpent.toFixed(2)}</div>
+                  <div className="text-3xl font-bold text-primary">{symbol}{totalSpent.toFixed(2)}</div>
                   <div className="flex items-center gap-1 mt-1 text-accent text-[11px] font-bold uppercase">
                     <TrendingUp className="h-3.5 w-3.5" />
                     Unsettled Total
@@ -364,11 +395,11 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                 <CardContent>
                   <div className={cn(
                     "text-3xl font-bold",
-                    (settlementInfo.stats[user?.uid || ""]?.net || 0) > 0 ? "text-green-500" : 
-                    (settlementInfo.stats[user?.uid || ""]?.net || 0) < 0 ? "text-destructive" : 
+                    (settlementInfo.stats[user?.uid || ""]?.net || 0) > 0.01 ? "text-green-500" : 
+                    (settlementInfo.stats[user?.uid || ""]?.net || 0) < -0.01 ? "text-destructive" : 
                     "text-foreground"
                   )}>
-                    ${(settlementInfo.stats[user?.uid || ""]?.net || 0).toFixed(2)}
+                    {symbol}{(settlementInfo.stats[user?.uid || ""]?.net || 0).toFixed(2)}
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">Current Balance</p>
                 </CardContent>
@@ -431,7 +462,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                             </div>
                             <div className="text-right shrink-0 px-4">
                               <p className={cn("font-bold text-lg", expense.isSettled ? "text-muted-foreground line-through" : "text-foreground")}>
-                                -${expense.amount.toFixed(2)}
+                                -{symbol}{expense.amount.toFixed(2)}
                               </p>
                             </div>
                           </Link>
@@ -486,7 +517,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                       const isToMe = debt.to === user?.uid;
 
                       return (
-                        <div key={idx} className="px-6 py-5">
+                        <div key={idx} className="px-6 py-5 group/settle">
                           <div className="flex items-center gap-3">
                             <div className="flex -space-x-3">
                               <Avatar className="h-8 w-8 border-2 border-background">
@@ -504,10 +535,20 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                               <p className="text-sm leading-snug">
                                 <span className="font-bold">{isFromMe ? "You" : (fromUser?.name || "Member")}</span>
                                 <span className="text-muted-foreground mx-1">owes</span>
-                                <span className="font-black text-foreground">${debt.amount.toFixed(2)}</span>
+                                <span className="font-black text-foreground">{symbol}{debt.amount.toFixed(2)}</span>
                                 <span className="text-muted-foreground mx-1">to</span>
                                 <span className="font-bold">{isToMe ? "you" : (toUser?.name || "Member")}</span>
                               </p>
+                              {isFromMe && (
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
+                                  className="h-7 mt-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/10 rounded-lg px-3 transition-all"
+                                  onClick={() => handleIndividualSettle(debt.from, debt.to, debt.amount)}
+                                >
+                                  Settle Now
+                                </Button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -521,7 +562,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             <Card className="border-none shadow-sm bg-accent/5 rounded-2xl p-6 border border-accent/10">
               <div className="flex gap-4">
                 <div className="h-10 w-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent shrink-0">
-                  <Info className="h-5 w-5" />
+                  <div className="text-[10px] font-bold">INFO</div>
                 </div>
                 <div className="space-y-1">
                   <h4 className="text-sm font-bold">Settlement Logic</h4>

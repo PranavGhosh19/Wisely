@@ -1,13 +1,11 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, Check, Users, Percent, Calculator, Scale, Hash, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { X, Check, Users, Percent, Scale, Hash, AlertCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { SplitType, SplitMember, User } from '@/types';
-import { cn } from '@/lib/utils';
+import { cn, getCurrencySymbol } from '@/lib/utils';
 
 interface SplitOptionsProps {
   isOpen: boolean;
@@ -17,6 +15,7 @@ interface SplitOptionsProps {
   totalAmount: number;
   initialSplitType: SplitType;
   initialSplitBetween: SplitMember[];
+  currencyCode?: string;
 }
 
 export function SplitOptions({
@@ -27,8 +26,10 @@ export function SplitOptions({
   totalAmount,
   initialSplitType,
   initialSplitBetween,
+  currencyCode
 }: SplitOptionsProps) {
   const [activeType, setActiveType] = useState<SplitType>(initialSplitType || 'EQUAL');
+  const symbol = getCurrencySymbol(currencyCode);
   
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(() => {
     if (initialSplitBetween && initialSplitBetween.length > 0) {
@@ -90,7 +91,7 @@ export function SplitOptions({
     if (activeType === 'EQUAL') {
       isValid = selectedUserIds.size > 0;
     } else if (activeType === 'PERCENTAGE') {
-      isValid = Math.abs(sum - 100) < 0.01;
+      isValid = Math.abs(sum - 100) < 0.1;
     } else if (activeType === 'UNEQUAL') {
       isValid = Math.abs(sum - totalAmount) < 0.01;
     } else if (activeType === 'WEIGHT') {
@@ -231,7 +232,7 @@ export function SplitOptions({
 
                       {activeType === 'UNEQUAL' && (
                         <div className="flex items-center gap-1 border-b-2 border-muted focus-within:border-primary transition-colors">
-                          <span className="text-xs text-muted-foreground font-bold">$</span>
+                          <span className="text-xs text-muted-foreground font-bold">{symbol}</span>
                           <Input
                             type="number"
                             inputMode="decimal"
@@ -298,7 +299,7 @@ export function SplitOptions({
               {activeType === 'EQUAL' && (
                 <>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold text-foreground">${perPersonAmount.toFixed(2)}</span>
+                    <span className="text-2xl font-bold text-foreground">{symbol}{perPersonAmount.toFixed(2)}</span>
                     <span className="text-xs text-muted-foreground font-medium">/person</span>
                   </div>
                   <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
@@ -310,15 +311,15 @@ export function SplitOptions({
               {activeType === 'UNEQUAL' && (
                 <>
                   <div className="flex items-baseline gap-1">
-                    <span className={cn("text-2xl font-bold", totals.remaining === 0 ? "text-green-500" : "text-foreground")}>
-                      ${totals.sum.toFixed(2)}
+                    <span className={cn("text-2xl font-bold", Math.abs(totals.remaining) <= 0.01 ? "text-green-500" : "text-foreground")}>
+                      {symbol}{totals.sum.toFixed(2)}
                     </span>
-                    <span className="text-xs text-muted-foreground font-medium">of ${totalAmount.toFixed(2)}</span>
+                    <span className="text-xs text-muted-foreground font-medium">of {symbol}{totalAmount.toFixed(2)}</span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     {Math.abs(totals.remaining) > 0.01 && <AlertCircle className="h-3 w-3 text-orange-500" />}
                     <span className={cn("text-[10px] font-bold uppercase tracking-wider", Math.abs(totals.remaining) <= 0.01 ? "text-green-500" : "text-orange-500")}>
-                      {Math.abs(totals.remaining) <= 0.01 ? "Perfectly split" : `$${Math.abs(totals.remaining).toFixed(2)} ${totals.remaining > 0 ? "left" : "over"}`}
+                      {Math.abs(totals.remaining) <= 0.01 ? "Perfectly split" : `${symbol}${Math.abs(totals.remaining).toFixed(2)} ${totals.remaining > 0 ? "left" : "over"}`}
                     </span>
                   </div>
                 </>
@@ -327,15 +328,15 @@ export function SplitOptions({
               {activeType === 'PERCENTAGE' && (
                 <>
                   <div className="flex items-baseline gap-1">
-                    <span className={cn("text-2xl font-bold", totals.remaining === 0 ? "text-green-500" : "text-foreground")}>
+                    <span className={cn("text-2xl font-bold", Math.abs(totals.remaining) <= 0.1 ? "text-green-500" : "text-foreground")}>
                       {totals.sum.toFixed(1)}%
                     </span>
                     <span className="text-xs text-muted-foreground font-medium">of 100%</span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    {Math.abs(totals.remaining) > 0.01 && <AlertCircle className="h-3 w-3 text-orange-500" />}
-                    <span className={cn("text-[10px] font-bold uppercase tracking-wider", Math.abs(totals.remaining) <= 0.01 ? "text-green-500" : "text-orange-500")}>
-                      {Math.abs(totals.remaining) <= 0.01 ? "Total reached" : `${Math.abs(totals.remaining).toFixed(1)}% ${totals.remaining > 0 ? "left" : "over"}`}
+                    {Math.abs(totals.remaining) > 0.1 && <AlertCircle className="h-3 w-3 text-orange-500" />}
+                    <span className={cn("text-[10px] font-bold uppercase tracking-wider", Math.abs(totals.remaining) <= 0.1 ? "text-green-500" : "text-orange-500")}>
+                      {Math.abs(totals.remaining) <= 0.1 ? "Total reached" : `${Math.abs(totals.remaining).toFixed(1)}% ${totals.remaining > 0 ? "left" : "over"}`}
                     </span>
                   </div>
                 </>

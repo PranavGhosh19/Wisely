@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -11,13 +10,13 @@ import { useStore } from "@/lib/store";
 import { CreateGroupDialog } from "@/components/groups/CreateGroupDialog";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, where } from "firebase/firestore";
-import { cn } from "@/lib/utils";
+import { cn, getCurrencySymbol } from "@/lib/utils";
 
 /**
  * A sub-component for each group card that fetches its own expenses
  * and calculates the user's net balance within that specific group.
  */
-function GroupCard({ group, userId }: { group: any; userId: string }) {
+function GroupCard({ group, userId, currencyCode }: { group: any; userId: string; currencyCode?: string }) {
   const router = useRouter();
   const db = useFirestore();
 
@@ -25,9 +24,9 @@ function GroupCard({ group, userId }: { group: any; userId: string }) {
     if (!db || !group.id || !userId) return null;
     return query(
       collection(db, "groups", group.id, "expenses"),
-      // Security Requirement: Must filter by groupMemberIds to match security rules for list operations
       where("groupMemberIds", "array-contains", userId),
-      where("isDeleted", "==", false)
+      where("isDeleted", "==", false),
+      where("isSettled", "==", false)
     );
   }, [db, group.id, userId]);
 
@@ -50,6 +49,8 @@ function GroupCard({ group, userId }: { group: any; userId: string }) {
     }, 0);
   }, [expenses, userId]);
 
+  const symbol = getCurrencySymbol(currencyCode);
+
   return (
     <Card 
       className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-card group rounded-2xl h-24 flex flex-col justify-center overflow-hidden"
@@ -63,8 +64,8 @@ function GroupCard({ group, userId }: { group: any; userId: string }) {
         <div className={cn(
           "px-3 py-1.5 rounded-xl flex items-center justify-center transition-all group-hover:scale-105 min-w-[80px]",
           isLoading ? "bg-muted animate-pulse" : 
-          netBalance > 0 ? "bg-green-500/10 text-green-500" : 
-          netBalance < 0 ? "bg-destructive/10 text-destructive" : 
+          netBalance > 0.01 ? "bg-green-500/10 text-green-500" : 
+          netBalance < -0.01 ? "bg-destructive/10 text-destructive" : 
           "bg-muted text-muted-foreground"
         )}>
           {isLoading ? (
@@ -72,10 +73,10 @@ function GroupCard({ group, userId }: { group: any; userId: string }) {
           ) : (
             <div className="flex flex-col items-end">
               <span className="text-[10px] font-bold uppercase tracking-wider leading-none mb-0.5 opacity-70">
-                {netBalance > 0 ? "Owed" : netBalance < 0 ? "Owe" : "Settled"}
+                {netBalance > 0.01 ? "Owed" : netBalance < -0.01 ? "Owe" : "Settled"}
               </span>
               <span className="text-sm font-bold leading-none">
-                {netBalance === 0 ? "—" : `₹${Math.abs(netBalance).toFixed(0)}`}
+                {Math.abs(netBalance) <= 0.01 ? "—" : `${symbol}${Math.abs(netBalance).toFixed(0)}`}
               </span>
             </div>
           )}
@@ -145,7 +146,7 @@ export default function GroupsPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {groups.map((group) => (
-              <GroupCard key={group.id} group={group} userId={user?.uid || ""} />
+              <GroupCard key={group.id} group={group} userId={user?.uid || ""} currencyCode={user?.currency} />
             ))}
           </div>
         )}

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -11,12 +10,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { ExpenseType, Expense, SplitType, SplitMember } from "@/types";
-import { AlertCircle, Upload, X, FileText, ArrowLeft, Loader2, ChevronRight, Users } from "lucide-react";
+import { Upload, X, FileText, ArrowLeft, Loader2, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase";
 import { doc, collection, query, where } from "firebase/firestore";
-import { setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { SplitOptions } from "./SplitOptions";
+import { getCurrencySymbol } from "@/lib/utils";
 
 interface ExpenseFormProps {
   initialData?: Expense;
@@ -26,7 +26,7 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({ initialData, initialType, initialGroupId }: ExpenseFormProps) {
   const router = useRouter();
-  const { user, addExpense, deleteExpense, groups, categories } = useStore();
+  const { user, addExpense, groups, categories } = useStore();
   const db = useFirestore();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -163,7 +163,6 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
 
         // Ensure splitBetween amounts are synchronized with the total amount
         if (formData.splitType === 'EQUAL') {
-          // Identify members selected in the split (those with an amount > 0 or explicitly in splitBetween)
           const activeMembers = formData.splitBetween.filter(s => s.amount > 0).map(s => s.userId);
           const membersToSplitWith = activeMembers.length > 0 ? activeMembers : (selectedGroup.members || []);
           
@@ -212,6 +211,8 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
     }
   };
 
+  const symbol = getCurrencySymbol(user?.currency);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -234,7 +235,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="amount" className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Amount ($)</Label>
+            <Label htmlFor="amount" className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Amount ({symbol})</Label>
             <Input 
               id="amount" 
               type="number" 
@@ -379,6 +380,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
           totalAmount={parseFloat(formData.amount) || 0}
           initialSplitType={formData.splitType}
           initialSplitBetween={formData.splitBetween}
+          currencyCode={user?.currency}
         />
       )}
     </div>

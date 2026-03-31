@@ -8,10 +8,7 @@ import { Button } from "@/components/ui/button";
 import { 
   ArrowLeft, 
   Edit2, 
-  Calendar, 
   Tag, 
-  User as UserIcon, 
-  FileText, 
   Users,
   Wallet,
   Receipt
@@ -22,6 +19,7 @@ import { useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase
 import { doc, collection, query, where } from "firebase/firestore";
 import { ExpenseType } from "@/types";
 import Image from "next/image";
+import { getCurrencySymbol } from "@/lib/utils";
 
 export default function TransactionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -70,6 +68,7 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
 
   const payer = memberProfiles?.find(m => m.uid === expense.paidBy);
   const payerName = expense.paidBy === user?.uid ? "You" : (payer?.name || "Unknown");
+  const symbol = getCurrencySymbol(user?.currency);
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row bg-background">
@@ -95,7 +94,7 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
               <Receipt className="h-8 w-8" />
             </div>
             <h1 className="text-5xl font-bold font-headline text-foreground tracking-tight">
-              ${expense.amount.toFixed(2)}
+              {symbol}{expense.amount.toFixed(2)}
             </h1>
             <p className="text-muted-foreground mt-2 font-medium flex items-center justify-center gap-2">
               {expense.category}
@@ -166,7 +165,7 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
                             <span className="text-sm font-medium">{member?.uid === user?.uid ? "You" : (member?.name || "Unknown")}</span>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-bold">${split.amount.toFixed(2)}</p>
+                            <p className="text-sm font-bold">{symbol}{split.amount.toFixed(2)}</p>
                             {split.percentage && <p className="text-[10px] text-muted-foreground">{split.percentage}%</p>}
                           </div>
                         </div>
@@ -181,7 +180,7 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
               <Card className="border-none bg-card rounded-2xl shadow-sm md:col-span-2 overflow-hidden">
                 <CardHeader className="bg-muted/30">
                   <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                    <FileText className="h-3.5 w-3.5" />
+                    <Receipt className="h-3.5 w-3.5" />
                     Receipt Preview
                   </CardTitle>
                 </CardHeader>

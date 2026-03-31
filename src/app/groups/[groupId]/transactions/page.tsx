@@ -1,4 +1,3 @@
-
 "use client";
 
 import { use, useEffect, useState } from "react";
@@ -13,7 +12,7 @@ import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase
 import { collection, query, orderBy, doc, where } from "firebase/firestore";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn, getCurrencySymbol } from "@/lib/utils";
 
 export default function GroupTransactionsPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -65,6 +64,8 @@ export default function GroupTransactionsPage({ params }: { params: Promise<{ gr
   );
 
   if (!mounted) return null;
+
+  const symbol = getCurrencySymbol(user?.currency);
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row bg-background">
@@ -152,7 +153,7 @@ export default function GroupTransactionsPage({ params }: { params: Promise<{ gr
                         </div>
                         <div className="text-right shrink-0 px-4">
                           <p className={cn("font-bold text-lg", expense.isSettled ? "text-muted-foreground line-through" : "text-foreground")}>
-                            -${expense.amount.toFixed(2)}
+                            -{symbol}{expense.amount.toFixed(2)}
                           </p>
                           {expense.notes && <p className="text-[11px] text-muted-foreground italic truncate max-w-[150px]">{expense.notes}</p>}
                         </div>

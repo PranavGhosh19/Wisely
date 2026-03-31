@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -12,7 +11,7 @@ import { Plus, Wallet, AlertCircle, Users, CreditCard, CheckCircle2 } from "luci
 import { format } from "date-fns";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, orderBy, where, collectionGroup } from "firebase/firestore";
-import { cn } from "@/lib/utils";
+import { cn, getCurrencySymbol } from "@/lib/utils";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -77,6 +76,7 @@ export default function Dashboard() {
     }, 0);
 
   const totalOverallSpent = totalPersonalSpent + totalUserGroupShare;
+  const symbol = getCurrencySymbol(user.currency);
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row bg-background">
@@ -108,7 +108,7 @@ export default function Dashboard() {
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Personal Spent</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary">${totalPersonalSpent.toFixed(2)}</div>
+              <div className="text-3xl font-bold text-primary">{symbol}{totalPersonalSpent.toFixed(2)}</div>
             </CardContent>
           </Card>
 
@@ -120,7 +120,7 @@ export default function Dashboard() {
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active Group Share</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">${totalUserGroupShare.toFixed(2)}</div>
+              <div className="text-3xl font-bold text-foreground">{symbol}{totalUserGroupShare.toFixed(2)}</div>
             </CardContent>
           </Card>
 
@@ -132,7 +132,7 @@ export default function Dashboard() {
               <CardTitle className="text-xs font-semibold uppercase tracking-wider opacity-80">Total Outstanding</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">${totalOverallSpent.toFixed(2)}</div>
+              <div className="text-3xl font-bold">{symbol}{totalOverallSpent.toFixed(2)}</div>
             </CardContent>
           </Card>
         </div>
@@ -185,7 +185,7 @@ export default function Dashboard() {
                       </div>
                       <div className="text-right">
                         <p className={cn("font-bold text-base sm:text-lg", expense.isSettled ? "text-muted-foreground line-through" : "text-foreground")}>
-                          -${expense.amount.toFixed(2)}
+                          -{symbol}{expense.amount.toFixed(2)}
                         </p>
                         {expense.notes && <p className="text-[11px] text-muted-foreground truncate max-w-[100px] sm:max-w-[150px]">{expense.notes}</p>}
                       </div>
