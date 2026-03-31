@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
@@ -150,7 +149,7 @@ export default function AnalyticsPage() {
       
       <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-7xl mx-auto w-full">
         <header className="mb-8">
-          <h2 className="text-3xl font-bold font-headline text-primary">Analytics</h2>
+          <h2 className="text-3xl font-bold font-headline text-primary">Overall Analytics</h2>
           <p className="text-muted-foreground">Detailed insights into your spending patterns.</p>
         </header>
 
