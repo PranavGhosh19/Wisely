@@ -1,11 +1,11 @@
 
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   ArrowLeft, 
@@ -23,7 +23,9 @@ import {
   User as UserIcon,
   BarChart3,
   CheckCircle2,
-  AlertTriangle
+  AlertCircle,
+  TrendingDown,
+  Coins
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
@@ -51,6 +53,7 @@ import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase
 import { collection, query, orderBy, doc, updateDoc, arrayUnion, where } from "firebase/firestore";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { cn } from "@/lib/utils";
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -116,13 +119,31 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   const totalSpent = (groupExpenses || []).reduce((acc, curr) => acc + curr.amount, 0);
 
   /**
-   * Calculate the user's individual share from group transactions.
-   * Strictly uses the splitBetween data. No fallback to equal split.
+   * Calculate exact net balances for everyone in the group.
+   * Logic: (Total Paid by User) - (Total of User's shares in all expenses)
    */
-  const totalUserShare = (groupExpenses || []).reduce((acc, curr) => {
-    const mySplit = curr.splitBetween?.find((s: any) => s.userId === user?.uid);
-    return acc + (mySplit?.amount || 0);
-  }, 0);
+  const memberBalances = useMemo(() => {
+    if (!group?.members || !groupExpenses) return {};
+    
+    const balances: Record<string, number> = {};
+    group.members.forEach(uid => balances[uid] = 0);
+
+    groupExpenses.forEach(exp => {
+      // Add the full amount to the payer's balance (they are 'owed' this money back)
+      if (balances[exp.paidBy] !== undefined) {
+        balances[exp.paidBy] += exp.amount;
+      }
+      
+      // Subtract the share from every member involved (they 'owe' their share)
+      exp.splitBetween?.forEach(split => {
+        if (balances[split.userId] !== undefined) {
+          balances[split.userId] -= split.amount;
+        }
+      });
+    });
+
+    return balances;
+  }, [group?.members, groupExpenses]);
 
   const handleJoinGroup = async () => {
     if (!user || !db || !groupId) return;
@@ -293,137 +314,186 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           </div>
         </header>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
-          <Card className="border-none shadow-sm bg-card rounded-2xl relative overflow-hidden group/card">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Spending</CardTitle>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  asChild
-                  className="h-7 px-2 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10 rounded-lg opacity-0 group-hover/card:opacity-100 transition-opacity"
-                >
-                  <Link href={`/groups/${groupId}/analytics`}>
-                    <BarChart3 className="h-3 w-3 mr-1" />
-                    Analyse
-                  </Link>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">${totalSpent.toFixed(2)}</div>
-              <div className="flex items-center gap-1 mt-1 text-accent text-[11px] font-bold uppercase">
-                <TrendingUp className="h-3.5 w-3.5" />
-                Live Tracking
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-sm bg-card rounded-2xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Share</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">
-                ${totalUserShare.toFixed(2)}
-              </div>
-              <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">Actual Usage</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-sm bg-card rounded-2xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Transactions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">{(groupExpenses || []).length}</div>
-              <div className="flex items-center gap-1 mt-1 text-muted-foreground text-[11px] font-bold uppercase">
-                <Receipt className="h-3.5 w-3.5" />
-                Recorded
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
-          <CardHeader className="border-b px-6 py-4 flex flex-row items-center justify-between">
-            <CardTitle className="font-headline text-lg font-bold">Group Activity</CardTitle>
-            <Button variant="link" asChild className="text-accent font-bold p-0 h-auto">
-              <Link href={`/groups/${groupId}/transactions`}>View all transaction</Link>
-            </Button>
-          </CardHeader>
-          <CardContent className="p-0">
-            {expensesLoading ? (
-              <div className="py-20 flex justify-center"><div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" /></div>
-            ) : !groupExpenses || groupExpenses.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-                <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                  <Receipt className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-bold font-headline">No active expenses</h3>
-                <p className="text-sm text-muted-foreground max-w-xs mt-1">Balances are settled. Start tracking by adding a new shared transaction.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-muted">
-                {groupExpenses.slice(0, 10).map((expense) => {
-                  const payerName = expense.paidBy === user?.uid 
-                    ? "You" 
-                    : (memberProfiles?.find(m => m.uid === expense.paidBy)?.name || "Member");
-
-                  return (
-                    <div 
-                      key={expense.id} 
-                      className="group flex items-center hover:bg-muted/5 transition-colors"
+        <div className="grid gap-6 lg:grid-cols-3 mb-8">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Card className="border-none shadow-sm bg-card rounded-2xl relative overflow-hidden group/card">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Group Total Spending</CardTitle>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      asChild
+                      className="h-7 px-2 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10 rounded-lg opacity-0 group-hover/card:opacity-100 transition-opacity"
                     >
-                      <Link 
-                        href={`/expenses/${expense.id}?type=${expense.type}&groupId=${groupId}`}
-                        className="flex-1 flex items-center justify-between px-6 py-5 min-w-0"
-                      >
-                        <div className="flex items-center gap-4 min-w-0">
-                          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl shrink-0">
-                            {expense.category[0] || "💰"}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <p className="font-bold text-base truncate">{expense.category}</p>
-                              {expense.receiptUrl && <FileText className="h-3.5 w-3.5 text-accent" title="Has receipt" />}
-                            </div>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[11px] font-medium text-muted-foreground uppercase whitespace-nowrap">
-                                {mounted ? format(expense.date, "MMM dd") : ""}
-                              </span>
-                              <span className="h-0.5 w-0.5 bg-muted-foreground rounded-full"></span>
-                              <span className="text-[10px] uppercase font-bold text-accent truncate">
-                                {payerName} paid
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0 px-4">
-                          <p className="font-bold text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
-                          {expense.notes && <p className="text-[11px] text-muted-foreground italic truncate max-w-[150px]">{expense.notes}</p>}
-                        </div>
+                      <Link href={`/groups/${groupId}/analytics`}>
+                        <BarChart3 className="h-3 w-3 mr-1" />
+                        Analyse
                       </Link>
-                      <div className="pr-6 shrink-0">
-                        <Button 
-                          asChild
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
-                            <Edit2 className="h-4 w-4 text-muted-foreground" />
-                          </Link>
-                        </Button>
-                      </div>
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-primary">${totalSpent.toFixed(2)}</div>
+                  <div className="flex items-center gap-1 mt-1 text-accent text-[11px] font-bold uppercase">
+                    <TrendingUp className="h-3.5 w-3.5" />
+                    Live Tracking
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-none shadow-sm bg-card rounded-2xl">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Individual Share</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-foreground">
+                    ${(memberBalances[user?.uid || ""] || 0) < 0 ? Math.abs(memberBalances[user?.uid || ""]).toFixed(2) : (memberBalances[user?.uid || ""] || 0).toFixed(2)}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">Actual Contribution</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
+              <CardHeader className="border-b px-6 py-4 flex flex-row items-center justify-between">
+                <CardTitle className="font-headline text-lg font-bold">Group Activity</CardTitle>
+                <Button variant="link" asChild className="text-accent font-bold p-0 h-auto">
+                  <Link href={`/groups/${groupId}/transactions`}>View all transaction</Link>
+                </Button>
+              </CardHeader>
+              <CardContent className="p-0">
+                {expensesLoading ? (
+                  <div className="py-20 flex justify-center"><div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" /></div>
+                ) : !groupExpenses || groupExpenses.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center px-4">
+                    <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                      <Receipt className="h-8 w-8 text-muted-foreground" />
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    <h3 className="text-lg font-bold font-headline">No active expenses</h3>
+                    <p className="text-sm text-muted-foreground max-w-xs mt-1">Balances are settled. Start tracking by adding a new shared transaction.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-muted">
+                    {groupExpenses.slice(0, 10).map((expense) => {
+                      const payerName = expense.paidBy === user?.uid 
+                        ? "You" 
+                        : (memberProfiles?.find(m => m.uid === expense.paidBy)?.name || "Member");
+
+                      return (
+                        <div 
+                          key={expense.id} 
+                          className="group flex items-center hover:bg-muted/5 transition-colors"
+                        >
+                          <Link 
+                            href={`/expenses/${expense.id}?type=${expense.type}&groupId=${groupId}`}
+                            className="flex-1 flex items-center justify-between px-6 py-5 min-w-0"
+                          >
+                            <div className="flex items-center gap-4 min-w-0">
+                              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl shrink-0">
+                                {expense.category[0] || "💰"}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <p className="font-bold text-base truncate">{expense.category}</p>
+                                  {expense.receiptUrl && <FileText className="h-3.5 w-3.5 text-accent" title="Has receipt" />}
+                                </div>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[11px] font-medium text-muted-foreground uppercase whitespace-nowrap">
+                                    {mounted ? format(expense.date, "MMM dd") : ""}
+                                  </span>
+                                  <span className="h-0.5 w-0.5 bg-muted-foreground rounded-full"></span>
+                                  <span className="text-[10px] uppercase font-bold text-accent truncate">
+                                    {payerName} paid
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0 px-4">
+                              <p className="font-bold text-lg text-foreground">-${expense.amount.toFixed(2)}</p>
+                              {expense.notes && <p className="text-[11px] text-muted-foreground italic truncate max-w-[150px]">{expense.notes}</p>}
+                            </div>
+                          </Link>
+                          <div className="pr-6 shrink-0">
+                            <Button 
+                              asChild
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
+                                <Edit2 className="h-4 w-4 text-muted-foreground" />
+                              </Link>
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="space-y-6">
+            <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden h-fit">
+              <CardHeader className="border-b px-6 py-4">
+                <CardTitle className="font-headline text-lg font-bold flex items-center gap-2">
+                  <Coins className="h-5 w-5 text-accent" />
+                  Balances
+                </CardTitle>
+                <CardDescription>Who owes what in this group</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                {membersLoading ? (
+                  <div className="py-12 flex justify-center"><div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>
+                ) : !group.members || group.members.length === 0 ? (
+                  <div className="p-8 text-center text-muted-foreground text-sm">No members found.</div>
+                ) : (
+                  <div className="divide-y divide-muted">
+                    {group.members.map((memberId) => {
+                      const profile = memberProfiles?.find(m => m.uid === memberId);
+                      const balance = memberBalances[memberId] || 0;
+                      const isCurrentUser = memberId === user?.uid;
+
+                      return (
+                        <div key={memberId} className="px-6 py-4 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9 border-2 border-background">
+                              <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
+                                {profile?.name?.[0] || "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-bold truncate max-w-[120px]">
+                                {isCurrentUser ? "You" : (profile?.name || "Member")}
+                              </span>
+                              <span className={cn(
+                                "text-[10px] font-bold uppercase tracking-wider",
+                                balance > 0 ? "text-green-500" : balance < 0 ? "text-destructive" : "text-muted-foreground"
+                              )}>
+                                {balance > 0 ? "Owed" : balance < 0 ? "Owes" : "Settled"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className={cn(
+                              "font-bold text-base",
+                              balance > 0 ? "text-green-500" : balance < 0 ? "text-destructive" : "text-foreground"
+                            )}>
+                              {balance === 0 ? "—" : `$${Math.abs(balance).toFixed(2)}`}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </main>
 
       {/* Members Dialog */}
