@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from "react";
@@ -38,7 +39,6 @@ export default function LandingPage() {
     );
   }
 
-  const heroImage = PlaceHolderImages.find(img => img.id === "landing-hero");
   const personalImage = PlaceHolderImages.find(img => img.id === "feature-personal");
   const groupImage = PlaceHolderImages.find(img => img.id === "feature-group");
 
@@ -89,19 +89,6 @@ export default function LandingPage() {
               </Button>
             </div>
           </div>
-
-          <div className="mt-20 relative max-w-5xl mx-auto rounded-[2rem] overflow-hidden shadow-2xl border-8 border-card">
-            {heroImage && (
-              <Image 
-                src={heroImage.imageUrl}
-                alt={heroImage.description}
-                width={1200}
-                height={800}
-                data-ai-hint={heroImage.imageHint}
-                className="w-full object-cover"
-              />
-            )}
-          </div>
         </div>
         
         <div className="absolute top-0 -left-20 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
@@ -138,10 +125,9 @@ export default function LandingPage() {
               {personalImage && (
                 <Image 
                   src={personalImage.imageUrl}
-                  alt={personalImage.description}
+                  alt="Personal Finance"
                   width={600}
                   height={400}
-                  data-ai-hint={personalImage.imageHint}
                   className="w-full hover:scale-105 transition-transform duration-500"
                 />
               )}
@@ -170,10 +156,9 @@ export default function LandingPage() {
               {groupImage && (
                 <Image 
                   src={groupImage.imageUrl}
-                  alt={groupImage.description}
+                  alt="Group Sharing"
                   width={600}
                   height={400}
-                  data-ai-hint={groupImage.imageHint}
                   className="w-full hover:scale-105 transition-transform duration-500"
                 />
               )}
