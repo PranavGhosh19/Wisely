@@ -19,6 +19,24 @@ const CURRENCIES = [
   { code: "EUR", label: "Euro (€)" },
   { code: "GBP", label: "British Pound (£)" },
   { code: "INR", label: "Indian Rupee (₹)" },
+  { code: "JPY", label: "Japanese Yen (¥)" },
+  { code: "AUD", label: "Australian Dollar (A$)" },
+  { code: "CAD", label: "Canadian Dollar (C$)" },
+  { code: "CHF", label: "Swiss Franc (CHF)" },
+  { code: "CNY", label: "Chinese Yuan (¥)" },
+  { code: "SEK", label: "Swedish Krona (kr)" },
+  { code: "NZD", label: "New Zealand Dollar (NZ$)" },
+  { code: "MXN", label: "Mexican Peso ($)" },
+  { code: "SGD", label: "Singapore Dollar (S$)" },
+  { code: "HKD", label: "Hong Kong Dollar (HK$)" },
+  { code: "NOK", label: "Norwegian Krone (kr)" },
+  { code: "KRW", label: "South Korean Won (₩)" },
+  { code: "TRY", label: "Turkish Lira (₺)" },
+  { code: "RUB", label: "Russian Ruble (₽)" },
+  { code: "BRL", label: "Brazilian Real (R$)" },
+  { code: "ZAR", label: "South African Rand (R)" },
+  { code: "AED", label: "UAE Dirham (د.إ)" },
+  { code: "SAR", label: "Saudi Riyal (ر.س)" },
 ];
 
 function CurrencyContent() {
@@ -107,7 +125,7 @@ function CurrencyContent() {
                 <SelectTrigger id="currency" className="h-14 rounded-2xl bg-muted/30 border-none text-base font-medium">
                   <SelectValue placeholder="Pick a currency..." />
                 </SelectTrigger>
-                <SelectContent className="rounded-2xl shadow-2xl border-none">
+                <SelectContent className="rounded-2xl shadow-2xl border-none max-h-[300px]">
                   {CURRENCIES.map((c) => (
                     <SelectItem key={c.code} value={c.code} className="h-12 rounded-xl">
                       {c.label}

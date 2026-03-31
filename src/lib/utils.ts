@@ -1,3 +1,4 @@
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -15,6 +16,24 @@ export function getCurrencySymbol(currencyCode: string = 'USD') {
     EUR: '€',
     GBP: '£',
     INR: '₹',
+    JPY: '¥',
+    AUD: 'A$',
+    CAD: 'C$',
+    CHF: 'CHF',
+    CNY: '¥',
+    SEK: 'kr',
+    NZD: 'NZ$',
+    MXN: '$',
+    SGD: 'S$',
+    HKD: 'HK$',
+    NOK: 'kr',
+    KRW: '₩',
+    TRY: '₺',
+    RUB: '₽',
+    BRL: 'R$',
+    ZAR: 'R',
+    AED: 'د.إ',
+    SAR: 'ر.س',
   };
   return symbols[currencyCode] || '$';
 }

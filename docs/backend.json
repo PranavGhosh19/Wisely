@@ -11,7 +11,7 @@
         "email": { "type": "string" },
         "groupIds": { "type": "array", "items": { "type": "string" } },
         "categories": { "type": "array", "items": { "type": "string" } },
-        "currency": { "type": "string", "enum": ["USD", "EUR", "GBP", "INR"], "default": "USD" }
+        "currency": { "type": "string", "enum": ["USD", "EUR", "GBP", "INR", "JPY", "AUD", "CAD", "CHF", "CNY", "SEK", "NZD", "MXN", "SGD", "HKD", "NOK", "KRW", "TRY", "RUB", "BRL", "ZAR", "AED", "SAR"], "default": "USD" }
       },
       "required": ["uid", "name", "email"]
     },
