@@ -23,9 +23,8 @@ import {
   User as UserIcon,
   BarChart3,
   CheckCircle2,
-  AlertCircle,
-  TrendingDown,
-  Coins
+  Coins,
+  Info
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
@@ -119,30 +118,35 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   const totalSpent = (groupExpenses || []).reduce((acc, curr) => acc + curr.amount, 0);
 
   /**
-   * Calculate exact net balances for everyone in the group.
-   * Logic: (Total Paid by User) - (Total of User's shares in all expenses)
+   * Calculate detailed member stats: Paid vs Share.
+   * Logic: 
+   * - Paid: Total money the user physically fronted.
+   * - Share: Total money the user 'consumed' based on split breakdown.
+   * - Net: Paid - Share.
    */
-  const memberBalances = useMemo(() => {
+  const memberStats = useMemo(() => {
     if (!group?.members || !groupExpenses) return {};
     
-    const balances: Record<string, number> = {};
-    group.members.forEach(uid => balances[uid] = 0);
+    const stats: Record<string, { net: number; paid: number; share: number }> = {};
+    group.members.forEach(uid => stats[uid] = { net: 0, paid: 0, share: 0 });
 
     groupExpenses.forEach(exp => {
-      // Add the full amount to the payer's balance (they are 'owed' this money back)
-      if (balances[exp.paidBy] !== undefined) {
-        balances[exp.paidBy] += exp.amount;
+      // Add paid amount
+      if (stats[exp.paidBy]) {
+        stats[exp.paidBy].paid += exp.amount;
+        stats[exp.paidBy].net += exp.amount;
       }
       
-      // Subtract the share from every member involved (they 'owe' their share)
+      // Subtract share
       exp.splitBetween?.forEach(split => {
-        if (balances[split.userId] !== undefined) {
-          balances[split.userId] -= split.amount;
+        if (stats[split.userId]) {
+          stats[split.userId].share += split.amount;
+          stats[split.userId].net -= split.amount;
         }
       });
     });
 
-    return balances;
+    return stats;
   }, [group?.members, groupExpenses]);
 
   const handleJoinGroup = async () => {
@@ -349,7 +353,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-foreground">
-                    ${(memberBalances[user?.uid || ""] || 0) < 0 ? Math.abs(memberBalances[user?.uid || ""]).toFixed(2) : (memberBalances[user?.uid || ""] || 0).toFixed(2)}
+                    ${(memberStats[user?.uid || ""]?.share || 0).toFixed(2)}
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">Actual Contribution</p>
                 </CardContent>
@@ -454,36 +458,50 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   <div className="divide-y divide-muted">
                     {group.members.map((memberId) => {
                       const profile = memberProfiles?.find(m => m.uid === memberId);
-                      const balance = memberBalances[memberId] || 0;
+                      const stats = memberStats[memberId] || { net: 0, paid: 0, share: 0 };
                       const isCurrentUser = memberId === user?.uid;
 
                       return (
-                        <div key={memberId} className="px-6 py-4 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9 border-2 border-background">
-                              <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
-                                {profile?.name?.[0] || "?"}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex flex-col">
-                              <span className="text-sm font-bold truncate max-w-[120px]">
-                                {isCurrentUser ? "You" : (profile?.name || "Member")}
-                              </span>
-                              <span className={cn(
-                                "text-[10px] font-bold uppercase tracking-wider",
-                                balance > 0 ? "text-green-500" : balance < 0 ? "text-destructive" : "text-muted-foreground"
+                        <div key={memberId} className="px-6 py-4 flex flex-col gap-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9 border-2 border-background">
+                                <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
+                                  {profile?.name?.[0] || "?"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex flex-col">
+                                <span className="text-sm font-bold truncate max-w-[120px]">
+                                  {isCurrentUser ? "You" : (profile?.name || "Member")}
+                                </span>
+                                <span className={cn(
+                                  "text-[10px] font-bold uppercase tracking-wider",
+                                  stats.net > 0 ? "text-green-500" : stats.net < 0 ? "text-destructive" : "text-muted-foreground"
+                                )}>
+                                  {stats.net > 0 ? "Owed" : stats.net < 0 ? "Owes" : "Settled"}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className={cn(
+                                "font-bold text-base",
+                                stats.net > 0 ? "text-green-500" : stats.net < 0 ? "text-destructive" : "text-foreground"
                               )}>
-                                {balance > 0 ? "Owed" : balance < 0 ? "Owes" : "Settled"}
-                              </span>
+                                {stats.net === 0 ? "—" : `$${Math.abs(stats.net).toFixed(2)}`}
+                              </p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className={cn(
-                              "font-bold text-base",
-                              balance > 0 ? "text-green-500" : balance < 0 ? "text-destructive" : "text-foreground"
-                            )}>
-                              {balance === 0 ? "—" : `$${Math.abs(balance).toFixed(2)}`}
-                            </p>
+                          
+                          {/* Descriptive info about the member's activity */}
+                          <div className="flex justify-between text-[10px] text-muted-foreground bg-muted/20 px-3 py-1.5 rounded-lg border border-border/30">
+                            <span className="flex items-center gap-1">
+                              <span className="opacity-60">Paid:</span> 
+                              <span className="font-bold text-foreground/80">${stats.paid.toFixed(2)}</span>
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <span className="opacity-60">Usage:</span> 
+                              <span className="font-bold text-foreground/80">${stats.share.toFixed(2)}</span>
+                            </span>
                           </div>
                         </div>
                       );
@@ -491,6 +509,20 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   </div>
                 )}
               </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-sm bg-accent/5 rounded-2xl p-6 border border-accent/10">
+              <div className="flex gap-4">
+                <div className="h-10 w-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent shrink-0">
+                  <Info className="h-5 w-5" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold">About Balances</h4>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    We calculate who owes what by comparing how much each person paid versus their individual share of all group expenses.
+                  </p>
+                </div>
+              </div>
             </Card>
           </div>
         </div>
