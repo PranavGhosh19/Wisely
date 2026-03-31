@@ -258,7 +258,7 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ReBarChart data={splitData} layout="vertical" margin={{ left: 20, right: 40 }}>
+                  <ReBarChart data={splitData} layout="vertical" margin={{ left: 20, right: 60 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
                     <XAxis 
                       type="number" 
@@ -283,6 +283,14 @@ export default function AnalyticsPage() {
                       fill="hsl(var(--primary))" 
                       radius={[0, 8, 8, 0]} 
                       barSize={40} 
+                      label={{ 
+                        position: 'right', 
+                        fill: 'hsl(var(--foreground))', 
+                        fontSize: 10, 
+                        fontWeight: 600,
+                        offset: 8,
+                        formatter: (val: number) => `$${val.toFixed(0)}`
+                      }}
                     />
                   </ReBarChart>
                 </ResponsiveContainer>
