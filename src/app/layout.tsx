@@ -7,6 +7,7 @@ import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { AuthSync } from "@/components/auth-sync";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 
+// Reference the scenic mountain landscape for the browser and apple touch icons
 const appIcon = PlaceHolderImages.find(img => img.id === "app-icon")?.imageUrl || 'https://picsum.photos/seed/wisely-app-icon/512/512';
 
 export const metadata: Metadata = {
