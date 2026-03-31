@@ -99,41 +99,36 @@ export default function Dashboard() {
           </Button>
         </header>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-8">
-          <Card className="border-none shadow-sm bg-card overflow-hidden relative rounded-2xl">
-            <div className="absolute top-0 right-0 p-3 opacity-10">
-              <Wallet className="h-16 w-16 text-primary" />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+          <Card className="border-none shadow-sm bg-card rounded-2xl p-4 flex items-center justify-between h-20 overflow-hidden relative group">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <Wallet className="h-5 w-5" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-tight">Personal Spent</span>
             </div>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Personal Spent</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">{symbol}{totalPersonalSpent.toFixed(2)}</div>
-            </CardContent>
+            <div className="text-xl font-bold text-primary shrink-0">{symbol}{totalPersonalSpent.toFixed(2)}</div>
           </Card>
 
-          <Card className="border-none shadow-sm bg-card overflow-hidden relative rounded-2xl">
-            <div className="absolute top-0 right-0 p-3 opacity-10">
-              <Users className="h-16 w-16 text-accent" />
+          <Card className="border-none shadow-sm bg-card rounded-2xl p-4 flex items-center justify-between h-20 overflow-hidden relative group">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent shrink-0">
+                <Users className="h-5 w-5" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-tight">Active Group Share</span>
             </div>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active Group Share</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">{symbol}{totalUserGroupShare.toFixed(2)}</div>
-            </CardContent>
+            <div className="text-xl font-bold text-foreground shrink-0">{symbol}{totalUserGroupShare.toFixed(2)}</div>
           </Card>
 
-          <Card className="border-none shadow-sm bg-primary text-primary-foreground overflow-hidden relative rounded-2xl">
-            <div className="absolute top-0 right-0 p-3 opacity-20">
-              <CreditCard className="h-16 w-16" />
+          <Card className="border-none shadow-sm bg-primary text-primary-foreground rounded-2xl p-4 flex items-center justify-between h-20 relative overflow-hidden group">
+            <div className="flex items-center gap-3 relative z-10">
+              <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <CreditCard className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-widest opacity-80 leading-tight">Total Outstanding</span>
             </div>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider opacity-80">Total Outstanding</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{symbol}{totalOverallSpent.toFixed(2)}</div>
-            </CardContent>
+            <div className="text-xl font-bold relative z-10 shrink-0">{symbol}{totalOverallSpent.toFixed(2)}</div>
+            <CreditCard className="absolute -right-4 -bottom-4 h-16 w-16 opacity-10 rotate-12 transition-transform group-hover:scale-110" />
           </Card>
         </div>
 
@@ -171,7 +166,7 @@ export default function Dashboard() {
                         <div>
                           <p className="font-bold text-sm sm:text-base">{expense.category}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[11px] font-medium text-muted-foreground uppercase">
+                            <span className="text-11px font-medium text-muted-foreground uppercase">
                               {mounted ? format(expense.date, "MMM dd") : ""}
                             </span>
                             {expense.isSettled && (

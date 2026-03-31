@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, HelpCircle, Loader2 } from "lucide-react";
+import { Plus, Users, HelpCircle, Loader2, Check } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { CreateGroupDialog } from "@/components/groups/CreateGroupDialog";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
@@ -66,17 +66,22 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
           isLoading ? "bg-muted animate-pulse" : 
           netBalance > 0.01 ? "bg-green-500/10 text-green-500" : 
           netBalance < -0.01 ? "bg-destructive/10 text-destructive" : 
-          "bg-muted text-muted-foreground"
+          "bg-emerald-500/10 text-emerald-500"
         )}>
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
+          ) : Math.abs(netBalance) <= 0.01 ? (
+            <div className="flex items-center gap-1">
+              <Check className="h-3.5 w-3.5" />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Settled</span>
+            </div>
           ) : (
             <div className="flex flex-col items-end">
               <span className="text-[10px] font-bold uppercase tracking-wider leading-none mb-0.5 opacity-70">
-                {netBalance > 0.01 ? "Owed" : netBalance < -0.01 ? "Owe" : "Settled"}
+                {netBalance > 0.01 ? "Owed" : "Owe"}
               </span>
               <span className="text-sm font-bold leading-none">
-                {Math.abs(netBalance) <= 0.01 ? "—" : `${symbol}${Math.abs(netBalance).toFixed(0)}`}
+                {symbol}{Math.abs(netBalance).toFixed(0)}
               </span>
             </div>
           )}
