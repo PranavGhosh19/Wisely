@@ -1,3 +1,22 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "landing-hero",
+      "description": "A sleek, modern financial analytics dashboard with clean graphs and spending overviews.",
+      "imageUrl": "https://picsum.photos/seed/wisely-hero/1200/800",
+      "imageHint": "financial dashboard"
+    },
+    {
+      "id": "feature-personal",
+      "description": "A close-up of a digital wallet showing categorized personal spending.",
+      "imageUrl": "https://picsum.photos/seed/wisely-personal/600/400",
+      "imageHint": "mobile payment"
+    },
+    {
+      "id": "feature-group",
+      "description": "A group of diverse friends laughing and sharing a meal at a restaurant.",
+      "imageUrl": "https://picsum.photos/seed/wisely-group/600/400",
+      "imageHint": "friends dinner"
+    }
+  ]
 }
