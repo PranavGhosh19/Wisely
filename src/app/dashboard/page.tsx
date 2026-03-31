@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,10 +8,10 @@ import { useStore } from "@/lib/store";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Wallet, AlertCircle } from "lucide-react";
+import { Plus, Wallet, AlertCircle, Users } from "lucide-react";
 import { format } from "date-fns";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
-import { collection, query, orderBy, where } from "firebase/firestore";
+import { collection, query, orderBy, where, collectionGroup } from "firebase/firestore";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function Dashboard() {
     }
   }, [user, router, storeLoading]);
 
-  // Safe Fetching: Include isDeleted filter to match security rules
+  // Personal Expenses Query
   const personalExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -36,6 +37,18 @@ export default function Dashboard() {
   }, [db, user]);
 
   const { data: expenses, isLoading: expensesLoading } = useCollection(personalExpensesQuery);
+
+  // Group Expenses Query - Fetch all group activity the user is part of
+  const groupExpensesQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(
+      collectionGroup(db, "expenses"),
+      where("groupMemberIds", "array-contains", user.uid),
+      where("isDeleted", "==", false)
+    );
+  }, [db, user]);
+
+  const { data: groupExpenses } = useCollection(groupExpensesQuery);
 
   if (storeLoading || !user) {
     return (
@@ -49,7 +62,8 @@ export default function Dashboard() {
   }
 
   const activeExpenses = expenses || [];
-  const totalSpent = activeExpenses.reduce((acc, curr) => acc + curr.amount, 0);
+  const totalPersonalSpent = activeExpenses.reduce((acc, curr) => acc + curr.amount, 0);
+  const totalGroupSpent = (groupExpenses || []).reduce((acc, curr) => acc + curr.amount, 0);
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row bg-background">
@@ -81,7 +95,19 @@ export default function Dashboard() {
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Personal Spent</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary">${totalSpent.toFixed(2)}</div>
+              <div className="text-3xl font-bold text-primary">${totalPersonalSpent.toFixed(2)}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-sm bg-card overflow-hidden relative rounded-2xl">
+            <div className="absolute top-0 right-0 p-3 opacity-10">
+              <Users className="h-16 w-16 text-accent" />
+            </div>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Group Spents</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-foreground">${totalGroupSpent.toFixed(2)}</div>
             </CardContent>
           </Card>
         </div>
