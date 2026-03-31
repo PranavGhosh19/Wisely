@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -65,7 +66,14 @@ export default function Dashboard() {
   
   // Calculate total of the user's individual shares in group expenses
   const totalUserGroupShare = (groupExpenses || []).reduce((acc, curr) => {
-    const userShare = curr.splitBetween?.find((s: any) => s.userId === user.uid)?.amount || 0;
+    let userShare = 0;
+    if (curr.splitBetween && Array.isArray(curr.splitBetween)) {
+      userShare = curr.splitBetween.find((s: any) => s.userId === user.uid)?.amount || 0;
+    } else {
+      // Fallback: If no split data exists, assume equal split among all group members
+      const memberCount = curr.groupMemberIds?.length || 1;
+      userShare = curr.amount / memberCount;
+    }
     return acc + userShare;
   }, 0);
 

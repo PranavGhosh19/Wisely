@@ -163,7 +163,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
 
         // Ensure splitBetween amounts are synchronized with the total amount
         if (formData.splitType === 'EQUAL') {
-          // Identify members selected in the split (those with an amount > 0)
+          // Identify members selected in the split (those with an amount > 0 or explicitly in splitBetween)
           const activeMembers = formData.splitBetween.filter(s => s.amount > 0).map(s => s.userId);
           const membersToSplitWith = activeMembers.length > 0 ? activeMembers : (selectedGroup.members || []);
           
