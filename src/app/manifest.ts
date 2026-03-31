@@ -1,7 +1,10 @@
 
 import type { MetadataRoute } from 'next'
- 
+import data from './lib/placeholder-images.json'
+
 export default function manifest(): MetadataRoute.Manifest {
+  const appIconUrl = data.placeholderImages.find(img => img.id === "app-icon")?.imageUrl || 'https://picsum.photos/seed/wisely-app-icon/512/512';
+
   return {
     name: 'Wisely Expense Tracker',
     short_name: 'Wisely',
@@ -12,17 +15,17 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#3D737F',
     icons: [
       {
-        src: 'https://picsum.photos/seed/wisely-app-icon/192/192',
+        src: appIconUrl,
         sizes: '192x192',
         type: 'image/png',
       },
       {
-        src: 'https://picsum.photos/seed/wisely-app-icon/512/512',
+        src: appIconUrl,
         sizes: '512x512',
         type: 'image/png',
       },
       {
-        src: 'https://picsum.photos/seed/wisely-app-icon/512/512',
+        src: appIconUrl,
         sizes: '512x512',
         type: 'image/png',
         purpose: 'maskable',

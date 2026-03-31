@@ -5,13 +5,16 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { AuthSync } from "@/components/auth-sync";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
+
+const appIcon = PlaceHolderImages.find(img => img.id === "app-icon")?.imageUrl || 'https://picsum.photos/seed/wisely-app-icon/512/512';
 
 export const metadata: Metadata = {
   title: 'Wisely | Smart Expense Tracking',
   description: 'Manage personal and group expenses with ease.',
   icons: {
-    icon: 'https://picsum.photos/seed/wisely-app-icon/32/32',
-    apple: 'https://picsum.photos/seed/wisely-app-icon/180/180',
+    icon: appIcon,
+    apple: appIcon,
   }
 };
 
