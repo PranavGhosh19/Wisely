@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
@@ -37,7 +38,7 @@ function AuthContent() {
 
   useEffect(() => {
     if (user && !loading) {
-      if (user.currency) {
+      if (user.currency && user.name) {
         router.replace(redirectUrl);
       }
     }
@@ -103,16 +104,18 @@ function AuthContent() {
       if (!userDoc.exists()) {
         const userProfile = {
           uid: firebaseUser.uid,
-          name: firebaseUser.displayName || "Google User",
+          name: firebaseUser.displayName || "",
           email: firebaseUser.email || "",
           groupIds: [],
           currency: "", 
         };
         await setDoc(userDocRef, userProfile);
-        router.push("/profile/currency?setup=true");
+        router.push("/profile/setup-name");
       } else {
         const data = userDoc.data();
-        if (!data?.currency) {
+        if (!data?.name) {
+          router.push("/profile/setup-name");
+        } else if (!data?.currency) {
           router.push("/profile/currency?setup=true");
         } else {
           toast({ title: "Welcome", description: "Successfully signed in with Google." });
