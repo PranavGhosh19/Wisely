@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState, useMemo } from "react";
+import { use, useEffect, useState, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
@@ -51,8 +51,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { cn, getCurrencySymbol } from "@/lib/utils";
 
-export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
-  const { groupId } = use(params);
+function GroupDetailContent({ groupId }: { groupId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useStore();
@@ -111,26 +110,17 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     .filter(exp => !exp.isSettled)
     .reduce((acc, curr) => acc + curr.amount, 0);
 
-  /**
-   * settlementInfo:
-   * stats: Aggregated Paid vs Share per member for UNSETTLED transactions.
-   * debts: Simplified "who owes whom" array.
-   */
   const settlementInfo = useMemo(() => {
     if (!group?.members || !groupExpenses) return { stats: {}, debts: [] };
     
     const stats: Record<string, { net: number; paid: number; share: number }> = {};
     group.members.forEach(uid => stats[uid] = { net: 0, paid: 0, share: 0 });
 
-    // ONLY calculate based on unsettled expenses
     groupExpenses.filter(exp => !exp.isSettled).forEach(exp => {
-      // Amount the user paid
       if (stats[exp.paidBy]) {
         stats[exp.paidBy].paid += exp.amount;
         stats[exp.paidBy].net += exp.amount;
       }
-      
-      // Amount the user is responsible for (their share)
       exp.splitBetween?.forEach(split => {
         if (stats[split.userId]) {
           stats[split.userId].share += split.amount;
@@ -155,10 +145,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     while (i < debtors.length && j < creditors.length) {
       const amount = Math.min(debtors[i].amount, creditors[j].amount);
        debts.push({ from: debtors[i].uid, to: creditors[j].uid, amount });
-      
       debtors[i].amount -= amount;
       creditors[j].amount -= amount;
-      
       if (debtors[i].amount < 0.01) i++;
       if (creditors[j].amount < 0.01) j++;
     }
@@ -172,27 +160,13 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     try {
       const gRef = doc(db, "groups", groupId);
       const uRef = doc(db, "users", user.uid);
-
-      await updateDoc(gRef, {
-        members: arrayUnion(user.uid)
-      });
-
-      await updateDoc(uRef, {
-        groupIds: arrayUnion(groupId)
-      });
-
-      toast({
-        title: "Joined!",
-        description: `Welcome to ${group?.name}!`,
-      });
+      await updateDoc(gRef, { members: arrayUnion(user.uid) });
+      await updateDoc(uRef, { groupIds: arrayUnion(groupId) });
+      toast({ title: "Joined!", description: `Welcome to ${group?.name}!` });
       setIsJoinDialogOpen(false);
       router.replace(`/groups/${groupId}`);
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error joining group",
-        description: error.message,
-      });
+      toast({ variant: "destructive", title: "Error joining group", description: error.message });
     } finally {
       setIsJoining(false);
     }
@@ -200,36 +174,23 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
 
   const handleSettle = () => {
     if (!db || !groupId || !groupExpenses) return;
-    
     try {
-      // Instead of deleting, we mark them as settled to keep history
       groupExpenses.filter(exp => !exp.isSettled).forEach(exp => {
         const docRef = doc(db, "groups", groupId, "expenses", exp.id);
         updateDocumentNonBlocking(docRef, { isSettled: true });
       });
-
-      toast({
-        title: "Balances Settled",
-        description: "All outstanding expenses have been marked as settled.",
-      });
+      toast({ title: "Balances Settled", description: "All outstanding expenses have been marked as settled." });
       setIsSettleDialogOpen(false);
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not settle balances at this time.",
-      });
+      toast({ variant: "destructive", title: "Error", description: "Could not settle balances at this time." });
     }
   };
 
   const handleIndividualSettle = (fromUid: string, toUid: string, amount: number) => {
     if (!db || !groupId) return;
-    
     try {
-      // Create a settlement payment transaction
       const settlementId = `settle-${Date.now()}`;
       const settlementRef = doc(db, "groups", groupId, "expenses", settlementId);
-      
       const settlementData = {
         id: settlementId,
         amount: amount,
@@ -238,19 +199,16 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         date: Date.now(),
         createdBy: user?.name || "User",
         createdById: user?.uid || "",
-        paidBy: fromUid, // The debtor pays
-        splitBetween: [
-          { userId: toUid, amount: amount } // The creditor receives
-        ],
+        paidBy: fromUid,
+        splitBetween: [{ userId: toUid, amount: amount }],
         splitType: "UNEQUAL",
-        isSettled: false, // This is an active settlement transaction that offsets existing debts
+        isSettled: false,
         notes: `Individual settlement payment`,
         groupId: groupId,
         groupMemberIds: group?.members || [],
         isDeleted: false
       };
-
-      updateDoc(settlementRef, settlementData);
+      updateDoc(settlementRef, settlementData as any);
       toast({ title: "Payment Recorded", description: "The balance has been updated." });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: "Failed to record payment." });
@@ -263,10 +221,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     if (typeof navigator !== 'undefined') {
       navigator.clipboard.writeText(shareUrl);
       setCopied(true);
-      toast({
-        title: "Link copied!",
-        description: "Invite link is ready to share.",
-      });
+      toast({ title: "Link copied!", description: "Invite link is ready to share." });
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -289,9 +244,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   const symbol = getCurrencySymbol(user?.currency);
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row bg-background">
-      <Navbar />
-      
+    <>
       <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-7xl mx-auto w-full">
         <header className="mb-6">
           <Button 
@@ -302,7 +255,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             <ArrowLeft className="h-4 w-4" />
             Groups
           </Button>
-          
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="flex items-center gap-2">
@@ -324,7 +276,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                 <span className="font-medium underline-offset-4 group-hover:underline">{group.members?.length || 0} Members</span>
               </button>
             </div>
-            
             <div className="flex items-center gap-2">
               <AlertDialog open={isSettleDialogOpen} onOpenChange={setIsSettleDialogOpen}>
                 <AlertDialogTrigger asChild>
@@ -387,7 +338,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   </div>
                 </CardContent>
               </Card>
-
               <Card className="border-none shadow-sm bg-card rounded-2xl">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Net Position</CardTitle>
@@ -430,12 +380,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                       const payerName = expense.paidBy === user?.uid 
                         ? "You" 
                         : (memberProfiles?.find(m => m.uid === expense.paidBy)?.name || "Member");
-
                       return (
-                        <div 
-                          key={expense.id} 
-                          className="group flex items-center hover:bg-muted/5 transition-colors"
-                        >
+                        <div key={expense.id} className="group flex items-center hover:bg-muted/5 transition-colors">
                           <Link 
                             href={`/expenses/${expense.id}?type=${expense.type}&groupId=${groupId}`}
                             className="flex-1 flex items-center justify-between px-6 py-5 min-w-0"
@@ -468,12 +414,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                           </Link>
                           <div className="pr-6 shrink-0">
                             {!expense.isSettled && (
-                              <Button 
-                                asChild
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
+                              <Button asChild variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
                                   <Edit2 className="h-4 w-4 text-muted-foreground" />
                                 </Link>
@@ -488,7 +429,6 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               </CardContent>
             </Card>
           </div>
-
           <div className="space-y-6">
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden h-fit">
               <CardHeader className="border-b px-6 py-4">
@@ -515,20 +455,15 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                       const toUser = memberProfiles?.find(m => m.uid === debt.to);
                       const isFromMe = debt.from === user?.uid;
                       const isToMe = debt.to === user?.uid;
-
                       return (
                         <div key={idx} className="px-6 py-5 group/settle">
                           <div className="flex items-center gap-3">
                             <div className="flex -space-x-3">
                               <Avatar className="h-8 w-8 border-2 border-background">
-                                <AvatarFallback className="bg-primary/10 text-primary font-bold text-[10px]">
-                                  {fromUser?.name?.[0] || "?"}
-                                </AvatarFallback>
+                                <AvatarFallback className="bg-primary/10 text-primary font-bold text-[10px]">{fromUser?.name?.[0] || "?"}</AvatarFallback>
                               </Avatar>
                               <Avatar className="h-8 w-8 border-2 border-background">
-                                <AvatarFallback className="bg-accent/10 text-accent font-bold text-[10px]">
-                                  {toUser?.name?.[0] || "?"}
-                                </AvatarFallback>
+                                <AvatarFallback className="bg-accent/10 text-accent font-bold text-[10px]">{toUser?.name?.[0] || "?"}</AvatarFallback>
                               </Avatar>
                             </div>
                             <div className="flex-1 min-w-0">
@@ -541,9 +476,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                               </p>
                               {isFromMe && (
                                 <Button 
-                                  size="sm" 
-                                  variant="ghost"
-                                  className="h-7 mt-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/10 rounded-lg px-3 transition-all"
+                                  size="sm" variant="ghost" className="h-7 mt-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/10 rounded-lg px-3 transition-all"
                                   onClick={() => handleIndividualSettle(debt.from, debt.to, debt.amount)}
                                 >
                                   Settle Now
@@ -558,17 +491,12 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                 )}
               </CardContent>
             </Card>
-
             <Card className="border-none shadow-sm bg-accent/5 rounded-2xl p-6 border border-accent/10">
               <div className="flex gap-4">
-                <div className="h-10 w-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent shrink-0">
-                  <div className="text-[10px] font-bold">INFO</div>
-                </div>
+                <div className="h-10 w-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent shrink-0"><div className="text-[10px] font-bold">INFO</div></div>
                 <div className="space-y-1">
                   <h4 className="text-sm font-bold">Settlement Logic</h4>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Settling up clears the outstanding balance indicators but preserves the expense data in your group history and analytics.
-                  </p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">Settling up clears the outstanding balance indicators but preserves the expense data in your group history and analytics.</p>
                 </div>
               </div>
             </Card>
@@ -576,32 +504,18 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         </div>
       </main>
 
-      {/* Members Dialog */}
       <Dialog open={isMembersOpen} onOpenChange={setIsMembersOpen}>
         <DialogContent className="sm:max-w-[400px] rounded-2xl p-6 border-none shadow-2xl">
           <DialogHeader className="mb-4">
-            <DialogTitle className="text-xl font-bold font-headline flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              Group Members
-            </DialogTitle>
-            <DialogDescription>
-              Sharing expenses in <span className="font-bold text-foreground">"{group.name}"</span>.
-            </DialogDescription>
+            <DialogTitle className="text-xl font-bold font-headline flex items-center gap-2"><Users className="h-5 w-5 text-primary" />Group Members</DialogTitle>
+            <DialogDescription>Sharing expenses in <span className="font-bold text-foreground">"{group.name}"</span>.</DialogDescription>
           </DialogHeader>
-          
           <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
             {membersLoading ? (
-              <div className="py-8 flex flex-col items-center gap-2">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                <span className="text-xs text-muted-foreground">Loading members...</span>
-              </div>
+              <div className="py-8 flex flex-col items-center gap-2"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /><span className="text-xs text-muted-foreground">Loading members...</span></div>
             ) : memberProfiles?.map((member) => (
               <div key={member.uid} className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl border border-border/50">
-                <Avatar className="h-10 w-10 border-2 border-background">
-                  <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                    {member.name?.[0] || <UserIcon className="h-4 w-4" />}
-                  </AvatarFallback>
-                </Avatar>
+                <Avatar className="h-10 w-10 border-2 border-background"><AvatarFallback className="bg-primary/10 text-primary font-bold">{member.name?.[0] || <UserIcon className="h-4 w-4" />}</AvatarFallback></Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold truncate">{member.name} {member.uid === user?.uid && "(You)"}</p>
                   <p className="text-[10px] text-muted-foreground truncate">{member.email}</p>
@@ -609,91 +523,63 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               </div>
             ))}
           </div>
-
           <DialogFooter className="mt-6">
-            <Button 
-              className="w-full rounded-xl font-bold h-11 gap-2 bg-primary shadow-lg shadow-primary/10 transition-all active:scale-95"
-              onClick={() => {
-                setIsMembersOpen(false);
-                setIsQrOpen(true);
-              }}
-            >
-              <UserPlus className="h-4 w-4" />
-              Invite More Members
+            <Button className="w-full rounded-xl font-bold h-11 gap-2 bg-primary shadow-lg shadow-primary/10 transition-all active:scale-95" onClick={() => { setIsMembersOpen(false); setIsQrOpen(true); }}>
+              <UserPlus className="h-4 w-4" />Invite More Members
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Join Dialog */}
-      <Dialog open={isJoinDialogOpen} onOpenChange={(open) => {
-        if (!isJoining) setIsJoinDialogOpen(open);
-      }}>
+      <Dialog open={isJoinDialogOpen} onOpenChange={(open) => { if (!isJoining) setIsJoinDialogOpen(open); }}>
         <DialogContent className="sm:max-w-[425px] rounded-2xl p-8 border-none shadow-2xl">
           <DialogHeader className="text-center space-y-4">
-            <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto">
-              <UserPlus className="h-8 w-8" />
-            </div>
+            <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto"><UserPlus className="h-8 w-8" /></div>
             <DialogTitle className="text-2xl font-bold font-headline">Join Group?</DialogTitle>
-            <DialogDescription className="text-base">
-              Would you like to join <span className="font-bold text-foreground">"{group?.name}"</span>?
-            </DialogDescription>
+            <DialogDescription className="text-base">Would you like to join <span className="font-bold text-foreground">"{group?.name}"</span>?</DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex flex-col sm:flex-row gap-3 mt-6">
-            <Button 
-              variant="outline" 
-              className="flex-1 h-12 rounded-xl font-bold order-2 sm:order-1 transition-all active:scale-95" 
-              onClick={() => {
-                setIsJoinDialogOpen(false);
-                router.push("/dashboard");
-              }}
-              disabled={isJoining}
-            >
-              No
-            </Button>
-            <Button 
-              className="flex-1 h-12 rounded-xl font-bold bg-primary order-1 sm:order-2 transition-all active:scale-95 shadow-lg shadow-primary/20"
-              onClick={handleJoinGroup}
-              disabled={isJoining}
-            >
-              {isJoining ? "Joining..." : "Ok"}
-            </Button>
+            <Button variant="outline" className="flex-1 h-12 rounded-xl font-bold order-2 sm:order-1 transition-all active:scale-95" onClick={() => { setIsJoinDialogOpen(false); router.push("/dashboard"); }} disabled={isJoining}>No</Button>
+            <Button className="flex-1 h-12 rounded-xl font-bold bg-primary order-1 sm:order-2 transition-all active:scale-95 shadow-lg shadow-primary/20" onClick={handleJoinGroup} disabled={isJoining}>{isJoining ? "Joining..." : "Ok"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* QR Code Dialog */}
       <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
         <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[1.5rem] p-5 sm:p-10 border-none shadow-2xl overflow-hidden">
           <DialogHeader className="text-center space-y-2 mb-2">
             <DialogTitle className="text-xl sm:text-2xl font-bold font-headline text-primary">Invite Members</DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm px-2">
-              Share this code with friends to join <span className="font-bold text-foreground">"{group.name}"</span>
-            </DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm px-2">Share this code with friends to join <span className="font-bold text-foreground">"{group.name}"</span></DialogDescription>
           </DialogHeader>
-          
           <div className="flex flex-col items-center gap-5 py-2 overflow-x-hidden">
             <div className="bg-secondary p-4 sm:p-6 rounded-[1.5rem] shadow-xl shadow-primary/5 border border-primary/10">
               <svg viewBox="0 0 100 100" className="w-32 h-32 sm:w-40 sm:h-40 text-primary" fill="currentColor">
                 <path d="M0 0h30v10H10v20H0V0zm10 10h10v10H10V10zm60-10h30v30h-10V10H70V0zm10 10h10v10H80V10zM0 70h30v30H0V70zm10 10h10v10H10V80zm70 0h10v10H80V80zm10-10h10v10H90V70zm-10-10h10v10H80V60zm-10 10h10v10H70V70zm10 10h10v10H80V80zm-20-20h10v10H60V60zm-10 10h10v10H50V70zm10 10h10v10H60V80zm-10-10h10v10H50V70zm10-10h10v10H60V60z" />
               </svg>
             </div>
-
             <div className="w-full space-y-3">
               <div className="flex items-center gap-2 p-2.5 bg-muted/30 rounded-lg border border-border/40 overflow-hidden w-full">
                 <span className="flex-1 text-[10px] sm:text-xs truncate text-muted-foreground font-mono block overflow-hidden">{shareUrl}</span>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-primary shrink-0 rounded-md" onClick={copyToClipboard}>
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-primary shrink-0 rounded-md" onClick={copyToClipboard}>{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</Button>
               </div>
-              <Button className="w-full rounded-xl font-bold h-12 gap-2 text-sm bg-primary shadow-lg shadow-primary/10 transition-all active:scale-95" onClick={copyToClipboard}>
-                <Share2 className="h-4 w-4" />
-                Share Group Link
-              </Button>
+              <Button className="w-full rounded-xl font-bold h-12 gap-2 text-sm bg-primary shadow-lg shadow-primary/10 transition-all active:scale-95" onClick={copyToClipboard}><Share2 className="h-4 w-4" />Share Group Link</Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+    </>
+  );
+}
+
+export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
+  const { groupId } = use(params);
+  
+  return (
+    <div className="flex min-h-screen flex-col md:flex-row bg-background">
+      <Navbar />
+      <Suspense fallback={<div className="flex h-screen items-center justify-center animate-pulse text-primary font-bold">Loading group details...</div>}>
+        <GroupDetailContent groupId={groupId} />
+      </Suspense>
     </div>
   );
 }
