@@ -1,6 +1,4 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDkA149q4bq9MohFJYbyAMok_hF_ezXZsE",
@@ -9,11 +7,10 @@ const firebaseConfig = {
   storageBucket: "wisely-93688.firebasestorage.app",
   messagingSenderId: "371802334079",
   appId: "1:371802334079:web:914749f196a7626c20b04a",
-  measurementId: "G-5WL2L7KTYQ"
+  measurementId: "G-5WL2L7KTYQ",
 };
 
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+// ✅ Prevent re-initialization (VERY IMPORTANT for Next.js)
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-export { auth, db };
+export default app;

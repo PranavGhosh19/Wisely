@@ -13,14 +13,8 @@ export function initializeFirebase() {
   let firebaseApp: FirebaseApp;
 
   if (!getApps().length) {
-    // We prioritize the config object to ensure initialization succeeds 
-    // even when environment-based auto-init is not available.
-    try {
-      firebaseApp = initializeApp(firebaseConfig);
-    } catch (e) {
-      // Fallback for environments that might have pre-configured apps
-      firebaseApp = initializeApp();
-    }
+    // Explicitly pass config to avoid "no-options" error in serverless/non-hosting environments
+    firebaseApp = initializeApp(firebaseConfig);
   } else {
     firebaseApp = getApp();
   }
