@@ -199,7 +199,7 @@ function AuthContent() {
                   type="password"
                   placeholder="••••••••" 
                   className="pl-10 h-11 rounded-xl"
-                  value={password}
+                  value={email ? password : ""}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
                 />
