@@ -11,22 +11,36 @@ import {
   Tag, 
   Users,
   Wallet,
-  Receipt
+  Receipt,
+  Trash2
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
-import { useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
+import { useDoc, useFirestore, useMemoFirebase, useCollection, deleteDocumentNonBlocking } from "@/firebase";
 import { doc, collection, query, where } from "firebase/firestore";
 import { ExpenseType } from "@/types";
 import Image from "next/image";
-import { getCurrencySymbol } from "@/lib/utils";
+import { cn, getCurrencySymbol } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 export default function TransactionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useStore();
+  const { user, deleteExpense: deleteExpenseFromStore } = useStore();
   const db = useFirestore();
+  const { toast } = useToast();
   
   const type = searchParams.get("type") as ExpenseType;
   const groupId = searchParams.get("groupId");
@@ -47,6 +61,20 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
   }, [db, expense?.groupMemberIds]);
   const { data: memberProfiles } = useCollection(membersQuery);
 
+  const handleDelete = () => {
+    if (!docRef || !user) return;
+    
+    deleteDocumentNonBlocking(docRef, user.uid, user.name);
+    deleteExpenseFromStore(id);
+    
+    toast({
+      title: "Expense deleted",
+      description: "The transaction has been removed from your history."
+    });
+    
+    router.back();
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -55,7 +83,7 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
     );
   }
 
-  if (!expense) {
+  if (!expense || expense.isDeleted) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-center">
@@ -80,12 +108,37 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
-          <Button asChild variant="outline" className="rounded-xl font-bold gap-2">
-            <a href={`/expenses/edit?id=${expense.id}&type=${expense.type}${groupId ? `&groupId=${groupId}` : ''}`}>
-              <Edit2 className="h-4 w-4" />
-              Edit
-            </a>
-          </Button>
+          
+          <div className="flex items-center gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl">
+                  <Trash2 className="h-5 w-5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="rounded-2xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Transaction?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete this expense? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="rounded-xl font-bold">Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90 rounded-xl font-bold">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <Button asChild variant="outline" className="rounded-xl font-bold gap-2">
+              <a href={`/expenses/edit?id=${expense.id}&type=${expense.type}${groupId ? `&groupId=${groupId}` : ''}`}>
+                <Edit2 className="h-4 w-4" />
+                Edit
+              </a>
+            </Button>
+          </div>
         </header>
 
         <div className="space-y-6">

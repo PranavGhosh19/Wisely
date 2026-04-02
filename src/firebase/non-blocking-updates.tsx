@@ -72,11 +72,16 @@ export function updateDocumentNonBlocking(docRef: DocumentReference, data: any) 
 
 
 /**
- * Initiates a deleteDoc operation for a document reference.
- * Does NOT await the write operation internally.
+ * Performs a "soft delete" by marking the document as deleted.
+ * Does NOT physically remove the document from Firestore.
  */
-export function deleteDocumentNonBlocking(docRef: DocumentReference) {
-  deleteDoc(docRef)
+export function deleteDocumentNonBlocking(docRef: DocumentReference, userId: string, userName: string) {
+  updateDoc(docRef, { 
+    isDeleted: true,
+    deletedBy: userName,
+    deletedById: userId,
+    updatedAt: Date.now()
+  })
     .catch(error => {
       errorEmitter.emit(
         'permission-error',
