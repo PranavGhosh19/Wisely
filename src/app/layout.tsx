@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { AuthSync } from "@/components/auth-sync";
+import { PwaHandler } from "@/components/pwa-handler";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 // Reference the wallet icon for all branding needs
@@ -13,6 +14,14 @@ const appIcon = PlaceHolderImages.find(img => img.id === "app-icon")?.imageUrl |
 export const metadata: Metadata = {
   title: 'Wisely | Smart Expense Tracking',
   description: 'Manage personal and group expenses with ease.',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Wisely',
+  },
+  formatDetection: {
+    telephone: false,
+  },
   icons: {
     icon: appIcon,
     apple: appIcon,
@@ -30,6 +39,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <meta name="theme-color" content="#07161B" />
       </head>
       <body className="font-body antialiased bg-background text-foreground transition-colors duration-300">
         <ThemeProvider
@@ -40,6 +50,7 @@ export default function RootLayout({
         >
           <FirebaseClientProvider>
             <AuthSync />
+            <PwaHandler />
             {children}
             <Toaster />
           </FirebaseClientProvider>
