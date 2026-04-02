@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -5,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, HelpCircle, Loader2, Check } from "lucide-react";
+import { Plus, Users, HelpCircle, Loader2, Check, TrendingUp, TrendingDown } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { CreateGroupDialog } from "@/components/groups/CreateGroupDialog";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
@@ -53,35 +54,46 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
 
   return (
     <Card 
-      className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-card group rounded-2xl h-24 flex flex-col justify-center overflow-hidden"
+      className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-card group rounded-2xl h-20 flex flex-col justify-center overflow-hidden"
       onClick={() => router.push(`/groups/${group.id}`)}
     >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-6">
-        <CardTitle className="font-headline text-lg font-bold text-foreground truncate max-w-[65%]">
-          {group.name}
-        </CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4">
+        <div className="flex flex-col min-w-0 pr-2">
+          <CardTitle className="font-headline text-base font-bold text-foreground truncate">
+            {group.name}
+          </CardTitle>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <Users className="h-3 w-3 text-muted-foreground" />
+            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+              {group.members?.length || 0} members
+            </span>
+          </div>
+        </div>
         
         <div className={cn(
-          "px-3 py-1.5 rounded-xl flex items-center justify-center transition-all group-hover:scale-105 min-w-[80px]",
+          "px-3 py-1.5 rounded-xl flex items-center justify-center transition-all group-hover:scale-105 min-w-[85px]",
           isLoading ? "bg-muted animate-pulse" : 
           netBalance > 0.01 ? "bg-green-500/10 text-green-500" : 
           netBalance < -0.01 ? "bg-destructive/10 text-destructive" : 
-          "bg-emerald-500/10 text-emerald-500"
+          "bg-muted/50 text-muted-foreground"
         )}>
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : Math.abs(netBalance) <= 0.01 ? (
             <div className="flex items-center gap-1">
-              <Check className="h-3.5 w-3.5" />
+              <Check className="h-3 w-3" />
               <span className="text-[10px] font-bold uppercase tracking-wider">Settled</span>
             </div>
           ) : (
             <div className="flex flex-col items-end">
-              <span className="text-[10px] font-bold uppercase tracking-wider leading-none mb-0.5 opacity-70">
-                {netBalance > 0.01 ? "Owed" : "Owe"}
-              </span>
+              <div className="flex items-center gap-1 leading-none mb-0.5">
+                {netBalance > 0.01 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+                <span className="text-[9px] font-bold uppercase tracking-tight opacity-80">
+                  {netBalance > 0.01 ? "Owed" : "Owe"}
+                </span>
+              </div>
               <span className="text-sm font-bold leading-none">
-                {symbol}{Math.abs(netBalance).toFixed(0)}
+                {symbol}{Math.abs(netBalance).toFixed(2)}
               </span>
             </div>
           )}
