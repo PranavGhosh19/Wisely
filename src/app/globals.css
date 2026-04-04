@@ -51,7 +51,12 @@
 
 @layer base {
   html {
-    font-size: 14px;
+    font-size: 10px;
+  }
+  @media (min-width: 768px) {
+    html {
+      font-size: 14px;
+    }
   }
   * {
     @apply border-border;
