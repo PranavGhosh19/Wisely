@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -28,15 +28,20 @@ import {
   Smartphone,
   Share2,
   Globe,
-  Type
+  Type,
+  Camera,
+  Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/firebase";
+import { useAuth, useFirestore } from "@/firebase";
 import { signOut } from "firebase/auth";
+import { doc, updateDoc } from "firebase/firestore";
+import Image from "next/image";
 
 export default function ProfilePage() {
   const router = useRouter();
   const auth = useAuth();
+  const db = useFirestore();
   const { 
     user, 
     logout, 
@@ -52,6 +57,8 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
   const [newCategory, setNewCategory] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -87,6 +94,37 @@ export default function ProfilePage() {
       title: "Category added",
       description: `"${newCategory.trim()}" is now available for your expenses.`
     });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user || !db) return;
+
+    if (file.size > 1024 * 1024) {
+      toast({ 
+        variant: "destructive", 
+        title: "Image too large", 
+        description: "Please pick an image smaller than 1MB." 
+      });
+      return;
+    }
+
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const base64String = reader.result as string;
+        await updateDoc(doc(db, "users", user.uid), {
+          photoURL: base64String
+        });
+        toast({ title: "Profile updated", description: "Your photo has been saved." });
+      } catch (error: any) {
+        toast({ variant: "destructive", title: "Upload failed", description: error.message });
+      } finally {
+        setUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleAddToHomeScreen = async () => {
@@ -143,8 +181,39 @@ export default function ProfilePage() {
           <Card className="border-none shadow-sm overflow-hidden rounded-2xl">
             <CardHeader className="pb-4">
               <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold border-4 border-background shadow-sm">
-                  {user.name?.[0] || "?"}
+                <div 
+                  className="relative group cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold border-4 border-background shadow-sm overflow-hidden relative">
+                    {user.photoURL ? (
+                      <Image 
+                        src={user.photoURL} 
+                        alt={user.name} 
+                        fill 
+                        className="object-cover"
+                      />
+                    ) : (
+                      user.name?.[0] || "?"
+                    )}
+                    
+                    {uploading && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <Loader2 className="h-6 w-6 text-white animate-spin" />
+                      </div>
+                    )}
+                    
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Camera className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={handleImageUpload} 
+                  />
                 </div>
                 <div>
                   <CardTitle className="font-headline text-xl">{user.name}</CardTitle>
