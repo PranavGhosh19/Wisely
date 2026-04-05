@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
@@ -55,11 +54,24 @@ export default function AllTransactionsPage() {
   }, [db, user]);
   const { data: groupExpenses, isLoading: loadingGroups } = useCollection(groupExpensesQuery);
 
+  // Fetch User's Groups for name mapping
+  const groupsQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, "groups"), where("members", "array-contains", user.uid));
+  }, [db, user]);
+  const { data: userGroups } = useCollection(groupsQuery);
+
+  const groupNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    userGroups?.forEach(g => {
+      map[g.id] = g.name;
+    });
+    return map;
+  }, [userGroups]);
+
   // Combine and process
   const allTransactions = useMemo(() => {
     const merged = [...(personalExpenses || []), ...(groupExpenses || [])];
-    // Sort combined list as the collectionGroup query doesn't automatically sort across all groups 
-    // unless we have specific indices, so we do it in memory for safety.
     return merged
       .filter(exp => 
         exp.category.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -176,7 +188,7 @@ export default function AllTransactionsPage() {
                                   {tx.type === 'PERSONAL' ? (
                                     <><User className="h-2.5 w-2.5" /> Personal</>
                                   ) : (
-                                    <><Users className="h-2.5 w-2.5" /> Shared</>
+                                    <><Users className="h-2.5 w-2.5" /> {tx.groupId ? (groupNameMap[tx.groupId] || "Shared") : "Shared"}</>
                                   )}
                                 </span>
                               </div>
