@@ -20,7 +20,8 @@ import {
   User as UserIcon,
   BarChart3,
   CheckCircle2,
-  Coins
+  Coins,
+  Wallet
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
@@ -47,7 +48,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
 import { collection, query, orderBy, doc, updateDoc, arrayUnion, where } from "firebase/firestore";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { updateDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { cn, getCurrencySymbol } from "@/lib/utils";
 
 function GroupDetailContent({ groupId }: { groupId: string }) {
@@ -207,7 +208,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
         groupMemberIds: group?.members || [],
         isDeleted: false
       };
-      updateDoc(settlementRef, settlementData as any);
+      setDocumentNonBlocking(settlementRef, settlementData, { merge: true });
       toast({ title: "Payment Recorded", description: "The balance has been updated." });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: "Failed to record payment." });
@@ -241,6 +242,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
   }
 
   const symbol = getCurrencySymbol(user?.currency);
+  const myNet = settlementInfo.stats[user?.uid || ""]?.net || 0;
 
   return (
     <>
@@ -284,14 +286,14 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                     disabled={settlementInfo.debts.length === 0}
                   >
                     <CheckCircle2 className="h-5 w-5" />
-                    Settle Up
+                    Settle All
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent className="rounded-2xl">
                   <AlertDialogHeader>
-                    <AlertDialogTitle className="font-headline text-xl">Settle Balances?</AlertDialogTitle>
+                    <AlertDialogTitle className="font-headline text-xl">Settle All Balances?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will mark current active expenses as settled. History will be preserved, but balances will reset.
+                      This will mark all current active expenses as settled. History will be preserved, but all member balances will reset to zero.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter className="gap-2">
@@ -300,7 +302,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                       className="bg-primary hover:bg-primary/90 rounded-xl font-bold"
                       onClick={handleSettle}
                     >
-                      Confirm Settlement
+                      Confirm Global Settlement
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -344,16 +346,60 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                 <CardContent>
                   <div className={cn(
                     "text-3xl font-bold",
-                    (settlementInfo.stats[user?.uid || ""]?.net || 0) > 0.01 ? "text-green-500" : 
-                    (settlementInfo.stats[user?.uid || ""]?.net || 0) < -0.01 ? "text-destructive" : 
+                    myNet > 0.01 ? "text-green-500" : 
+                    myNet < -0.01 ? "text-destructive" : 
                     "text-foreground"
                   )}>
-                    {symbol}{(settlementInfo.stats[user?.uid || ""]?.net || 0).toFixed(2)}
+                    {symbol}{Math.abs(myNet).toFixed(2)}
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-1 uppercase font-medium">Current Balance</p>
+                  <p className="text-[10px] text-muted-foreground mt-1 uppercase font-bold tracking-tight">
+                    {myNet > 0.01 ? "You are owed" : myNet < -0.01 ? "You owe" : "Settled"}
+                  </p>
                 </CardContent>
               </Card>
             </div>
+
+            <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden h-fit">
+              <CardHeader className="border-b px-6 py-4">
+                <CardTitle className="font-headline text-lg font-bold flex items-center gap-2">
+                  <Wallet className="h-5 w-5 text-primary" />
+                  Member Balances
+                </CardTitle>
+                <CardDescription>Individual contribution vs usage</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y divide-muted">
+                  {group.members.map(uid => {
+                    const profile = memberProfiles?.find(m => m.uid === uid);
+                    const stats = settlementInfo.stats[uid] || { paid: 0, share: 0, net: 0 };
+                    const isMe = uid === user?.uid;
+                    return (
+                      <div key={uid} className="px-6 py-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">{profile?.name?.[0] || "?"}</AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold truncate">{isMe ? "You" : (profile?.name || "Member")}</p>
+                            <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-muted-foreground">
+                              <span>Paid: {symbol}{stats.paid.toFixed(2)}</span>
+                              <span className="h-1 w-1 bg-muted-foreground rounded-full" />
+                              <span>Share: {symbol}{stats.share.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className={cn(
+                          "text-sm font-bold",
+                          stats.net > 0.01 ? "text-green-500" : stats.net < -0.01 ? "text-destructive" : "text-muted-foreground"
+                        )}>
+                          {stats.net > 0.01 ? "+" : ""}{symbol}{stats.net.toFixed(2)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
 
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
               <CardHeader className="border-b px-6 py-4 flex flex-row items-center justify-between">
@@ -435,7 +481,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                   <Coins className="h-5 w-5 text-accent" />
                   Active Settlements
                 </CardTitle>
-                <CardDescription>Outstanding group debts</CardDescription>
+                <CardDescription>Direct member-to-member debts</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 {membersLoading ? (
@@ -473,14 +519,12 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                                 <span className="text-muted-foreground mx-1">to</span>
                                 <span className="font-bold">{isToMe ? "you" : (toUser?.name || "Member")}</span>
                               </p>
-                              {isFromMe && (
-                                <Button 
-                                  size="sm" variant="ghost" className="h-7 mt-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/10 rounded-lg px-3 transition-all"
-                                  onClick={() => handleIndividualSettle(debt.from, debt.to, debt.amount)}
-                                >
-                                  Settle Now
-                                </Button>
-                              )}
+                              <Button 
+                                size="sm" variant="ghost" className="h-7 mt-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/10 rounded-lg px-3 transition-all"
+                                onClick={() => handleIndividualSettle(debt.from, debt.to, debt.amount)}
+                              >
+                                Settle Up
+                              </Button>
                             </div>
                           </div>
                         </div>
