@@ -1,9 +1,9 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Receipt, FileText, Edit2, Search, CheckCircle2 } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -63,6 +63,22 @@ export default function GroupTransactionsPage({ params }: { params: Promise<{ gr
     (exp.notes && exp.notes.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // Group expenses by Month/Year
+  const groupedExpenses = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    filteredExpenses.forEach((expense) => {
+      const monthYear = format(new Date(expense.date), "MMMM yyyy");
+      if (!groups[monthYear]) {
+        groups[monthYear] = [];
+      }
+      groups[monthYear].push(expense);
+    });
+    return Object.entries(groups).map(([monthYear, items]) => ({
+      monthYear,
+      items
+    }));
+  }, [filteredExpenses]);
+
   if (!mounted) return null;
 
   const symbol = getCurrencySymbol(user?.currency);
@@ -100,13 +116,17 @@ export default function GroupTransactionsPage({ params }: { params: Promise<{ gr
           </div>
         </header>
 
-        <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
-          <CardContent className="p-0">
-            {isLoading ? (
+        {isLoading ? (
+          <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
+            <CardContent className="p-0">
               <div className="py-20 flex justify-center">
                 <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
               </div>
-            ) : filteredExpenses.length === 0 ? (
+            </CardContent>
+          </Card>
+        ) : groupedExpenses.length === 0 ? (
+          <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
+            <CardContent className="p-0">
               <div className="flex flex-col items-center justify-center py-20 text-center px-4">
                 <Receipt className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
                 <h3 className="text-lg font-bold font-headline">No transactions found</h3>
@@ -114,71 +134,84 @@ export default function GroupTransactionsPage({ params }: { params: Promise<{ gr
                   {searchTerm ? "Try a different search term." : "Your group activity will appear here."}
                 </p>
               </div>
-            ) : (
-              <div className="divide-y divide-muted">
-                {filteredExpenses.map((expense) => {
-                  const payerName = expense.paidBy === user?.uid 
-                    ? "You" 
-                    : (memberProfiles?.find(m => m.uid === expense.paidBy)?.name || "Member");
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            {groupedExpenses.map((group) => (
+              <div key={group.monthYear} className="space-y-2">
+                <h3 className="px-4 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  {group.monthYear}
+                </h3>
+                <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="divide-y divide-muted">
+                      {group.items.map((expense) => {
+                        const payerName = expense.paidBy === user?.uid 
+                          ? "You" 
+                          : (memberProfiles?.find(m => m.uid === expense.paidBy)?.name || "Member");
 
-                  return (
-                    <div 
-                      key={expense.id} 
-                      className="group flex items-center hover:bg-muted/5 transition-colors"
-                    >
-                      <Link 
-                        href={`/expenses/${expense.id}?type=${expense.type}&groupId=${groupId}`}
-                        className="flex-1 flex items-center justify-between px-6 py-5 min-w-0"
-                      >
-                        <div className="flex items-center gap-4 min-w-0">
-                          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl shrink-0">
-                            {expense.category[0] || "💰"}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <p className={cn("font-bold text-base truncate", expense.isSettled && "text-muted-foreground")}>{expense.category}</p>
-                              {expense.isSettled && <CheckCircle2 className="h-3.5 w-3.5 text-green-500" title="Settled" />}
-                              {expense.receiptUrl && <FileText className="h-3.5 w-3.5 text-accent" title="Has receipt" />}
-                            </div>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[11px] font-medium text-muted-foreground uppercase whitespace-nowrap">
-                                {format(expense.date, "MMM dd, yyyy")}
-                              </span>
-                              <span className="h-0.5 w-0.5 bg-muted-foreground rounded-full"></span>
-                              <span className="text-[10px] uppercase font-bold text-accent truncate">
-                                {payerName} paid
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0 px-4">
-                          <p className={cn("font-bold text-lg", expense.isSettled ? "text-muted-foreground line-through" : "text-foreground")}>
-                            -{symbol}{expense.amount.toFixed(2)}
-                          </p>
-                          {expense.notes && <p className="text-[11px] text-muted-foreground italic truncate max-w-[150px]">{expense.notes}</p>}
-                        </div>
-                      </Link>
-                      <div className="pr-6 shrink-0">
-                        {!expense.isSettled && (
-                          <Button 
-                            asChild
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        return (
+                          <div 
+                            key={expense.id} 
+                            className="group flex items-center hover:bg-muted/5 transition-colors"
                           >
-                            <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
-                              <Edit2 className="h-4 w-4 text-muted-foreground" />
+                            <Link 
+                              href={`/expenses/${expense.id}?type=${expense.type}&groupId=${groupId}`}
+                              className="flex-1 flex items-center justify-between px-6 py-5 min-w-0"
+                            >
+                              <div className="flex items-center gap-4 min-w-0">
+                                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl shrink-0">
+                                  {expense.category[0] || "💰"}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <p className={cn("font-bold text-base truncate", expense.isSettled && "text-muted-foreground")}>{expense.category}</p>
+                                    {expense.isSettled && <CheckCircle2 className="h-3.5 w-3.5 text-green-500" title="Settled" />}
+                                    {expense.receiptUrl && <FileText className="h-3.5 w-3.5 text-accent" title="Has receipt" />}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-[11px] font-medium text-muted-foreground uppercase whitespace-nowrap">
+                                      {format(expense.date, "MMM dd")}
+                                    </span>
+                                    <span className="h-0.5 w-0.5 bg-muted-foreground rounded-full"></span>
+                                    <span className="text-[10px] uppercase font-bold text-accent truncate">
+                                      {payerName} paid
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0 px-4">
+                                <p className={cn("font-bold text-lg", expense.isSettled ? "text-muted-foreground line-through" : "text-foreground")}>
+                                  -{symbol}{expense.amount.toFixed(2)}
+                                </p>
+                                {expense.notes && <p className="text-[11px] text-muted-foreground italic truncate max-w-[150px]">{expense.notes}</p>}
+                              </div>
                             </Link>
-                          </Button>
-                        )}
-                      </div>
+                            <div className="pr-6 shrink-0">
+                              {!expense.isSettled && (
+                                <Button 
+                                  asChild
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
+                                    <Edit2 className="h-4 w-4 text-muted-foreground" />
+                                  </Link>
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </CardContent>
+                </Card>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );
