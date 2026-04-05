@@ -79,18 +79,25 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
         )}>
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
-          ) : Math.abs(netBalance) <= 0.01 ? (
-            <div className="flex items-center gap-1">
-              <Check className="h-3 w-3" />
-              <span className="text-[10px] font-bold uppercase tracking-wider">Settled</span>
-            </div>
           ) : (
             <div className="flex flex-col items-end">
               <div className="flex items-center gap-1 leading-none mb-0.5">
-                {netBalance > 0.01 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
-                <span className="text-[9px] font-bold uppercase tracking-tight opacity-80">
-                  {netBalance > 0.01 ? "Owed" : "Owe"}
-                </span>
+                {netBalance > 0.01 ? (
+                  <>
+                    <TrendingUp className="h-2.5 w-2.5" />
+                    <span className="text-[9px] font-bold uppercase tracking-tight opacity-80">You are owed</span>
+                  </>
+                ) : netBalance < -0.01 ? (
+                  <>
+                    <TrendingDown className="h-2.5 w-2.5" />
+                    <span className="text-[9px] font-bold uppercase tracking-tight opacity-80">You owe</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-2.5 w-2.5" />
+                    <span className="text-[9px] font-bold uppercase tracking-tight opacity-80">Settled</span>
+                  </>
+                )}
               </div>
               <span className="text-sm font-bold leading-none">
                 {symbol}{Math.abs(netBalance).toFixed(2)}
