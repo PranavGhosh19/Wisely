@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -6,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, HelpCircle, Loader2, Check, TrendingUp, TrendingDown } from "lucide-react";
+import { Plus, Users, Loader2, Check, TrendingUp, TrendingDown } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { CreateGroupDialog } from "@/components/groups/CreateGroupDialog";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
@@ -178,19 +177,6 @@ export default function GroupsPage() {
             ))}
           </div>
         )}
-
-        <div className="mt-12 p-6 bg-accent/5 rounded-2xl border border-accent/10 flex flex-col md:flex-row items-center gap-6">
-          <div className="h-14 w-14 bg-accent/10 rounded-full flex items-center justify-center shrink-0">
-            <HelpCircle className="h-7 w-7 text-accent" />
-          </div>
-          <div className="flex-1 text-center md:text-left">
-            <h4 className="font-bold text-lg mb-1">How do balances work?</h4>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              We aggregate all your transactions within a group to show your net position. 
-              Green means you are owed money, and red means you have outstanding payments.
-            </p>
-          </div>
-        </div>
       </main>
 
       <CreateGroupDialog 
