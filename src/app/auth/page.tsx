@@ -36,6 +36,7 @@ function AuthContent() {
   
   const redirectUrl = searchParams.get("redirect") || "/dashboard";
 
+  // Standard background check for already logged-in users
   useEffect(() => {
     if (user && !loading) {
       if (user.currency && user.name) {
@@ -78,6 +79,8 @@ function AuthContent() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
         toast({ title: "Welcome Back", description: "Successfully signed in." });
+        // Explicitly redirect for faster feedback
+        router.replace(redirectUrl);
       }
     } catch (error: any) {
       toast({ 
@@ -85,7 +88,6 @@ function AuthContent() {
         title: "Authentication Failed", 
         description: error.message || "An error occurred during sign in." 
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -119,6 +121,8 @@ function AuthContent() {
           router.push("/profile/currency?setup=true");
         } else {
           toast({ title: "Welcome", description: "Successfully signed in with Google." });
+          // Explicit navigation for better performance
+          router.replace(redirectUrl);
         }
       }
     } catch (error: any) {
@@ -202,7 +206,7 @@ function AuthContent() {
                   type="password"
                   placeholder="••••••••" 
                   className="pl-10 h-11 rounded-xl"
-                  value={email ? password : ""}
+                  value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
                 />
