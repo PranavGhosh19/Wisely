@@ -51,6 +51,10 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
   }, [expenses, userId]);
 
   const symbol = getCurrencySymbol(currencyCode);
+  
+  // Use a very small epsilon for floating point comparison to ensure 0.00 is truly settled
+  const isOwed = netBalance > 0.005;
+  const isOwe = netBalance < -0.005;
 
   return (
     <Card 
@@ -73,8 +77,8 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
         <div className={cn(
           "px-3 py-1.5 rounded-xl flex items-center justify-center transition-all group-hover:scale-105 min-w-[85px]",
           isLoading ? "bg-muted animate-pulse" : 
-          netBalance > 0.01 ? "bg-green-500/10 text-green-500" : 
-          netBalance < -0.01 ? "bg-destructive/10 text-destructive" : 
+          isOwed ? "bg-green-500/10 text-green-500" : 
+          isOwe ? "bg-destructive/10 text-destructive" : 
           "bg-muted/50 text-muted-foreground"
         )}>
           {isLoading ? (
@@ -82,12 +86,12 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
           ) : (
             <div className="flex flex-col items-end">
               <div className="flex items-center gap-1 leading-none mb-0.5">
-                {netBalance > 0.01 ? (
+                {isOwed ? (
                   <>
                     <TrendingUp className="h-2.5 w-2.5" />
                     <span className="text-[9px] font-bold uppercase tracking-tight opacity-80">You are owed</span>
                   </>
-                ) : netBalance < -0.01 ? (
+                ) : isOwe ? (
                   <>
                     <TrendingDown className="h-2.5 w-2.5" />
                     <span className="text-[9px] font-bold uppercase tracking-tight opacity-80">You owe</span>
