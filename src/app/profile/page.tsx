@@ -27,7 +27,8 @@ import {
   Trash2,
   Smartphone,
   Share2,
-  Globe
+  Globe,
+  Type
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/firebase";
@@ -36,7 +37,17 @@ import { signOut } from "firebase/auth";
 export default function ProfilePage() {
   const router = useRouter();
   const auth = useAuth();
-  const { user, logout, categories, addCategory, removeCategory, installPrompt, setInstallPrompt } = useStore();
+  const { 
+    user, 
+    logout, 
+    categories, 
+    addCategory, 
+    removeCategory, 
+    installPrompt, 
+    setInstallPrompt,
+    fontSize,
+    setFontSize
+  } = useStore();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
@@ -87,10 +98,7 @@ export default function ProfilePage() {
       return;
     }
 
-    // Show the install prompt
     installPrompt.prompt();
-    
-    // Wait for the user to respond to the prompt
     const { outcome } = await installPrompt.userChoice;
     
     if (outcome === 'accepted') {
@@ -115,6 +123,12 @@ export default function ProfilePage() {
     { id: 'system', name: 'System', icon: Monitor },
   ];
 
+  const fontSizeOptions = [
+    { id: '10px', name: '10px' },
+    { id: '12px', name: '12px' },
+    { id: '14px', name: '14px' },
+  ];
+
   return (
     <div className="flex min-h-screen flex-col md:flex-row bg-background">
       <Navbar />
@@ -126,7 +140,6 @@ export default function ProfilePage() {
         </header>
 
         <div className="space-y-6">
-          {/* Profile Card */}
           <Card className="border-none shadow-sm overflow-hidden rounded-2xl">
             <CardHeader className="pb-4">
               <div className="flex items-center gap-4">
@@ -148,7 +161,6 @@ export default function ProfilePage() {
                     <p className="text-sm font-medium truncate">{user.email}</p>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl border border-border/50">
                   <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -160,7 +172,6 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Custom Categories Section */}
           <Card className="border-none shadow-sm rounded-2xl">
             <CardHeader className="pb-4">
               <CardTitle className="font-headline text-lg flex items-center gap-2">
@@ -181,7 +192,6 @@ export default function ProfilePage() {
                   <Plus className="h-5 w-5" />
                 </Button>
               </form>
-
               <div className="flex flex-wrap gap-2 pt-2">
                 {categories.map((cat) => (
                   <div 
@@ -192,7 +202,6 @@ export default function ProfilePage() {
                     <button 
                       onClick={() => removeCategory(cat)}
                       className="text-muted-foreground hover:text-destructive transition-colors"
-                      title="Remove category"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -202,7 +211,6 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Appearance Selection */}
           <Card className="border-none shadow-sm rounded-2xl">
             <CardHeader className="pb-4">
               <CardTitle className="font-headline text-lg flex items-center gap-2">
@@ -236,7 +244,6 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Additional Settings */}
           <div className="space-y-2">
             <p className="text-[10px] font-bold uppercase text-muted-foreground px-2 tracking-widest">Preferences</p>
             <div className="bg-card rounded-2xl overflow-hidden shadow-sm border-none">
@@ -256,6 +263,34 @@ export default function ProfilePage() {
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
 
+              <div className="p-4 border-b border-border/50">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
+                    <Type className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-medium">Font Size</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 p-1 bg-muted/30 rounded-xl">
+                  {fontSizeOptions.map((option) => {
+                    const isActive = fontSize === option.id;
+                    return (
+                      <button
+                        key={option.id}
+                        onClick={() => setFontSize(option.id)}
+                        className={cn(
+                          "py-2 rounded-lg transition-all text-[10px] font-bold uppercase tracking-wider",
+                          isActive 
+                            ? "bg-background text-primary shadow-sm" 
+                            : "text-muted-foreground hover:bg-background/30"
+                        )}
+                      >
+                        {option.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <button 
                 className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
                 onClick={handleAddToHomeScreen}
@@ -266,10 +301,7 @@ export default function ProfilePage() {
                   </div>
                   <span className="text-sm font-medium">Add to Android Home Screen</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  {!installPrompt && <span className="text-[10px] font-bold uppercase text-muted-foreground bg-muted px-2 py-0.5 rounded">Native</span>}
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
 
               <button 
@@ -284,29 +316,9 @@ export default function ProfilePage() {
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
-
-              <button className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
-                    <Bell className="h-4 w-4" />
-                  </div>
-                  <span className="text-sm font-medium">Notifications</span>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
-              <button className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500">
-                    <Shield className="h-4 w-4" />
-                  </div>
-                  <span className="text-sm font-medium">Security & Privacy</span>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
             </div>
           </div>
 
-          {/* Logout Button */}
           <Button 
             variant="outline" 
             className="w-full h-12 rounded-2xl border-2 text-destructive hover:text-destructive hover:bg-destructive/5 font-bold gap-2 mt-4"

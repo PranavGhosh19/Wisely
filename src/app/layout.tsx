@@ -5,10 +5,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { AuthSync } from "@/components/auth-sync";
+import { FontSizeSync } from "@/components/font-size-sync";
 import { PwaHandler } from "@/components/pwa-handler";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 
-// Reference the wallet icon for all branding needs
 const appIcon = PlaceHolderImages.find(img => img.id === "app-icon")?.imageUrl || '/wallet.png';
 
 export const metadata: Metadata = {
@@ -49,6 +49,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <FirebaseClientProvider>
+            <FontSizeSync />
             <AuthSync />
             <PwaHandler />
             {children}
