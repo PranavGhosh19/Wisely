@@ -106,8 +106,9 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
   }, [db, group?.members]);
   const { data: memberProfiles, isLoading: membersLoading } = useCollection(membersQuery);
 
+  // Exclude settlements from the "Total Spent" aggregate
   const totalSpent = (groupExpenses || [])
-    .filter(exp => !exp.isSettled)
+    .filter(exp => !exp.isSettled && exp.category !== 'Settlement')
     .reduce((acc, curr) => acc + curr.amount, 0);
 
   const settlementInfo = useMemo(() => {
@@ -117,13 +118,19 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
     group.members.forEach(uid => stats[uid] = { net: 0, paid: 0, share: 0 });
 
     groupExpenses.filter(exp => !exp.isSettled).forEach(exp => {
+      const isTransfer = exp.category === 'Settlement';
+      
       if (stats[exp.paidBy]) {
-        stats[exp.paidBy].paid += exp.amount;
+        // Only count toward "Paid" if it's an actual purchase, not a settlement transfer
+        if (!isTransfer) stats[exp.paidBy].paid += exp.amount;
+        // Always include in net balance math
         stats[exp.paidBy].net += exp.amount;
       }
       exp.splitBetween?.forEach(split => {
         if (stats[split.userId]) {
-          stats[split.userId].share += split.amount;
+          // Only count toward "Share" if it's an actual purchase
+          if (!isTransfer) stats[split.userId].share += split.amount;
+          // Always include in net balance math
           stats[split.userId].net -= split.amount;
         }
       });
@@ -365,7 +372,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                   <Wallet className="h-5 w-5 text-primary" />
                   Member Balances
                 </CardTitle>
-                <CardDescription>Individual contribution vs usage</CardDescription>
+                <CardDescription>Individual contribution vs usage (excludes settlements)</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y divide-muted">
@@ -432,8 +439,11 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                             className="flex-1 flex items-center justify-between px-6 py-5 min-w-0"
                           >
                             <div className="flex items-center gap-4 min-w-0">
-                              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl shrink-0">
-                                {expense.category[0] || "💰"}
+                              <div className={cn(
+                                "h-12 w-12 rounded-full flex items-center justify-center text-xl shrink-0",
+                                expense.category === 'Settlement' ? "bg-accent/10 text-accent" : "bg-primary/10 text-primary"
+                              )}>
+                                {expense.category === 'Settlement' ? <Coins className="h-6 w-6" /> : (expense.category[0] || "💰")}
                               </div>
                               <div className="min-w-0">
                                 <div className="flex items-center gap-1.5">
@@ -446,14 +456,14 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                                   </span>
                                   <span className="h-0.5 w-0.5 bg-muted-foreground rounded-full"></span>
                                   <span className="text-[10px] uppercase font-bold text-accent truncate">
-                                    {payerName} paid
+                                    {payerName} {expense.category === 'Settlement' ? "transferred" : "paid"}
                                   </span>
                                 </div>
                               </div>
                             </div>
                             <div className="text-right shrink-0 px-4">
                               <p className={cn("font-bold text-lg", expense.isSettled ? "text-muted-foreground line-through" : "text-foreground")}>
-                                -{symbol}{expense.amount.toFixed(2)}
+                                {expense.category === 'Settlement' ? "" : "-"}{symbol}{expense.amount.toFixed(2)}
                               </p>
                             </div>
                           </Link>

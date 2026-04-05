@@ -102,15 +102,18 @@ export default function AnalyticsPage() {
   }, [db, user]);
   const { data: userGroups } = useCollection(groupsQuery);
 
-  // Combine and Filter data for global insights
+  // Combine and Filter data for global insights (Excluding Settlements)
   const filteredExpenses = useMemo(() => {
     let base: any[] = [];
+    const personal = (personalExpenses || []).filter(e => e.category !== 'Settlement');
+    const group = (groupExpenses || []).filter(e => e.category !== 'Settlement');
+
     if (scope === "ALL") {
-      base = [...(personalExpenses || []), ...(groupExpenses || [])];
+      base = [...personal, ...group];
     } else if (scope === "PERSONAL") {
-      base = personalExpenses || [];
+      base = personal;
     } else if (scope === "GROUP") {
-      base = groupExpenses || [];
+      base = group;
       if (selectedGroupId !== "all") {
         base = base.filter(exp => exp.groupId === selectedGroupId);
       }
@@ -155,8 +158,12 @@ export default function AnalyticsPage() {
 
   // Visual 3: Personal vs Group
   const splitData = useMemo(() => {
-    const personal = (personalExpenses || []).reduce((acc, exp) => acc + exp.amount, 0);
-    const group = (groupExpenses || []).reduce((acc, exp) => acc + exp.amount, 0);
+    const personal = (personalExpenses || [])
+      .filter(e => e.category !== 'Settlement')
+      .reduce((acc, exp) => acc + exp.amount, 0);
+    const group = (groupExpenses || [])
+      .filter(e => e.category !== 'Settlement')
+      .reduce((acc, exp) => acc + exp.amount, 0);
     return [
       { name: 'Personal', amount: parseFloat(personal.toFixed(2)) },
       { name: 'Group Shared', amount: parseFloat(group.toFixed(2)) }
@@ -175,7 +182,7 @@ export default function AnalyticsPage() {
         <header className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-3xl font-bold font-headline text-primary">Overall Analytics</h2>
-            <p className="text-muted-foreground">Detailed insights into your spending patterns.</p>
+            <p className="text-muted-foreground">Detailed insights into your spending patterns (excludes settlements).</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">

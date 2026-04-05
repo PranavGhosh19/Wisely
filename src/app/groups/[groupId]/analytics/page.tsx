@@ -54,11 +54,12 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
 
   const symbol = getCurrencySymbol(user?.currency);
 
-  // Apply Filtering and Processing Logic
+  // Apply Filtering and Processing Logic (Excluding Settlements)
   const filteredExpenses = useMemo(() => {
     if (!rawExpenses || !user) return [];
     
     return rawExpenses
+      .filter(exp => exp.category !== 'Settlement') // Strict filter for spending analytics
       .map(exp => {
         // Calculate the user's individual share for this expense
         const userShare = exp.splitBetween?.find((s: any) => s.userId === user.uid)?.amount || 0;
@@ -129,7 +130,7 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
               <h2 className="text-3xl font-bold font-headline text-primary">
                 {group?.name || "Group"} Insights
               </h2>
-              <p className="text-muted-foreground">Analysing {filteredExpenses.length} transactions.</p>
+              <p className="text-muted-foreground">Analysing {filteredExpenses.length} transactions (excludes settlements).</p>
             </div>
 
             <div className="flex flex-col gap-3">

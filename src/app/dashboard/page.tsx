@@ -52,24 +52,28 @@ export default function Dashboard() {
 
   const { data: groupExpenses } = useCollection(groupExpensesQuery);
 
-  // Calculate Category Data for Donut Chart
+  // Calculate Category Data for Donut Chart (Excluding Settlements)
   const categoryData = useMemo(() => {
     if (!personalExpenses && !groupExpenses) return [];
     
     const categories: Record<string, number> = {};
     
     // Process Personal
-    (personalExpenses || []).forEach(exp => {
-      categories[exp.category] = (categories[exp.category] || 0) + exp.amount;
-    });
+    (personalExpenses || [])
+      .filter(exp => exp.category !== 'Settlement')
+      .forEach(exp => {
+        categories[exp.category] = (categories[exp.category] || 0) + exp.amount;
+      });
     
     // Process Group Share
-    (groupExpenses || []).forEach(exp => {
-      const mySplit = exp.splitBetween?.find((s: any) => s.userId === user?.uid);
-      if (mySplit) {
-        categories[exp.category] = (categories[exp.category] || 0) + mySplit.amount;
-      }
-    });
+    (groupExpenses || [])
+      .filter(exp => exp.category !== 'Settlement')
+      .forEach(exp => {
+        const mySplit = exp.splitBetween?.find((s: any) => s.userId === user?.uid);
+        if (mySplit) {
+          categories[exp.category] = (categories[exp.category] || 0) + mySplit.amount;
+        }
+      });
 
     return Object.entries(categories)
       .map(([name, value]) => ({ name, value }))
@@ -88,11 +92,12 @@ export default function Dashboard() {
     );
   }
 
-  const activeExpenses = personalExpenses || [];
-  const totalPersonalSpent = activeExpenses.reduce((acc, curr) => acc + curr.amount, 0);
+  // Aggregate stats excluding Settlements
+  const activePersonalExpenses = (personalExpenses || []).filter(exp => exp.category !== 'Settlement');
+  const totalPersonalSpent = activePersonalExpenses.reduce((acc, curr) => acc + curr.amount, 0);
   
   const totalUserGroupShare = (groupExpenses || [])
-    .filter(exp => !exp.isSettled)
+    .filter(exp => !exp.isSettled && exp.category !== 'Settlement')
     .reduce((acc, curr) => {
       const mySplit = curr.splitBetween?.find((s: any) => s.userId === user.uid);
       return acc + (mySplit?.amount || 0);
@@ -174,7 +179,7 @@ export default function Dashboard() {
                   {categoryData.length > 0 ? (
                     <>
                       Your biggest expense category is <span className="text-primary font-bold">"{categoryData[0]?.name}"</span>, 
-                      accounting for {((categoryData[0]?.value / totalOverallSpent) * 100).toFixed(1)}% of your total outgoings. 
+                      accounting for {((categoryData[0]?.value / (totalOverallSpent || 1)) * 100).toFixed(1)}% of your total outgoings. 
                       Consider reviewing this area to optimize your monthly budget.
                     </>
                   ) : (
@@ -196,7 +201,7 @@ export default function Dashboard() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-lg font-headline">Category Distribution</CardTitle>
-                <CardDescription>Combined breakdown of all expenses</CardDescription>
+                <CardDescription>Combined breakdown of all actual expenses</CardDescription>
               </div>
             </CardHeader>
             <CardContent className="h-[250px] w-full">
