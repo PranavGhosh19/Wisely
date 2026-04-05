@@ -5,13 +5,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { Navbar } from "@/components/layout/Navbar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Wallet, AlertCircle, Users, CreditCard, CheckCircle2 } from "lucide-react";
-import { format } from "date-fns";
+import { Plus, Wallet, Users, CreditCard } from "lucide-react";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, orderBy, where, collectionGroup } from "firebase/firestore";
-import { cn, getCurrencySymbol } from "@/lib/utils";
+import { getCurrencySymbol } from "@/lib/utils";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -26,7 +25,7 @@ export default function Dashboard() {
     }
   }, [user, router, storeLoading]);
 
-  // Personal Expenses Query
+  // Personal Expenses Query - used for summary
   const personalExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -36,9 +35,9 @@ export default function Dashboard() {
     );
   }, [db, user]);
 
-  const { data: expenses, isLoading: expensesLoading } = useCollection(personalExpensesQuery);
+  const { data: expenses } = useCollection(personalExpensesQuery);
 
-  // Group Expenses Query - Fetch all group activity the user is part of
+  // Group Expenses Query - used for summary
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -128,66 +127,6 @@ export default function Dashboard() {
               <span className="text-[10px] font-bold uppercase tracking-widest opacity-80 leading-tight">Total Outstanding</span>
             </div>
             <div className="text-xl font-bold relative z-10 shrink-0">{symbol}{totalOverallSpent.toFixed(2)}</div>
-          </Card>
-        </div>
-
-        <div className="w-full">
-          <Card className="border-none shadow-sm bg-card h-full rounded-2xl">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <CardTitle className="font-headline text-lg font-bold">Recent Activity</CardTitle>
-              <Button variant="link" className="text-accent text-sm font-bold p-0" asChild>
-                  <Link href="/analytics">View History</Link>
-              </Button>
-            </CardHeader>
-            <CardContent className="px-0 sm:px-6">
-              <div className="divide-y divide-muted">
-                {expensesLoading ? (
-                  <div className="py-12 flex justify-center"><div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>
-                ) : activeExpenses.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center px-6">
-                    <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                      <AlertCircle className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-lg font-bold">No private expenses</h3>
-                    <p className="text-sm text-muted-foreground max-w-xs mt-1">Your personal activity will appear here.</p>
-                  </div>
-                ) : (
-                  activeExpenses.map((expense) => (
-                    <Link 
-                      key={expense.id} 
-                      href={`/expenses/${expense.id}?type=${expense.type}`}
-                      className="flex items-center justify-between p-4 sm:p-0 sm:py-6 first:pt-0 last:pb-0 group transition-colors hover:bg-muted/5 cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center bg-primary/10 text-primary">
-                          {expense.category[0] || "💰"}
-                        </div>
-                        <div>
-                          <p className="font-bold text-sm sm:text-base">{expense.category}</p>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-11px font-medium text-muted-foreground uppercase">
-                              {mounted ? format(expense.date, "MMM dd") : ""}
-                            </span>
-                            {expense.isSettled && (
-                              <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded">
-                                <CheckCircle2 className="h-2.5 w-2.5" />
-                                Settled
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className={cn("font-bold text-base sm:text-lg", expense.isSettled ? "text-muted-foreground line-through" : "text-foreground")}>
-                          -{symbol}{expense.amount.toFixed(2)}
-                        </p>
-                        {expense.notes && <p className="text-[11px] text-muted-foreground truncate max-w-[100px] sm:max-w-[150px]">{expense.notes}</p>}
-                      </div>
-                    </Link>
-                  ))
-                )}
-              </div>
-            </CardContent>
           </Card>
         </div>
       </main>
