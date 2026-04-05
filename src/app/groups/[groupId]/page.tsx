@@ -20,8 +20,7 @@ import {
   User as UserIcon,
   BarChart3,
   CheckCircle2,
-  Coins,
-  Info
+  Coins
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
@@ -490,15 +489,6 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                   </div>
                 )}
               </CardContent>
-            </Card>
-            <Card className="border-none shadow-sm bg-accent/5 rounded-2xl p-6 border border-accent/10">
-              <div className="flex gap-4">
-                <div className="h-10 w-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent shrink-0"><div className="text-[10px] font-bold">INFO</div></div>
-                <div className="space-y-1">
-                  <h4 className="text-sm font-bold">Settlement Logic</h4>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">Settling up clears the outstanding balance indicators but preserves the expense data in your group history and analytics.</p>
-                </div>
-              </div>
             </Card>
           </div>
         </div>
