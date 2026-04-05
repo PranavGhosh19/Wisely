@@ -21,6 +21,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import Image from "next/image";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -168,8 +169,17 @@ export function Navbar() {
                   "flex items-center gap-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-all border border-transparent hover:border-border/50",
                   isSidebarCollapsed ? "p-2 justify-center" : "p-4"
                 )}>
-                  <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold shadow-sm ring-2 ring-background shrink-0">
-                    {user.name?.[0] || "?"}
+                  <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold shadow-sm ring-2 ring-background shrink-0 overflow-hidden relative">
+                    {user.photoURL ? (
+                      <Image 
+                        src={user.photoURL} 
+                        alt={user.name} 
+                        fill 
+                        className="object-cover"
+                      />
+                    ) : (
+                      user.name?.[0] || "?"
+                    )}
                   </div>
                   {!isSidebarCollapsed && (
                     <div className="flex flex-col truncate flex-1">
@@ -259,10 +269,14 @@ export function Navbar() {
             )}
           >
             <div className={cn(
-              "h-7 w-7 rounded-lg flex items-center justify-center border-2 transition-all overflow-hidden",
+              "h-7 w-7 rounded-lg flex items-center justify-center border-2 transition-all overflow-hidden relative",
               pathname === "/profile" ? "border-primary bg-primary/10" : "border-transparent bg-muted"
             )}>
-              <span className="text-[10px] font-bold">W</span>
+              {user.photoURL ? (
+                <Image src={user.photoURL} alt={user.name} fill className="object-cover" />
+              ) : (
+                <span className="text-[10px] font-bold">{user.name?.[0] || "W"}</span>
+              )}
             </div>
             <span className="text-[9px] font-bold uppercase tracking-widest">Me</span>
           </Link>
