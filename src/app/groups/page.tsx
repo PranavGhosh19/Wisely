@@ -93,12 +93,12 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
                 {isOwed ? (
                   <>
                     <TrendingUp className="h-2.5 w-2.5" />
-                    <span className="text-[9px] font-bold uppercase tracking-tight">Owed</span>
+                    <span className="text-[9px] font-bold uppercase tracking-tight">You are owed</span>
                   </>
                 ) : isOwe ? (
                   <>
                     <TrendingDown className="h-2.5 w-2.5" />
-                    <span className="text-[9px] font-bold uppercase tracking-tight">Owe</span>
+                    <span className="text-[9px] font-bold uppercase tracking-tight">You owe</span>
                   </>
                 ) : (
                   <>

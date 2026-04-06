@@ -1,3 +1,4 @@
+
 "use client";
 
 import { use, useEffect, useState, useMemo, Suspense } from "react";
@@ -19,7 +20,6 @@ import {
   UserPlus,
   User as UserIcon,
   BarChart3,
-  CheckCircle2,
   Coins
 } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -391,8 +391,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                               </div>
                               <div className="min-w-0">
                                 <div className="flex items-center gap-1.5">
-                                  <p className={cn("font-bold text-base truncate", expense.isSettled && "text-muted-foreground")}>{expense.category}</p>
-                                  {expense.isSettled && <CheckCircle2 className="h-3.5 w-3.5 text-green-500" title="Settled" />}
+                                  <p className="font-bold text-base truncate">{expense.category}</p>
                                 </div>
                                 <div className="flex items-center gap-2 mt-0.5">
                                   <span className="text-[11px] font-medium text-muted-foreground uppercase whitespace-nowrap">
@@ -406,7 +405,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                               </div>
                             </div>
                             <div className="text-right shrink-0 px-4">
-                              <p className={cn("font-bold text-lg", expense.isSettled ? "text-muted-foreground line-through" : "text-foreground")}>
+                              <p className="font-bold text-lg text-foreground">
                                 {isSettlement ? "" : "-"}{symbol}{expense.amount.toFixed(2)}
                               </p>
                               <p className={cn(

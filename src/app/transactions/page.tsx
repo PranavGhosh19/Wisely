@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
@@ -7,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { 
   Receipt, 
   Search, 
-  CheckCircle2, 
   User, 
   Users, 
   ArrowRight, 
@@ -173,7 +173,6 @@ export default function AllTransactionsPage() {
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
                                 <p className="font-bold text-base truncate">{tx.category}</p>
-                                {tx.isSettled && <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />}
                                 {tx.receiptUrl && <FileText className="h-3.5 w-3.5 text-muted-foreground/50" />}
                               </div>
                               <div className="flex items-center gap-2 mt-0.5">
@@ -197,10 +196,7 @@ export default function AllTransactionsPage() {
                           
                           <div className="flex items-center gap-4">
                             <div className="text-right">
-                              <p className={cn(
-                                "font-bold text-lg",
-                                tx.isSettled ? "text-muted-foreground line-through" : "text-foreground"
-                              )}>
+                              <p className="font-bold text-lg text-foreground">
                                 -{symbol}{tx.amount.toFixed(2)}
                               </p>
                               {tx.notes && <p className="text-[11px] text-muted-foreground italic truncate max-w-[120px] sm:max-w-[180px]">{tx.notes}</p>}

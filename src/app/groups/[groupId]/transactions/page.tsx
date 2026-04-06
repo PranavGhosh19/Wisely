@@ -1,3 +1,4 @@
+
 "use client";
 
 import { use, useEffect, useState, useMemo } from "react";
@@ -5,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Receipt, FileText, Edit2, Search, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Receipt, FileText, Edit2, Search } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
@@ -13,6 +14,7 @@ import { collection, query, orderBy, doc, where } from "firebase/firestore";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { cn, getCurrencySymbol } from "@/lib/utils";
+import { Coins } from "lucide-react";
 
 export default function GroupTransactionsPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -171,8 +173,7 @@ export default function GroupTransactionsPage({ params }: { params: Promise<{ gr
                                 </div>
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-1.5">
-                                    <p className={cn("font-bold text-base truncate", expense.isSettled && "text-muted-foreground")}>{expense.category}</p>
-                                    {expense.isSettled && <CheckCircle2 className="h-3.5 w-3.5 text-green-500" title="Settled" />}
+                                    <p className="font-bold text-base truncate">{expense.category}</p>
                                     {expense.receiptUrl && <FileText className="h-3.5 w-3.5 text-accent" title="Has receipt" />}
                                   </div>
                                   <div className="flex items-center gap-2 mt-0.5">
@@ -187,7 +188,7 @@ export default function GroupTransactionsPage({ params }: { params: Promise<{ gr
                                 </div>
                               </div>
                               <div className="text-right shrink-0 px-4">
-                                <p className={cn("font-bold text-lg", expense.isSettled ? "text-muted-foreground line-through" : "text-foreground")}>
+                                <p className="font-bold text-lg text-foreground">
                                   {isSettlement ? "" : "-"}{symbol}{expense.amount.toFixed(2)}
                                 </p>
                                 <p className={cn(
