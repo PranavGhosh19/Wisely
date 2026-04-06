@@ -12,10 +12,7 @@ import { Plus, Wallet, Users, CreditCard, PieChart as PieChartIcon, ArrowRight }
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, orderBy, where, collectionGroup } from "firebase/firestore";
 import { getCurrencySymbol } from "@/lib/utils";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { LoadingScreen } from "@/components/layout/loading-screen";
-
-const COLORS = ['#3D737F', '#CEC7BF', '#07161B', '#5A9BA8', '#8FBABF', '#A89E92'];
 
 export default function Dashboard() {
   const router = useRouter();
@@ -54,7 +51,7 @@ export default function Dashboard() {
 
   const { data: groupExpenses } = useCollection(groupExpensesQuery);
 
-  // Calculate Category Data for Donut Chart (Excluding Settlements)
+  // Calculate Category Data for Insights (Excluding Settlements)
   const categoryData = useMemo(() => {
     if (!personalExpenses && !groupExpenses) return [];
     
@@ -79,8 +76,7 @@ export default function Dashboard() {
 
     return Object.entries(categories)
       .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 6); // Top 6 categories
+      .sort((a, b) => b.value - a.value);
   }, [personalExpenses, groupExpenses, user?.uid]);
 
   if (storeLoading || !user) {
@@ -156,9 +152,9 @@ export default function Dashboard() {
         </div>
 
         {/* Analyst & Stats Section */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6">
           {/* Analyst Insights Card */}
-          <Card className="border-none shadow-sm bg-card rounded-2xl md:col-span-2 lg:col-span-1">
+          <Card className="border-none shadow-sm bg-card rounded-2xl">
             <CardHeader>
               <CardTitle className="text-lg font-headline flex items-center gap-2">
                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -188,51 +184,6 @@ export default function Dashboard() {
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-            </CardContent>
-          </Card>
-
-          {/* Donut Chart Card */}
-          <Card className="border-none shadow-sm bg-card rounded-2xl md:col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-lg font-headline">Category Distribution</CardTitle>
-                <CardDescription>Combined breakdown of all actual expenses</CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="h-[250px] w-full">
-              {categoryData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        borderRadius: '12px', 
-                        border: '1px solid hsl(var(--border))',
-                        fontSize: '12px'
-                      }}
-                      formatter={(value: number) => [`${symbol}${value.toFixed(2)}`, 'Spent']}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center p-6 opacity-50">
-                  <PieChartIcon className="h-12 w-12 mb-2" />
-                  <p className="text-sm">Add data to see distribution</p>
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>

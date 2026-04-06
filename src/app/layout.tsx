@@ -12,7 +12,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 const appIcon = PlaceHolderImages.find(img => img.id === "app-icon")?.imageUrl || '/wallet.png';
 
 export const metadata: Metadata = {
-  title: 'Wisely | Smart Expense Tracking',
+  title: 'Wisely',
   description: 'Manage personal and group expenses with ease.',
   appleWebApp: {
     capable: true,

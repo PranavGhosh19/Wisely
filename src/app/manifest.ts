@@ -1,3 +1,4 @@
+
 import type { MetadataRoute } from 'next'
 import data from './lib/placeholder-images.json'
 
@@ -6,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
   const appIconUrl = data.placeholderImages.find(img => img.id === "app-icon")?.imageUrl || '/wallet.png';
 
   return {
-    name: 'Wisely Expense Tracker',
+    name: 'Wisely',
     short_name: 'Wisely',
     description: 'Master your money, personal or shared.',
     start_url: '/',

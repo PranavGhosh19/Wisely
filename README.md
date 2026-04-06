@@ -1,4 +1,5 @@
-# Wisely | Smart Expense Tracking
+
+# Wisely
 
 This is a NextJS starter in Firebase Studio designed for personal and shared expense management.
 
