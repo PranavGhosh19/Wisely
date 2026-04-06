@@ -10,6 +10,7 @@ interface SpenseFlowState {
   isLoading: boolean;
   installPrompt: any | null;
   fontSize: string;
+  isSidebarCollapsed: boolean;
   setUser: (user: User | null) => void;
   setExpenses: (expenses: Expense[]) => void;
   setGroups: (groups: Group[]) => void;
@@ -22,6 +23,7 @@ interface SpenseFlowState {
   addGroup: (group: Group) => void;
   setInstallPrompt: (prompt: any) => void;
   setFontSize: (size: string) => void;
+  setSidebarCollapsed: (collapsed: boolean) => void;
   logout: () => void;
 }
 
@@ -44,6 +46,7 @@ export const useStore = create<SpenseFlowState>((set) => ({
   isLoading: true,
   installPrompt: null,
   fontSize: '14px',
+  isSidebarCollapsed: false,
   setUser: (user) => set({ user, isLoading: false }),
   setExpenses: (expenses) => set({ expenses }),
   setGroups: (groups) => set({ groups }),
@@ -62,12 +65,14 @@ export const useStore = create<SpenseFlowState>((set) => ({
   addGroup: (group) => set((state) => ({ groups: [group, ...state.groups] })),
   setInstallPrompt: (installPrompt) => set({ installPrompt }),
   setFontSize: (fontSize) => set({ fontSize }),
+  setSidebarCollapsed: (isSidebarCollapsed) => set({ isSidebarCollapsed }),
   logout: () => set({ 
     user: null, 
     expenses: [], 
     groups: [], 
     categories: DEFAULT_CATEGORIES, 
     installPrompt: null, 
-    fontSize: '14px'
+    fontSize: '14px',
+    isSidebarCollapsed: false
   }),
 }));
