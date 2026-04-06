@@ -2,7 +2,9 @@
   "placeholderImages": [
     {
       "id": "app-icon",
-      "imageUrl": "/wallet.png"
+      "description": "The official Wisely 'W' logo icon on a rounded primary background.",
+      "imageUrl": "https://placehold.co/512x512/3D737F/FFFFFF?text=W",
+      "imageHint": "letter W icon"
     }
   ]
 }
