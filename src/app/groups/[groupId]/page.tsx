@@ -32,6 +32,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
 import { collection, query, orderBy, doc, updateDoc, arrayUnion, where } from "firebase/firestore";
@@ -39,6 +41,14 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { cn, getCurrencySymbol } from "@/lib/utils";
 import { QRCodeSVG } from "qrcode.react";
+
+interface SettlementTarget {
+  from: string;
+  to: string;
+  amount: number;
+  fromName: string;
+  toName: string;
+}
 
 function GroupDetailContent({ groupId }: { groupId: string }) {
   const router = useRouter();
@@ -53,6 +63,10 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
   const [isJoining, setIsJoining] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  // Settlement Dialog State
+  const [settlementTarget, setSettlementTarget] = useState<SettlementTarget | null>(null);
+  const [customAmount, setCustomAmount] = useState<string>("");
 
   const shouldShowJoin = searchParams.get("join") === "true";
 
@@ -168,8 +182,29 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
     }
   };
 
-  const handleIndividualSettle = (fromUid: string, toUid: string, amount: number) => {
-    if (!db || !groupId) return;
+  const openSettleDialog = (debt: { from: string; to: string; amount: number }) => {
+    const fromUser = memberProfiles?.find(m => m.uid === debt.from);
+    const toUser = memberProfiles?.find(m => m.uid === debt.to);
+    
+    setSettlementTarget({
+      from: debt.from,
+      to: debt.to,
+      amount: debt.amount,
+      fromName: debt.from === user?.uid ? "You" : (fromUser?.name || "Member"),
+      toName: debt.to === user?.uid ? "you" : (toUser?.name || "Member")
+    });
+    setCustomAmount(debt.amount.toFixed(2));
+  };
+
+  const handleIndividualSettle = () => {
+    if (!db || !groupId || !settlementTarget) return;
+    
+    const amount = parseFloat(customAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({ variant: "destructive", title: "Invalid amount", description: "Please enter a valid amount greater than 0." });
+      return;
+    }
+
     try {
       const settlementId = `settle-${Date.now()}`;
       const settlementRef = doc(db, "groups", groupId, "expenses", settlementId);
@@ -181,8 +216,8 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
         date: Date.now(),
         createdBy: user?.name || "User",
         createdById: user?.uid || "",
-        paidBy: fromUid,
-        splitBetween: [{ userId: toUid, amount: amount }],
+        paidBy: settlementTarget.from,
+        splitBetween: [{ userId: settlementTarget.to, amount: amount }],
         splitType: "UNEQUAL",
         isSettled: false,
         notes: `Individual settlement payment`,
@@ -192,6 +227,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
       };
       setDocumentNonBlocking(settlementRef, settlementData, { merge: true });
       toast({ title: "Payment Recorded", description: "The balance has been updated." });
+      setSettlementTarget(null);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: "Failed to record payment." });
     }
@@ -451,7 +487,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                               </p>
                               <Button 
                                 size="sm" variant="ghost" className="h-7 mt-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/10 rounded-lg px-3 transition-all"
-                                onClick={() => handleIndividualSettle(debt.from, debt.to, debt.amount)}
+                                onClick={() => openSettleDialog(debt)}
                               >
                                 Settle Up
                               </Button>
@@ -467,6 +503,46 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
           </div>
         </div>
       </main>
+
+      {/* Settle Up Dialog */}
+      <Dialog open={!!settlementTarget} onOpenChange={(open) => !open && setSettlementTarget(null)}>
+        <DialogContent className="sm:max-w-[400px] rounded-2xl p-6 border-none shadow-2xl">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-xl font-bold font-headline flex items-center gap-2">
+              <Coins className="h-5 w-5 text-primary" />
+              Settle Payment
+            </DialogTitle>
+            <DialogDescription>
+              {settlementTarget?.fromName} paying {settlementTarget?.toName}.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="settle-amount" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Amount ({symbol})</Label>
+              <Input 
+                id="settle-amount"
+                type="number"
+                step="0.01"
+                className="h-14 rounded-xl text-2xl font-bold bg-muted/30 border-none"
+                value={customAmount}
+                onChange={(e) => setCustomAmount(e.target.value)}
+                autoFocus
+              />
+              <p className="text-[10px] text-muted-foreground font-medium">
+                The total debt is {symbol}{settlementTarget?.amount.toFixed(2)}. You can edit this amount for partial settlements.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-6">
+            <Button variant="outline" className="h-11 rounded-xl font-bold" onClick={() => setSettlementTarget(null)}>Cancel</Button>
+            <Button className="flex-1 h-11 rounded-xl font-bold bg-primary shadow-lg shadow-primary/10 transition-all active:scale-95" onClick={handleIndividualSettle}>
+              Record Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isMembersOpen} onOpenChange={setIsMembersOpen}>
         <DialogContent className="sm:max-w-[400px] rounded-2xl p-6 border-none shadow-2xl">
