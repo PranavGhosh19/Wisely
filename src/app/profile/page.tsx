@@ -100,11 +100,12 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file || !user || !db) return;
 
-    if (file.size > 1024 * 1024) {
+    // Increased limit to 5MB
+    if (file.size > 5 * 1024 * 1024) {
       toast({ 
         variant: "destructive", 
         title: "Image too large", 
-        description: "Please pick an image smaller than 1MB." 
+        description: "Please pick an image smaller than 5MB." 
       });
       return;
     }
