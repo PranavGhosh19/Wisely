@@ -20,8 +20,7 @@ import {
   User as UserIcon,
   BarChart3,
   CheckCircle2,
-  Coins,
-  Wallet
+  Coins
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
@@ -367,48 +366,6 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                 </CardContent>
               </Card>
             </div>
-
-            <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden h-fit">
-              <CardHeader className="border-b px-6 py-4">
-                <CardTitle className="font-headline text-lg font-bold flex items-center gap-2">
-                  <Wallet className="h-5 w-5 text-primary" />
-                  Member Balances
-                </CardTitle>
-                <CardDescription>Individual contribution vs usage (excludes settlements)</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y divide-muted">
-                  {group.members.map(uid => {
-                    const profile = memberProfiles?.find(m => m.uid === uid);
-                    const stats = settlementInfo.stats[uid] || { paid: 0, share: 0, net: 0 };
-                    const isMe = uid === user?.uid;
-                    return (
-                      <div key={uid} className="px-6 py-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9">
-                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">{profile?.name?.[0] || "?"}</AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <p className="text-sm font-bold truncate">{isMe ? "You" : (profile?.name || "Member")}</p>
-                            <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-muted-foreground">
-                              <span>Paid: {symbol}{stats.paid.toFixed(2)}</span>
-                              <span className="h-1 w-1 bg-muted-foreground rounded-full" />
-                              <span>Share: {symbol}{stats.share.toFixed(2)}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className={cn(
-                          "text-sm font-bold",
-                          stats.net > 0.01 ? "text-green-500" : stats.net < -0.01 ? "text-destructive" : "text-muted-foreground"
-                        )}>
-                          {stats.net > 0.01 ? "+" : ""}{symbol}{stats.net.toFixed(2)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
 
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
               <CardHeader className="border-b px-6 py-4 flex flex-row items-center justify-between">
