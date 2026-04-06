@@ -18,7 +18,8 @@ import { cn, getCurrencySymbol } from "@/lib/utils";
  * and calculates the user's net balance within that specific group.
  * 
  * Logic: 
- * Balance = (Total amount User Paid) - (Total amount User is Responsible for)
+ * - balanceExclSettlements: Only real expenses (category !== 'Settlement')
+ * - balanceInclSettlements: Total net including balance transfers (Settlements)
  */
 function GroupCard({ group, userId, currencyCode }: { group: any; userId: string; currencyCode?: string }) {
   const router = useRouter();
@@ -36,32 +37,39 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
 
   const { data: expenses, isLoading } = useCollection(expensesQuery);
 
-  const netBalance = useMemo(() => {
-    if (!expenses) return 0;
+  const { balanceExclSettlements, balanceInclSettlements } = useMemo(() => {
+    if (!expenses) return { balanceExclSettlements: 0, balanceInclSettlements: 0 };
     
-    return expenses.reduce((acc, exp) => {
+    let excl = 0;
+    let incl = 0;
+
+    expenses.forEach(exp => {
       // Find the user's share in this expense
       const userShare = exp.splitBetween?.find((s: any) => s.userId === userId)?.amount || 0;
+      const isPayer = exp.paidBy === userId;
+      const isSettlement = exp.category === 'Settlement';
       
-      if (exp.paidBy === userId) {
-        // User paid: they are owed (total - their share)
-        return acc + (exp.amount - userShare);
-      } else {
-        // Someone else paid: user owes their share
-        return acc - userShare;
+      // diff = (what I paid) - (what I consumed)
+      const diff = isPayer ? (exp.amount - userShare) : -userShare;
+      
+      incl += diff;
+      if (!isSettlement) {
+        excl += diff;
       }
-    }, 0);
+    });
+
+    return { balanceExclSettlements: excl, balanceInclSettlements: incl };
   }, [expenses, userId]);
 
   const symbol = getCurrencySymbol(currencyCode);
   
   // Use a small epsilon for floating point comparison
-  const isOwed = netBalance > 0.005;
-  const isOwe = netBalance < -0.005;
+  const isOwed = balanceInclSettlements > 0.005;
+  const isOwe = balanceInclSettlements < -0.005;
 
   return (
     <Card 
-      className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-card group rounded-2xl h-20 flex flex-col justify-center overflow-hidden"
+      className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-card group rounded-2xl h-24 flex flex-col justify-center overflow-hidden"
       onClick={() => router.push(`/groups/${group.id}`)}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4">
@@ -78,7 +86,7 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
         </div>
         
         <div className={cn(
-          "px-3 py-1.5 rounded-xl flex items-center justify-center transition-all group-hover:scale-105 min-w-[85px]",
+          "px-3 py-2 rounded-xl flex flex-col items-end transition-all group-hover:scale-105 min-w-[100px]",
           isLoading ? "bg-muted animate-pulse" : 
           isOwed ? "bg-green-500/10 text-green-500" : 
           isOwe ? "bg-destructive/10 text-destructive" : 
@@ -87,28 +95,37 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <div className="flex flex-col items-end">
-              <div className="flex items-center gap-1 leading-none mb-0.5">
-                {isOwed ? (
-                  <>
-                    <TrendingUp className="h-2.5 w-2.5" />
-                    <span className="text-[9px] font-bold uppercase tracking-tight opacity-80">You are owed</span>
-                  </>
-                ) : isOwe ? (
-                  <>
-                    <TrendingDown className="h-2.5 w-2.5" />
-                    <span className="text-[9px] font-bold uppercase tracking-tight opacity-80">You owe</span>
-                  </>
-                ) : (
-                  <>
-                    <Check className="h-2.5 w-2.5" />
-                    <span className="text-[9px] font-bold uppercase tracking-tight opacity-80">Settled</span>
-                  </>
-                )}
+            <div className="flex flex-col items-end text-right">
+              <div className="mb-1">
+                <p className="text-[8px] font-bold uppercase tracking-tighter opacity-60 leading-none">Net Expenses</p>
+                <p className="text-[10px] font-bold leading-tight">
+                  {balanceExclSettlements > 0 ? "+" : ""}{symbol}{balanceExclSettlements.toFixed(2)}
+                </p>
               </div>
-              <span className="text-sm font-bold leading-none">
-                {symbol}{Math.abs(netBalance).toFixed(2)}
-              </span>
+              
+              <div className="flex flex-col items-end">
+                <div className="flex items-center gap-1 leading-none mb-0.5">
+                  {isOwed ? (
+                    <>
+                      <TrendingUp className="h-2.5 w-2.5" />
+                      <span className="text-[9px] font-bold uppercase tracking-tight">Owed</span>
+                    </>
+                  ) : isOwe ? (
+                    <>
+                      <TrendingDown className="h-2.5 w-2.5" />
+                      <span className="text-[9px] font-bold uppercase tracking-tight">Owe</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-2.5 w-2.5" />
+                      <span className="text-[9px] font-bold uppercase tracking-tight">Settled</span>
+                    </>
+                  )}
+                </div>
+                <span className="text-sm font-black leading-none">
+                  {symbol}{Math.abs(balanceInclSettlements).toFixed(2)}
+                </span>
+              </div>
             </div>
           )}
         </div>
