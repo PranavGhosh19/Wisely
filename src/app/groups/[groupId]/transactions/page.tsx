@@ -151,6 +151,11 @@ export default function GroupTransactionsPage({ params }: { params: Promise<{ gr
                           ? "You" 
                           : (memberProfiles?.find(m => m.uid === expense.paidBy)?.name || "Member");
 
+                        const userShare = expense.splitBetween?.find((s: any) => s.userId === user?.uid)?.amount || 0;
+                        const isPayer = expense.paidBy === user?.uid;
+                        const netImpact = isPayer ? (expense.amount - userShare) : -userShare;
+                        const isSettlement = expense.category === 'Settlement';
+
                         return (
                           <div 
                             key={expense.id} 
@@ -162,7 +167,7 @@ export default function GroupTransactionsPage({ params }: { params: Promise<{ gr
                             >
                               <div className="flex items-center gap-4 min-w-0">
                                 <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl shrink-0">
-                                  {expense.category[0] || "💰"}
+                                  {isSettlement ? <Coins className="h-6 w-6" /> : (expense.category[0] || "💰")}
                                 </div>
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-1.5">
@@ -183,7 +188,19 @@ export default function GroupTransactionsPage({ params }: { params: Promise<{ gr
                               </div>
                               <div className="text-right shrink-0 px-4">
                                 <p className={cn("font-bold text-lg", expense.isSettled ? "text-muted-foreground line-through" : "text-foreground")}>
-                                  -{symbol}{expense.amount.toFixed(2)}
+                                  {isSettlement ? "" : "-"}{symbol}{expense.amount.toFixed(2)}
+                                </p>
+                                <p className={cn(
+                                  "text-[10px] font-bold uppercase tracking-tight",
+                                  netImpact > 0.01 ? "text-green-500" : netImpact < -0.01 ? "text-destructive" : "text-muted-foreground"
+                                )}>
+                                  {isSettlement ? (
+                                    isPayer ? `You paid ${symbol}${expense.amount.toFixed(2)}` : `You received ${symbol}${expense.amount.toFixed(2)}`
+                                  ) : (
+                                    netImpact > 0.01 ? `You are owed ${symbol}${netImpact.toFixed(2)}` : 
+                                    netImpact < -0.01 ? `You owe ${symbol}${Math.abs(netImpact).toFixed(2)}` : 
+                                    "Not involved"
+                                  )}
                                 </p>
                                 {expense.notes && <p className="text-[11px] text-muted-foreground italic truncate max-w-[150px]">{expense.notes}</p>}
                               </div>

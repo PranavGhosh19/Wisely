@@ -434,6 +434,12 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                       const payerName = expense.paidBy === user?.uid 
                         ? "You" 
                         : (memberProfiles?.find(m => m.uid === expense.paidBy)?.name || "Member");
+                      
+                      const userShare = expense.splitBetween?.find((s: any) => s.userId === user?.uid)?.amount || 0;
+                      const isPayer = expense.paidBy === user?.uid;
+                      const netImpact = isPayer ? (expense.amount - userShare) : -userShare;
+                      const isSettlement = expense.category === 'Settlement';
+
                       return (
                         <div key={expense.id} className="group flex items-center hover:bg-muted/5 transition-colors">
                           <Link 
@@ -443,9 +449,9 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                             <div className="flex items-center gap-4 min-w-0">
                               <div className={cn(
                                 "h-12 w-12 rounded-full flex items-center justify-center text-xl shrink-0",
-                                expense.category === 'Settlement' ? "bg-accent/10 text-accent" : "bg-primary/10 text-primary"
+                                isSettlement ? "bg-accent/10 text-accent" : "bg-primary/10 text-primary"
                               )}>
-                                {expense.category === 'Settlement' ? <Coins className="h-6 w-6" /> : (expense.category[0] || "💰")}
+                                {isSettlement ? <Coins className="h-6 w-6" /> : (expense.category[0] || "💰")}
                               </div>
                               <div className="min-w-0">
                                 <div className="flex items-center gap-1.5">
@@ -458,14 +464,26 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                                   </span>
                                   <span className="h-0.5 w-0.5 bg-muted-foreground rounded-full"></span>
                                   <span className="text-[10px] uppercase font-bold text-accent truncate">
-                                    {payerName} {expense.category === 'Settlement' ? "transferred" : "paid"}
+                                    {payerName} {isSettlement ? "transferred" : "paid"}
                                   </span>
                                 </div>
                               </div>
                             </div>
                             <div className="text-right shrink-0 px-4">
                               <p className={cn("font-bold text-lg", expense.isSettled ? "text-muted-foreground line-through" : "text-foreground")}>
-                                {expense.category === 'Settlement' ? "" : "-"}{symbol}{expense.amount.toFixed(2)}
+                                {isSettlement ? "" : "-"}{symbol}{expense.amount.toFixed(2)}
+                              </p>
+                              <p className={cn(
+                                "text-[10px] font-bold uppercase tracking-tight",
+                                netImpact > 0.01 ? "text-green-500" : netImpact < -0.01 ? "text-destructive" : "text-muted-foreground"
+                              )}>
+                                {isSettlement ? (
+                                  isPayer ? `You paid ${symbol}${expense.amount.toFixed(2)}` : `You received ${symbol}${expense.amount.toFixed(2)}`
+                                ) : (
+                                  netImpact > 0.01 ? `You are owed ${symbol}${netImpact.toFixed(2)}` : 
+                                  netImpact < -0.01 ? `You owe ${symbol}${Math.abs(netImpact).toFixed(2)}` : 
+                                  "Not involved"
+                                )}
                               </p>
                             </div>
                           </Link>
