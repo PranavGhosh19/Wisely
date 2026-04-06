@@ -1,8 +1,10 @@
+
 "use client";
 
 import { use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { LoadingScreen } from "@/components/layout/loading-screen";
 
 export default function JoinPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -21,12 +23,5 @@ export default function JoinPage({ params }: { params: Promise<{ groupId: string
     }
   }, [user, isLoading, groupId, router]);
 
-  return (
-    <div className="flex h-screen items-center justify-center bg-background">
-      <div className="flex flex-col items-center gap-4">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-        <p className="font-medium text-muted-foreground animate-pulse">Checking invitation...</p>
-      </div>
-    </div>
-  );
+  return <LoadingScreen />;
 }

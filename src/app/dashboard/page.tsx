@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -12,6 +13,7 @@ import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, orderBy, where, collectionGroup } from "firebase/firestore";
 import { getCurrencySymbol } from "@/lib/utils";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { LoadingScreen } from "@/components/layout/loading-screen";
 
 const COLORS = ['#3D737F', '#CEC7BF', '#07161B', '#5A9BA8', '#8FBABF', '#A89E92'];
 
@@ -82,14 +84,7 @@ export default function Dashboard() {
   }, [personalExpenses, groupExpenses, user?.uid]);
 
   if (storeLoading || !user) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background p-6">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="font-medium text-muted-foreground animate-pulse">Loading Wisely...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // Aggregate stats excluding Settlements

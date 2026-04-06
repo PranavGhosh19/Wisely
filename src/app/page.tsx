@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from "react";
@@ -14,6 +15,7 @@ import {
   Smartphone,
   CheckCircle2
 } from "lucide-react";
+import { LoadingScreen } from "@/components/layout/loading-screen";
 
 export default function LandingPage() {
   const { user, isLoading } = useStore();
@@ -26,14 +28,7 @@ export default function LandingPage() {
   }, [user, isLoading, router]);
 
   if (isLoading || user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="font-medium text-muted-foreground animate-pulse">Loading Wisely...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
