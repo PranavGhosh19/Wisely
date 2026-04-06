@@ -122,16 +122,12 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
       const isTransfer = exp.category === 'Settlement';
       
       if (stats[exp.paidBy]) {
-        // Only count toward "Paid" if it's an actual purchase, not a settlement transfer
         if (!isTransfer) stats[exp.paidBy].paid += exp.amount;
-        // Always include in net balance math
         stats[exp.paidBy].net += exp.amount;
       }
       exp.splitBetween?.forEach(split => {
         if (stats[split.userId]) {
-          // Only count toward "Share" if it's an actual purchase
           if (!isTransfer) stats[split.userId].share += split.amount;
-          // Always include in net balance math
           stats[split.userId].net -= split.amount;
         }
       });
@@ -161,6 +157,11 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
 
     return { stats, debts };
   }, [group?.members, groupExpenses]);
+
+  // Filter debts to only show those involving the current user
+  const myRelevantDebts = useMemo(() => {
+    return settlementInfo.debts.filter(d => d.from === user?.uid || d.to === user?.uid);
+  }, [settlementInfo.debts, user?.uid]);
 
   const handleJoinGroup = async () => {
     if (!user || !db || !groupId) return;
@@ -492,21 +493,21 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                   <Coins className="h-5 w-5 text-accent" />
                   Active Settlements
                 </CardTitle>
-                <CardDescription>Direct member-to-member debts</CardDescription>
+                <CardDescription>Your pending payments and collections</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 {membersLoading ? (
                   <div className="py-12 flex justify-center"><div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>
-                ) : settlementInfo.debts.length === 0 ? (
+                ) : myRelevantDebts.length === 0 ? (
                   <div className="p-12 text-center">
                     <div className="h-12 w-12 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
                       <Check className="h-6 w-6" />
                     </div>
-                    <p className="text-sm font-bold">Balances are settled!</p>
+                    <p className="text-sm font-bold">You are all settled!</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-muted">
-                    {settlementInfo.debts.map((debt, idx) => {
+                    {myRelevantDebts.map((debt, idx) => {
                       const fromUser = memberProfiles?.find(m => m.uid === debt.from);
                       const toUser = memberProfiles?.find(m => m.uid === debt.to);
                       const isFromMe = debt.from === user?.uid;
