@@ -7,6 +7,7 @@ import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { AuthSync } from "@/components/auth-sync";
 import { FontSizeSync } from "@/components/font-size-sync";
 import { PwaHandler } from "@/components/pwa-handler";
+import { NotificationHandler } from "@/components/notifications/NotificationHandler";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 const appIcon = PlaceHolderImages.find(img => img.id === "app-icon")?.imageUrl || '/wallet.png';
@@ -49,6 +50,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <FirebaseClientProvider>
+            <NotificationHandler />
             <FontSizeSync />
             <AuthSync />
             <PwaHandler />
