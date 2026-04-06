@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -27,8 +28,8 @@ import {
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Groups", href: "/groups", icon: Users },
   { name: "Transactions", href: "/transactions", icon: ReceiptText },
+  { name: "Groups", href: "/groups", icon: Users },
   { name: "Analytics", href: "/analytics", icon: PieChart },
 ];
 
@@ -241,14 +242,14 @@ export function Navbar() {
           </Link>
 
           <Link
-            href="/groups"
+            href="/transactions"
             className={cn(
               "flex flex-col items-center gap-1 flex-1 transition-all",
-              pathname.startsWith("/groups") ? "text-primary" : "text-muted-foreground"
+              pathname === "/transactions" ? "text-primary" : "text-muted-foreground"
             )}
           >
-            <Users className="h-5 w-5" />
-            <span className="text-[9px] font-bold uppercase tracking-widest">Groups</span>
+            <ReceiptText className="h-5 w-5" />
+            <span className="text-[9px] font-bold uppercase tracking-widest">Trans</span>
           </Link>
 
           <div className="relative -top-6 px-2">
@@ -264,14 +265,14 @@ export function Navbar() {
           </div>
 
           <Link
-            href="/transactions"
+            href="/groups"
             className={cn(
               "flex flex-col items-center gap-1 flex-1 transition-all",
-              pathname === "/transactions" ? "text-primary" : "text-muted-foreground"
+              pathname.startsWith("/groups") ? "text-primary" : "text-muted-foreground"
             )}
           >
-            <ReceiptText className="h-5 w-5" />
-            <span className="text-[9px] font-bold uppercase tracking-widest">Trans</span>
+            <Users className="h-5 w-5" />
+            <span className="text-[9px] font-bold uppercase tracking-widest">Groups</span>
           </Link>
 
           <Link

@@ -1,9 +1,8 @@
 
-// Scripts for firebase and firebase-messaging
-importScripts('https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.10.0/firebase-messaging-compat.js');
+// This script runs in the background to handle push notifications when the app is closed.
+importScripts('https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging-compat.js');
 
-// Initialize the Firebase app in the service worker by passing the CLI-generated config
 firebase.initializeApp({
   apiKey: "AIzaSyDkA149q4bq9MohFJYbyAMok_hF_ezXZsE",
   authDomain: "wisely-93688.firebaseapp.com",
@@ -14,7 +13,6 @@ firebase.initializeApp({
   measurementId: "G-5WL2L7KTYQ"
 });
 
-// Retrieve an instance of Firebase Messaging so that it can handle background messages.
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {

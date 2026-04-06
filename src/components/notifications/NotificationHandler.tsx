@@ -50,17 +50,15 @@ export function NotificationHandler() {
           onMessage(messaging, (payload) => {
             toast({
               title: payload.notification?.title || 'Activity Alert',
-              description: payload.notification?.body || 'New group activity recorded.',
+              description: payload.notification?.body || 'New activity recorded.',
             });
           });
         }
       } catch (error) {
-        // Silent error for notifications to avoid disrupting core app flow
         console.error('NotificationHandler: Setup failed', error);
       }
     };
 
-    // Trigger setup when the user is authenticated
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
         setupMessaging();
