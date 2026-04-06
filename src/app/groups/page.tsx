@@ -16,6 +16,9 @@ import { cn, getCurrencySymbol } from "@/lib/utils";
 /**
  * A sub-component for each group card that fetches its own expenses
  * and calculates the user's net balance within that specific group.
+ * 
+ * Logic: 
+ * Balance = (Total amount User Paid) - (Total amount User is Responsible for)
  */
 function GroupCard({ group, userId, currencyCode }: { group: any; userId: string; currencyCode?: string }) {
   const router = useRouter();
@@ -52,7 +55,7 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
 
   const symbol = getCurrencySymbol(currencyCode);
   
-  // Use a very small epsilon for floating point comparison to ensure 0.00 is truly settled
+  // Use a small epsilon for floating point comparison
   const isOwed = netBalance > 0.005;
   const isOwe = netBalance < -0.005;
 
