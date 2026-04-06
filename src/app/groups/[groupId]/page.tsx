@@ -32,22 +32,11 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
 import { collection, query, orderBy, doc, updateDoc, arrayUnion, where } from "firebase/firestore";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { updateDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { cn, getCurrencySymbol } from "@/lib/utils";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -61,7 +50,6 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
   const [isMembersOpen, setIsMembersOpen] = useState(false);
-  const [isSettleDialogOpen, setIsSettleDialogOpen] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -180,20 +168,6 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
     }
   };
 
-  const handleSettle = () => {
-    if (!db || !groupId || !groupExpenses) return;
-    try {
-      groupExpenses.filter(exp => !exp.isSettled).forEach(exp => {
-        const docRef = doc(db, "groups", groupId, "expenses", exp.id);
-        updateDocumentNonBlocking(docRef, { isSettled: true });
-      });
-      toast({ title: "Balances Settled", description: "All outstanding expenses have been marked as settled." });
-      setIsSettleDialogOpen(false);
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: "Could not settle balances at this time." });
-    }
-  };
-
   const handleIndividualSettle = (fromUid: string, toUid: string, amount: number) => {
     if (!db || !groupId) return;
     try {
@@ -284,37 +258,6 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                 <Users className="h-4 w-4 group-hover:scale-110 transition-transform" />
                 <span className="font-medium underline-offset-4 group-hover:underline">{group.members?.length || 0} Members</span>
               </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <AlertDialog open={isSettleDialogOpen} onOpenChange={setIsSettleDialogOpen}>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="outline"
-                    className="flex-1 sm:flex-none border-primary text-primary hover:bg-primary/5 gap-2 h-11 rounded-xl font-bold px-6"
-                    disabled={settlementInfo.debts.length === 0}
-                  >
-                    <CheckCircle2 className="h-5 w-5" />
-                    Settle All
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="rounded-2xl">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="font-headline text-xl">Settle All Balances?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will mark all current active expenses as settled. History will be preserved, but all member balances will reset to zero.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter className="gap-2">
-                    <AlertDialogCancel className="rounded-xl font-bold">Cancel</AlertDialogCancel>
-                    <AlertDialogAction 
-                      className="bg-primary hover:bg-primary/90 rounded-xl font-bold"
-                      onClick={handleSettle}
-                    >
-                      Confirm Global Settlement
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
             </div>
           </div>
         </header>
