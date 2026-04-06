@@ -18,8 +18,7 @@ import { cn, getCurrencySymbol } from "@/lib/utils";
  * and calculates the user's net balance within that specific group.
  * 
  * Logic: 
- * - balanceExclSettlements: Only real expenses (category !== 'Settlement')
- * - balanceInclSettlements: Total net including balance transfers (Settlements)
+ * - balance: Total net including balance transfers (Settlements)
  */
 function GroupCard({ group, userId, currencyCode }: { group: any; userId: string; currencyCode?: string }) {
   const router = useRouter();
@@ -37,35 +36,29 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
 
   const { data: expenses, isLoading } = useCollection(expensesQuery);
 
-  const { balanceExclSettlements, balanceInclSettlements } = useMemo(() => {
-    if (!expenses) return { balanceExclSettlements: 0, balanceInclSettlements: 0 };
+  const balance = useMemo(() => {
+    if (!expenses) return 0;
     
-    let excl = 0;
-    let incl = 0;
+    let total = 0;
 
     expenses.forEach(exp => {
       // Find the user's share in this expense
       const userShare = exp.splitBetween?.find((s: any) => s.userId === userId)?.amount || 0;
       const isPayer = exp.paidBy === userId;
-      const isSettlement = exp.category === 'Settlement';
       
       // diff = (what I paid) - (what I consumed)
       const diff = isPayer ? (exp.amount - userShare) : -userShare;
-      
-      incl += diff;
-      if (!isSettlement) {
-        excl += diff;
-      }
+      total += diff;
     });
 
-    return { balanceExclSettlements: excl, balanceInclSettlements: incl };
+    return total;
   }, [expenses, userId]);
 
   const symbol = getCurrencySymbol(currencyCode);
   
   // Use a small epsilon for floating point comparison
-  const isOwed = balanceInclSettlements > 0.005;
-  const isOwe = balanceInclSettlements < -0.005;
+  const isOwed = balance > 0.005;
+  const isOwe = balance < -0.005;
 
   return (
     <Card 
@@ -86,7 +79,7 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
         </div>
         
         <div className={cn(
-          "px-3 py-2 rounded-xl flex flex-col items-end transition-all group-hover:scale-105 min-w-[100px]",
+          "px-3 py-2 rounded-xl flex flex-col items-center justify-center transition-all group-hover:scale-105 min-w-[100px]",
           isLoading ? "bg-muted animate-pulse" : 
           isOwed ? "bg-green-500/10 text-green-500" : 
           isOwe ? "bg-destructive/10 text-destructive" : 
@@ -96,36 +89,27 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <div className="flex flex-col items-end text-right">
-              <div className="mb-1">
-                <p className="text-[8px] font-bold uppercase tracking-tighter opacity-60 leading-none">Net Expenses</p>
-                <p className="text-[10px] font-bold leading-tight">
-                  {balanceExclSettlements > 0 ? "+" : ""}{symbol}{balanceExclSettlements.toFixed(2)}
-                </p>
+              <div className="flex items-center gap-1 leading-none mb-0.5">
+                {isOwed ? (
+                  <>
+                    <TrendingUp className="h-2.5 w-2.5" />
+                    <span className="text-[9px] font-bold uppercase tracking-tight">Owed</span>
+                  </>
+                ) : isOwe ? (
+                  <>
+                    <TrendingDown className="h-2.5 w-2.5" />
+                    <span className="text-[9px] font-bold uppercase tracking-tight">Owe</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-2.5 w-2.5" />
+                    <span className="text-[9px] font-bold uppercase tracking-tight">Settled</span>
+                  </>
+                )}
               </div>
-              
-              <div className="flex flex-col items-end">
-                <div className="flex items-center gap-1 leading-none mb-0.5">
-                  {isOwed ? (
-                    <>
-                      <TrendingUp className="h-2.5 w-2.5" />
-                      <span className="text-[9px] font-bold uppercase tracking-tight">Owed</span>
-                    </>
-                  ) : isOwe ? (
-                    <>
-                      <TrendingDown className="h-2.5 w-2.5" />
-                      <span className="text-[9px] font-bold uppercase tracking-tight">Owe</span>
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-2.5 w-2.5" />
-                      <span className="text-[9px] font-bold uppercase tracking-tight">Settled</span>
-                    </>
-                  )}
-                </div>
-                <span className="text-sm font-black leading-none">
-                  {symbol}{Math.abs(balanceInclSettlements).toFixed(2)}
-                </span>
-              </div>
+              <span className="text-sm font-black leading-none">
+                {symbol}{Math.abs(balance).toFixed(2)}
+              </span>
             </div>
           )}
         </div>
