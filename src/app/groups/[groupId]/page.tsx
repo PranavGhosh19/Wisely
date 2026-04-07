@@ -351,9 +351,38 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-none shadow-sm bg-card rounded-2xl">
+              <Card className="border-none shadow-sm bg-card rounded-2xl relative overflow-hidden group/card">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Net Position</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Net Position</CardTitle>
+                    <div className="flex items-center gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                      {Math.abs(myNet) > 0.01 && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 px-2 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10 rounded-lg"
+                          onClick={() => {
+                            const myDebt = settlementInfo.debts.find(d => d.from === user?.uid || d.to === user?.uid);
+                            if (myDebt) openSettleDialog(myDebt);
+                          }}
+                        >
+                          <Zap className="h-3 w-3 mr-1" />
+                          Settle Up
+                        </Button>
+                      )}
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        asChild
+                        className="h-7 px-2 text-[10px] font-bold uppercase tracking-wider text-accent hover:bg-accent/10 rounded-lg"
+                      >
+                        <Link href={`/groups/${groupId}/analytics`}>
+                          <BarChart3 className="h-3 w-3 mr-1" />
+                          Details
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className={cn(
