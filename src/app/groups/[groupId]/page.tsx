@@ -370,17 +370,6 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                           Settle Up
                         </Button>
                       )}
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        asChild
-                        className="h-7 px-2 text-[10px] font-bold uppercase tracking-wider text-accent hover:bg-accent/10 rounded-lg"
-                      >
-                        <Link href={`/groups/${groupId}/analytics`}>
-                          <BarChart3 className="h-3 w-3 mr-1" />
-                          Details
-                        </Link>
-                      </Button>
                     </div>
                   </div>
                 </CardHeader>
