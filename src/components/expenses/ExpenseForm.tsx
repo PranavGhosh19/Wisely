@@ -14,11 +14,10 @@ import { ExpenseType, Expense, SplitType, SplitMember } from "@/types";
 import { Upload, X, FileText, ArrowLeft, Loader2, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase";
-import { doc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
+import { doc, collection, query, where } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { SplitOptions } from "./SplitOptions";
 import { getCurrencySymbol } from "@/lib/utils";
-import { calculateGroupBalances, simplifyDebts } from "@/lib/balances";
 
 interface ExpenseFormProps {
   initialData?: Expense;
@@ -106,25 +105,6 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
     setIsSplitOptionsOpen(false);
   };
 
-  const updateGroupCache = async (groupId: string) => {
-    if (!db) return;
-    const expensesRef = collection(db, "groups", groupId, "expenses");
-    const q = query(expensesRef, where("isDeleted", "==", false));
-    const snapshot = await getDocs(q);
-    const expenses = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Expense));
-    
-    const groupDocRef = doc(db, "groups", groupId);
-    const members = (groups.find(g => g.id === groupId) || group)?.members || [];
-    
-    const groupBalances = calculateGroupBalances(members, expenses);
-    const settlements = simplifyDebts(groupBalances);
-
-    await updateDoc(groupDocRef, {
-      groupBalances,
-      settlements
-    });
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !db) return;
@@ -193,9 +173,6 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
 
         const newRef = doc(db, "groups", formData.groupId, "expenses", expenseId);
         await setDocumentNonBlocking(newRef, expenseData, { merge: true });
-        
-        // Update group cache for performance
-        await updateGroupCache(formData.groupId);
       }
 
       addExpense(expenseData);

@@ -12,16 +12,35 @@ import { CreateGroupDialog } from "@/components/groups/CreateGroupDialog";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, where } from "firebase/firestore";
 import { cn, getCurrencySymbol } from "@/lib/utils";
+import { calculateGroupBalances } from "@/lib/balances";
 
 /**
- * Optimized Group Card using the "Pro-Level Architecture".
- * It reads pre-calculated balances directly from the group document.
+ * Group Card that calculates the user's net balance on-the-fly.
+ * This component fetches expenses for the group and computes the net position
+ * without relying on cached aggregation fields.
  */
 function GroupCard({ group, userId, currencyCode }: { group: any; userId: string; currencyCode?: string }) {
   const router = useRouter();
+  const db = useFirestore();
   
-  // Instant access from cached field on group doc
-  const balance = group.groupBalances?.[userId] || 0;
+  // Fetch expenses for this specific group to calculate balance on-the-fly
+  const groupExpensesQuery = useMemoFirebase(() => {
+    if (!db || !group.id) return null;
+    return query(
+      collection(db, "groups", group.id, "expenses"),
+      where("isDeleted", "==", false)
+    );
+  }, [db, group.id]);
+
+  const { data: groupExpenses } = useCollection(groupExpensesQuery);
+
+  // Calculate net balance for the current user based on fetched records
+  const balance = useMemo(() => {
+    if (!groupExpenses || !userId) return 0;
+    const stats = calculateGroupBalances(group.members || [], groupExpenses);
+    return stats[userId] || 0;
+  }, [groupExpenses, userId, group.members]);
+
   const symbol = getCurrencySymbol(currencyCode);
   
   const isOwed = balance > 0.01;
