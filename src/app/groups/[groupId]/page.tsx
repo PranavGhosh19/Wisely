@@ -281,20 +281,32 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
             Groups
           </Button>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-3xl font-bold font-headline text-primary">{group.name}</h2>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="h-9 w-9 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm"
-                  onClick={() => setIsQrOpen(true)}
-                >
-                  <QrCode className="h-5 w-5" />
-                </Button>
+            <div className="flex flex-col gap-3 sm:gap-1">
+              <div className="flex items-center justify-between sm:justify-start gap-4">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-3xl font-bold font-headline text-primary">{group.name}</h2>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="h-9 w-9 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm"
+                    onClick={() => setIsQrOpen(true)}
+                  >
+                    <QrCode className="h-5 w-5" />
+                  </Button>
+                </div>
+
+                {/* Mobile Toggle */}
+                <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-xl border border-border/50 sm:hidden">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Smart Settle</span>
+                  <Switch 
+                    checked={isGreedyActive} 
+                    onCheckedChange={setIsGreedyActive} 
+                    className="scale-75 data-[state=checked]:bg-primary"
+                  />
+                </div>
               </div>
               <button 
-                className="flex items-center gap-2 mt-1.5 text-sm text-muted-foreground hover:text-primary transition-colors group"
+                className="flex items-center gap-2 mt-0.5 text-sm text-muted-foreground hover:text-primary transition-colors group w-fit"
                 onClick={() => setIsMembersOpen(true)}
               >
                 <Users className="h-4 w-4 group-hover:scale-110 transition-transform" />
@@ -302,7 +314,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
               </button>
             </div>
 
-            <div className="flex items-center gap-3 bg-muted/30 px-4 py-2 rounded-2xl border border-border/50">
+            <div className="hidden sm:flex items-center gap-3 bg-muted/30 px-4 py-2 rounded-2xl border border-border/50">
               <div className="flex flex-col">
                 <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground leading-none">Smart Settle</span>
                 <span className="text-[9px] font-medium text-muted-foreground">Greedy Settlement</span>
@@ -464,7 +476,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                   <div className="space-y-1">
                     <CardTitle className="font-headline text-lg font-bold flex items-center gap-2">
                       <Coins className="h-5 w-5 text-accent" />
-                      {isGreedyActive ? "Greedy Magic" : "Current Balances"}
+                      {isGreedyActive ? "Greedy Magic" : "Active Settlements"}
                     </CardTitle>
                     <CardDescription>
                       {isGreedyActive ? "Optimized path to zero" : "Individual net standings"}
@@ -551,12 +563,12 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                                   <span className="text-muted-foreground mx-1">to</span>
                                   <span className="font-bold">{isToMe ? "you" : (toUser?.name || "Member")}</span>
                                 </p>
-                                <Button 
-                                  size="sm" variant="ghost" className="h-7 mt-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/10 rounded-lg px-3 transition-all"
+                                <button 
+                                  className="h-7 mt-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/10 rounded-lg px-3 transition-all border border-transparent hover:border-primary/20"
                                   onClick={() => openSettleDialog(debt)}
                                 >
                                   Settle Up
-                                </Button>
+                                </button>
                               </div>
                             </div>
                           </div>
