@@ -484,9 +484,9 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                 {membersLoading ? (
                   <div className="py-12 flex justify-center"><div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>
                 ) : !isGreedyActive ? (
-                  /* RAW MODE: Show net balances for everyone */
+                  /* RAW MODE: Show net balances for everyone EXCEPT current user */
                   <div className="divide-y divide-muted">
-                    {Object.entries(settlementInfo.stats).filter(([_, s]) => Math.abs(s.net) > 0.01).length === 0 ? (
+                    {Object.entries(settlementInfo.stats).filter(([uid, s]) => uid !== user?.uid && Math.abs(s.net) > 0.01).length === 0 ? (
                       <div className="p-12 text-center">
                         <div className="h-12 w-12 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
                           <Check className="h-6 w-6" />
@@ -495,7 +495,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                       </div>
                     ) : (
                       Object.entries(settlementInfo.stats)
-                        .filter(([_, s]) => Math.abs(s.net) > 0.01)
+                        .filter(([uid, s]) => uid !== user?.uid && Math.abs(s.net) > 0.01)
                         .sort((a, b) => b[1].net - a[1].net)
                         .map(([uid, stats]) => {
                           const mUser = memberProfiles?.find(m => m.uid === uid);
@@ -512,7 +512,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex flex-col">
-                                  <span className="text-sm font-bold truncate max-w-[100px]">{uid === user?.uid ? "You" : (mUser?.name || "Member")}</span>
+                                  <span className="text-sm font-bold truncate max-w-[100px]">{mUser?.name || "Member"}</span>
                                   {suggestedDebt && (
                                     <button 
                                       className="text-[9px] font-bold uppercase tracking-widest text-primary hover:underline text-left"
