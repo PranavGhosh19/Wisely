@@ -361,7 +361,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                     {myNet > 0.01 ? "You are owed" : myNet < -0.01 ? "You owe" : "Settled"}
                   </p>
                 </CardContent>
-              </div>
+              </Card>
             </div>
 
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
