@@ -13,6 +13,12 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Helper to check if user is a member of the group document
+    function isMemberOfGroup(groupId) {
+      return isAuthenticated() && 
+        request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.members;
+    }
+
     // =========================
     // 🔹 USERS
     // =========================
@@ -51,23 +57,22 @@ service cloud.firestore {
 
       // Group expenses subcollection
       match /expenses/{expenseId} {
-        // Use the groupMemberIds field on the expense for faster, queryable permission checks
-        // Safe access with .get() ensures rules don't crash if fields are missing
+        // Use the groupMemberIds field on the expense for faster permission checks,
+        // or check membership on the parent group for scoped collection queries.
         allow read: if isAuthenticated() && (
-          request.auth.uid in resource.data.get('groupMemberIds', [])
+          request.auth.uid in resource.data.get('groupMemberIds', []) || isMemberOfGroup(groupId)
         );
         
         allow create: if isAuthenticated() && (
-          request.auth.uid in request.resource.data.get('groupMemberIds', [])
+          request.auth.uid in request.resource.data.get('groupMemberIds', []) || isMemberOfGroup(groupId)
         );
         
         allow update: if isAuthenticated() && (
-          request.auth.uid in resource.data.get('groupMemberIds', []) ||
-          request.auth.uid in request.resource.data.get('groupMemberIds', [])
+          request.auth.uid in resource.data.get('groupMemberIds', []) || isMemberOfGroup(groupId)
         );
         
         allow delete: if isAuthenticated() && (
-          request.auth.uid in resource.data.get('groupMemberIds', [])
+          request.auth.uid in resource.data.get('groupMemberIds', []) || isMemberOfGroup(groupId)
         );
       }
     }

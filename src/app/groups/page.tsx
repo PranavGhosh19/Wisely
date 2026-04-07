@@ -23,14 +23,16 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
   const router = useRouter();
   const db = useFirestore();
   
-  // Fetch expenses for this specific group to calculate balance on-the-fly
+  // Fetch expenses for this specific group to calculate balance on-the-fly.
+  // We must filter by groupMemberIds to satisfy Firestore Security Rules for listing.
   const groupExpensesQuery = useMemoFirebase(() => {
-    if (!db || !group.id) return null;
+    if (!db || !group.id || !userId) return null;
     return query(
       collection(db, "groups", group.id, "expenses"),
+      where("groupMemberIds", "array-contains", userId),
       where("isDeleted", "==", false)
     );
-  }, [db, group.id]);
+  }, [db, group.id, userId]);
 
   const { data: groupExpenses } = useCollection(groupExpensesQuery);
 
