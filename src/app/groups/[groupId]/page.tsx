@@ -4,6 +4,7 @@
 import { use, useEffect, useState, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useStore } from "@/lib/store";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,6 @@ import {
   Coins,
   Zap
 } from "lucide-react";
-import { useStore } from "@/lib/store";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -164,11 +164,6 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
 
     return { stats, debts };
   }, [group?.members, groupExpenses]);
-
-  // Filter debts to only show those involving the current user
-  const myRelevantDebts = useMemo(() => {
-    return settlementInfo.debts.filter(d => d.from === user?.uid || d.to === user?.uid);
-  }, [settlementInfo.debts, user?.uid]);
 
   const handleJoinGroup = async () => {
     if (!user || !db || !groupId) return;
@@ -505,15 +500,28 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                         .map(([uid, stats]) => {
                           const mUser = memberProfiles?.find(m => m.uid === uid);
                           const isOwed = stats.net > 0.01;
+                          // Find a relevant debt to suggest a settlement pair
+                          const suggestedDebt = settlementInfo.debts.find(d => d.from === uid || d.to === uid);
+                          
                           return (
-                            <div key={uid} className="px-6 py-4 flex items-center justify-between">
+                            <div key={uid} className="px-6 py-4 flex items-center justify-between group/row">
                               <div className="flex items-center gap-3">
                                 <Avatar className="h-8 w-8 border-2 border-background">
                                   <AvatarFallback className={cn("font-bold text-[10px]", isOwed ? "bg-green-500/10 text-green-500" : "bg-destructive/10 text-destructive")}>
                                     {mUser?.name?.[0] || "?"}
                                   </AvatarFallback>
                                 </Avatar>
-                                <span className="text-sm font-bold">{uid === user?.uid ? "You" : (mUser?.name || "Member")}</span>
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-bold truncate max-w-[100px]">{uid === user?.uid ? "You" : (mUser?.name || "Member")}</span>
+                                  {suggestedDebt && (
+                                    <button 
+                                      className="text-[9px] font-bold uppercase tracking-widest text-primary hover:underline text-left"
+                                      onClick={() => openSettleDialog(suggestedDebt)}
+                                    >
+                                      Settle Up
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                               <div className="text-right">
                                 <p className={cn("text-sm font-black", isOwed ? "text-green-500" : "text-destructive")}>
