@@ -14,51 +14,18 @@ import { collection, query, where } from "firebase/firestore";
 import { cn, getCurrencySymbol } from "@/lib/utils";
 
 /**
- * A sub-component for each group card that fetches its own expenses
- * and calculates the user's net balance within that specific group.
- * 
- * Logic: 
- * - balance: Total net including balance transfers (Settlements)
+ * Optimized Group Card using the "Pro-Level Architecture".
+ * It reads pre-calculated balances directly from the group document.
  */
 function GroupCard({ group, userId, currencyCode }: { group: any; userId: string; currencyCode?: string }) {
   const router = useRouter();
-  const db = useFirestore();
-
-  const expensesQuery = useMemoFirebase(() => {
-    if (!db || !group.id || !userId) return null;
-    return query(
-      collection(db, "groups", group.id, "expenses"),
-      where("groupMemberIds", "array-contains", userId),
-      where("isDeleted", "==", false),
-      where("isSettled", "==", false)
-    );
-  }, [db, group.id, userId]);
-
-  const { data: expenses, isLoading } = useCollection(expensesQuery);
-
-  const balance = useMemo(() => {
-    if (!expenses) return 0;
-    
-    let total = 0;
-
-    expenses.forEach(exp => {
-      // Find the user's share in this expense
-      const userShare = exp.splitBetween?.find((s: any) => s.userId === userId)?.amount || 0;
-      const isPayer = exp.paidBy === userId;
-      
-      // diff = (what I paid) - (what I consumed)
-      const diff = isPayer ? (exp.amount - userShare) : -userShare;
-      total += diff;
-    });
-
-    return total;
-  }, [expenses, userId]);
-
+  
+  // Instant access from cached field on group doc
+  const balance = group.groupBalances?.[userId] || 0;
   const symbol = getCurrencySymbol(currencyCode);
   
-  // Use a small epsilon for floating point comparison
-  const isOwed = balance > 0.005;
-  const isOwe = balance < -0.005;
+  const isOwed = balance > 0.01;
+  const isOwe = balance < -0.01;
 
   return (
     <Card 
@@ -79,39 +46,34 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
         </div>
         
         <div className={cn(
-          "px-3 py-2 rounded-xl flex flex-col items-center justify-center transition-all group-hover:scale-105 min-w-[100px]",
-          isLoading ? "bg-muted animate-pulse" : 
+          "px-4 py-2.5 rounded-xl flex flex-col items-center justify-center transition-all group-hover:scale-105 min-w-[110px]",
           isOwed ? "bg-green-500/10 text-green-500" : 
           isOwe ? "bg-destructive/10 text-destructive" : 
           "bg-muted/50 text-muted-foreground"
         )}>
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <div className="flex flex-col items-end text-right">
-              <div className="flex items-center gap-1 leading-none mb-0.5">
-                {isOwed ? (
-                  <>
-                    <TrendingUp className="h-2.5 w-2.5" />
-                    <span className="text-[9px] font-bold uppercase tracking-tight">You are owed</span>
-                  </>
-                ) : isOwe ? (
-                  <>
-                    <TrendingDown className="h-2.5 w-2.5" />
-                    <span className="text-[9px] font-bold uppercase tracking-tight">You owe</span>
-                  </>
-                ) : (
-                  <>
-                    <Check className="h-2.5 w-2.5" />
-                    <span className="text-[9px] font-bold uppercase tracking-tight">Settled</span>
-                  </>
-                )}
-              </div>
-              <span className="text-sm font-black leading-none">
-                {symbol}{Math.abs(balance).toFixed(2)}
-              </span>
+          <div className="flex flex-col items-center text-center">
+            <div className="flex items-center gap-1 leading-none mb-1">
+              {isOwed ? (
+                <>
+                  <TrendingUp className="h-2.5 w-2.5" />
+                  <span className="text-[9px] font-bold uppercase tracking-tight">You are owed</span>
+                </>
+              ) : isOwe ? (
+                <>
+                  <TrendingDown className="h-2.5 w-2.5" />
+                  <span className="text-[9px] font-bold uppercase tracking-tight">You owe</span>
+                </>
+              ) : (
+                <>
+                  <Check className="h-2.5 w-2.5" />
+                  <span className="text-[9px] font-bold uppercase tracking-tight">Settled</span>
+                </>
+              )}
             </div>
-          )}
+            <span className="text-sm font-black leading-none">
+              {symbol}{Math.abs(balance).toFixed(2)}
+            </span>
+          </div>
         </div>
       </CardHeader>
     </Card>
@@ -122,6 +84,11 @@ export default function GroupsPage() {
   const { user, setGroups } = useStore();
   const db = useFirestore();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const groupsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -138,6 +105,8 @@ export default function GroupsPage() {
       setGroups(groups);
     }
   }, [groups, setGroups]);
+
+  if (!mounted) return null;
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row bg-background">

@@ -40,7 +40,10 @@
         "groupMemberIds": { "type": "array", "items": { "type": "string" } },
         "isDeleted": { "type": "boolean" },
         "receiptUrl": { "type": "string" },
-        "receiptName": { "type": "string" }
+        "receiptName": { "type": "string" },
+        "isSettled": { "type": "boolean" },
+        "splitType": { "type": "string" },
+        "splitBetween": { "type": "array", "items": { "type": "object" } }
       }
     },
     "Group": {
@@ -52,7 +55,9 @@
         "name": { "type": "string" },
         "members": { "type": "array", "items": { "type": "string" } },
         "createdBy": { "type": "string" },
-        "createdAt": { "type": "number" }
+        "createdAt": { "type": "number" },
+        "groupBalances": { "type": "object", "description": "Cached net balances for each user." },
+        "settlements": { "type": "array", "items": { "type": "object" }, "description": "Simplified debts/transfers needed to zero out." }
       }
     }
   },

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -13,10 +14,11 @@ import { ExpenseType, Expense, SplitType, SplitMember } from "@/types";
 import { Upload, X, FileText, ArrowLeft, Loader2, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase";
-import { doc, collection, query, where } from "firebase/firestore";
+import { doc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { SplitOptions } from "./SplitOptions";
 import { getCurrencySymbol } from "@/lib/utils";
+import { calculateGroupBalances, simplifyDebts } from "@/lib/balances";
 
 interface ExpenseFormProps {
   initialData?: Expense;
@@ -104,6 +106,25 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
     setIsSplitOptionsOpen(false);
   };
 
+  const updateGroupCache = async (groupId: string) => {
+    if (!db) return;
+    const expensesRef = collection(db, "groups", groupId, "expenses");
+    const q = query(expensesRef, where("isDeleted", "==", false));
+    const snapshot = await getDocs(q);
+    const expenses = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Expense));
+    
+    const groupDocRef = doc(db, "groups", groupId);
+    const members = (groups.find(g => g.id === groupId) || group)?.members || [];
+    
+    const groupBalances = calculateGroupBalances(members, expenses);
+    const settlements = simplifyDebts(groupBalances);
+
+    await updateDoc(groupDocRef, {
+      groupBalances,
+      settlements
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !db) return;
@@ -153,7 +174,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
 
       if (expenseType === "PERSONAL") {
         const newRef = doc(db, "users", user.uid, "personalExpenses", expenseId);
-        setDocumentNonBlocking(newRef, expenseData, { merge: true });
+        await setDocumentNonBlocking(newRef, expenseData, { merge: true });
       } else {
         const selectedGroup = groups.find(g => g.id === formData.groupId) || group;
         if (!selectedGroup) throw new Error("Group not found");
@@ -161,33 +182,20 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         expenseData.groupId = formData.groupId;
         expenseData.groupMemberIds = selectedGroup.members;
 
-        // Ensure splitBetween amounts are synchronized with the total amount
-        if (formData.splitType === 'EQUAL') {
-          const activeMembers = formData.splitBetween.filter(s => s.amount > 0).map(s => s.userId);
-          const membersToSplitWith = activeMembers.length > 0 ? activeMembers : (selectedGroup.members || []);
-          
-          const splitAmount = amount / (membersToSplitWith.length || 1);
+        // Ensure splitBetween is set for default Equal split if empty
+        if (expenseData.splitBetween.length === 0) {
+          const splitAmount = amount / (selectedGroup.members?.length || 1);
           expenseData.splitBetween = (selectedGroup.members || []).map(uid => ({
             userId: uid,
-            amount: membersToSplitWith.includes(uid) ? parseFloat(splitAmount.toFixed(2)) : 0
+            amount: parseFloat(splitAmount.toFixed(2))
           }));
-        } else if (formData.splitType === 'PERCENTAGE') {
-          expenseData.splitBetween = formData.splitBetween.map(s => ({
-            ...s,
-            amount: parseFloat(((s.percentage || 0) / 100 * amount).toFixed(2))
-          }));
-        } else if (formData.splitType === 'WEIGHT') {
-          const totalWeight = formData.splitBetween.reduce((acc, s) => acc + (s.weight || 0), 0);
-          expenseData.splitBetween = formData.splitBetween.map(s => ({
-            ...s,
-            amount: parseFloat(((s.weight || 0) / (totalWeight || 1) * amount).toFixed(2))
-          }));
-        } else {
-          expenseData.splitBetween = formData.splitBetween;
         }
 
         const newRef = doc(db, "groups", formData.groupId, "expenses", expenseId);
-        setDocumentNonBlocking(newRef, expenseData, { merge: true });
+        await setDocumentNonBlocking(newRef, expenseData, { merge: true });
+        
+        // Update group cache for performance
+        await updateGroupCache(formData.groupId);
       }
 
       addExpense(expenseData);

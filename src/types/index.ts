@@ -12,12 +12,20 @@ export interface User {
   currency?: string;
 }
 
+export interface SimplifiedDebt {
+  from: string;
+  to: string;
+  amount: number;
+}
+
 export interface Group {
   id: string;
   name: string;
   members: string[]; // User UIDs
   createdBy: string;
   createdAt: number;
+  groupBalances?: Record<string, number>;
+  settlements?: SimplifiedDebt[];
 }
 
 export interface SplitMember {
