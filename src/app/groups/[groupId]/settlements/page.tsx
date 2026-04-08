@@ -1,4 +1,3 @@
-
 "use client";
 
 import { use, useEffect, useState, useMemo, Suspense } from "react";
@@ -58,27 +57,27 @@ function SettlementsContent({ groupId }: { groupId: string }) {
     setMounted(true);
   }, []);
 
-  // Initialize preference from Firebase
-  useEffect(() => {
-    if (user && !hasSetInitial && user.isSmartSettleEnabled !== undefined) {
-      setIsGreedyActive(user.isSmartSettleEnabled);
-      setHasSetInitial(true);
-    }
-  }, [user, hasSetInitial]);
-
-  const handleToggleSmartSettle = (checked: boolean) => {
-    setIsGreedyActive(checked);
-    if (user && db) {
-      const userRef = doc(db, "users", user.uid);
-      updateDocumentNonBlocking(userRef, { isSmartSettleEnabled: checked });
-    }
-  };
-
   const groupRef = useMemoFirebase(() => {
     if (!db || !groupId) return null;
     return doc(db, "groups", groupId);
   }, [db, groupId]);
   const { data: group, isLoading: groupLoading } = useDoc(groupRef);
+
+  // Initialize preference from Group Firebase data
+  useEffect(() => {
+    if (group && !hasSetInitial && group.isSmartSettleEnabled !== undefined) {
+      setIsGreedyActive(group.isSmartSettleEnabled);
+      setHasSetInitial(true);
+    }
+  }, [group, hasSetInitial]);
+
+  const handleToggleSmartSettle = (checked: boolean) => {
+    setIsGreedyActive(checked);
+    if (groupId && db) {
+      const gRef = doc(db, "groups", groupId);
+      updateDocumentNonBlocking(gRef, { isSmartSettleEnabled: checked });
+    }
+  };
 
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !groupId || !user) return null;

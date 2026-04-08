@@ -1,4 +1,3 @@
-
 export type ExpenseType = 'PERSONAL' | 'GROUP';
 export type SplitType = 'EQUAL' | 'UNEQUAL' | 'PERCENTAGE' | 'WEIGHT';
 
@@ -27,6 +26,7 @@ export interface Group {
   createdAt: number;
   groupBalances?: Record<string, number>;
   settlements?: SimplifiedDebt[];
+  isSmartSettleEnabled?: boolean;
 }
 
 export interface SplitMember {
