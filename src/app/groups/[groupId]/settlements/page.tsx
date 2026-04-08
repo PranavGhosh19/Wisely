@@ -12,7 +12,9 @@ import {
   Zap, 
   Check, 
   User as UserIcon,
-  Plus
+  Plus,
+  ArrowUpRight,
+  ArrowDownLeft
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
@@ -288,7 +290,7 @@ function SettlementsContent({ groupId }: { groupId: string }) {
                       })
                     )
                   ) : (
-                    /* RAW BALANCES VIEW */
+                    /* RAW BALANCES VIEW - REDESIGNED */
                     (() => {
                       const otherStandings = Object.entries(settlementInfo.stats)
                         .filter(([uid, s]) => uid !== user?.uid && Math.abs(s.net) > 0.01)
@@ -312,32 +314,64 @@ function SettlementsContent({ groupId }: { groupId: string }) {
                         const suggestedDebt = settlementInfo.debts.find(d => d.from === uid || d.to === uid);
 
                         return (
-                          <div key={uid} className="p-6 flex items-center justify-between">
+                          <div key={uid} className={cn(
+                            "p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:bg-muted/5 transition-colors group",
+                            isOwed ? "bg-green-500/[0.02]" : "bg-destructive/[0.02]"
+                          )}>
                             <div className="flex items-center gap-4">
-                              <Avatar className="h-12 w-12 border-2 border-background">
-                                <AvatarFallback className={cn("font-bold", isOwed ? "bg-green-500/10 text-green-500" : "bg-destructive/10 text-destructive")}>
-                                  {mUser?.name?.[0] || "?"}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-bold text-base">{mUser?.name || "Member"}</p>
-                                <p className={cn("text-[10px] font-black uppercase tracking-widest", isOwed ? "text-green-500" : "text-destructive")}>
-                                  {isOwed ? "Is Owed" : "Owes Money"}
+                              <div className="relative">
+                                <Avatar className={cn(
+                                  "h-14 w-14 border-4 border-card shadow-lg ring-2",
+                                  isOwed ? "ring-green-500/20" : "ring-destructive/20"
+                                )}>
+                                  <AvatarFallback className={cn(
+                                    "font-bold text-lg", 
+                                    isOwed ? "bg-green-500/10 text-green-500" : "bg-destructive/10 text-destructive"
+                                  )}>
+                                    {mUser?.name?.[0] || "?"}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className={cn(
+                                  "absolute -bottom-1 -right-1 h-6 w-6 rounded-full flex items-center justify-center border-2 border-card shadow-sm",
+                                  isOwed ? "bg-green-500 text-white" : "bg-destructive text-white"
+                                )}>
+                                  {isOwed ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownLeft className="h-3.5 w-3.5" />}
+                                </div>
+                              </div>
+                              <div className="space-y-0.5">
+                                <p className="font-bold text-lg text-foreground">{mUser?.name || "Member"}</p>
+                                <p className={cn(
+                                  "text-[10px] font-black uppercase tracking-[0.1em]", 
+                                  isOwed ? "text-green-500" : "text-destructive"
+                                )}>
+                                  {isOwed ? "Is Owed Money" : "Currently Owes"}
                                 </p>
                               </div>
                             </div>
-                            <div className="text-right flex flex-col items-end gap-2">
-                              <p className={cn("text-2xl font-black tabular-nums", isOwed ? "text-green-500" : "text-destructive")}>
-                                {isOwed ? "+" : "-"}{symbol}{Math.abs(stats.net).toFixed(2)}
-                              </p>
+                            
+                            <div className="flex items-center justify-between sm:justify-end gap-8">
+                              <div className="text-right">
+                                <div className={cn(
+                                  "text-2xl font-black tabular-nums tracking-tighter", 
+                                  isOwed ? "text-green-500" : "text-destructive"
+                                )}>
+                                  {isOwed ? "+" : "-"}{symbol}{Math.abs(stats.net).toFixed(2)}
+                                </div>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">Net Standing</p>
+                              </div>
+                              
                               {suggestedDebt && (
                                 <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="h-8 rounded-lg text-[10px] font-bold uppercase tracking-wider"
+                                  className={cn(
+                                    "rounded-xl font-bold h-11 px-6 shadow-lg transition-all active:scale-95",
+                                    isOwed 
+                                      ? "bg-green-500 hover:bg-green-600 shadow-green-500/10" 
+                                      : "bg-primary hover:bg-primary/90 shadow-primary/10"
+                                  )}
                                   onClick={() => openSettleDialog(suggestedDebt)}
                                 >
-                                  Settle Now
+                                  <Zap className="h-4 w-4 mr-2" />
+                                  Settle
                                 </Button>
                               )}
                             </div>
