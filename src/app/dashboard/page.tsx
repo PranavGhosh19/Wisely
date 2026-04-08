@@ -145,7 +145,7 @@ export default function Dashboard() {
               <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
                 <CreditCard className="h-5 w-5 text-white" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest opacity-80 leading-tight">Total Outstanding</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest opacity-80 leading-tight">Total Expenses</span>
             </div>
             <div className="text-xl font-bold relative z-10 shrink-0">{symbol}{totalOverallSpent.toFixed(2)}</div>
           </Card>
