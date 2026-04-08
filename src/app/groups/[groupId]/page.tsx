@@ -226,10 +226,11 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
     }
   };
 
-  const handleShareWhatsapp = () => {
+  const handleShareToWhatsApp = () => {
     const text = `Join my group "${group?.name || 'Shared Expenses'}" on Wisely to track and split expenses together! ${shareUrl}`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(whatsappUrl, '_blank');
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+
+    window.location.href = whatsappUrl;
   };
 
   if (groupLoading) {

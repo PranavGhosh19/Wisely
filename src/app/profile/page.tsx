@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -100,7 +99,6 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file || !user || !db) return;
 
-    // Increased limit to 5MB
     if (file.size > 5 * 1024 * 1024) {
       toast({ 
         variant: "destructive", 
@@ -154,6 +152,12 @@ export default function ProfilePage() {
       title: "Install on iOS",
       description: "Tap the 'Share' icon in Safari (the square with an up arrow) and then select 'Add to Home Screen'.",
     });
+  };
+
+  const handleReferFriend = () => {
+    const text = `Hey! I'm using Wisely to track my expenses and split bills with friends. It's really helpful, check it out: https://wisely.app`;
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.location.href = whatsappUrl;
   };
 
   const appearanceOptions = [
@@ -329,6 +333,19 @@ export default function ProfilePage() {
                     <span className="text-sm font-medium">Default Currency</span>
                     <span className="text-[10px] text-muted-foreground font-bold uppercase">{user.currency || "USD"}</span>
                   </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+
+              <button 
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
+                onClick={handleReferFriend}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-pink-500/10 flex items-center justify-center text-pink-500">
+                    <Share2 className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-medium">Refer a Friend</span>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
