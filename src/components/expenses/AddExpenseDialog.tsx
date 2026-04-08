@@ -11,14 +11,11 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { ExpenseType, Expense } from "@/types";
-import { AlertCircle, Upload, X, FileText, Calendar as CalendarIcon } from "lucide-react";
+import { AlertCircle, Upload, X, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { useFirestore } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 
 interface AddExpenseDialogProps {
   open: boolean;
@@ -259,34 +256,14 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="font-bold">Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full h-11 justify-start text-left font-normal rounded-xl",
-                        !formData.date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                      {formData.date ? format(new Date(formData.date), "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 rounded-2xl border-none shadow-2xl" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={new Date(formData.date)}
-                      onSelect={(date) => {
-                        if (date) {
-                          setFormData(prev => ({ ...prev, date: format(date, "yyyy-MM-dd") }));
-                        }
-                      }}
-                      initialFocus
-                      className="rounded-2xl"
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Label htmlFor="date" className="font-bold">Date</Label>
+                <Input 
+                  id="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                  className="h-11 rounded-xl"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="notes" className="font-bold">Notes (Opt.)</Label>
