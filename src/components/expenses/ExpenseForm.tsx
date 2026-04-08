@@ -162,7 +162,6 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         expenseData.groupId = formData.groupId;
         expenseData.groupMemberIds = selectedGroup.members;
 
-        // Ensure splitBetween is set for default Equal split if empty
         if (expenseData.splitBetween.length === 0) {
           const splitAmount = amount / (selectedGroup.members?.length || 1);
           expenseData.splitBetween = (selectedGroup.members || []).map(uid => ({
@@ -233,7 +232,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
             />
           </div>
 
-          <div className="grid gap-4 grid-cols-2">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
             <div className="space-y-2">
               <Label className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Category</Label>
               <Select value={formData.category} onValueChange={(val) => setFormData(prev => ({ ...prev, category: val }))}>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { use, useEffect, useState, useMemo, Suspense } from "react";
@@ -63,7 +64,6 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Settlement Dialog State
   const [settlementTarget, setSettlementTarget] = useState<SettlementTarget | null>(null);
   const [customAmount, setCustomAmount] = useState<string>("");
 
@@ -107,7 +107,6 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
   }, [db, group?.members]);
   const { data: memberProfiles, isLoading: membersLoading } = useCollection(membersQuery);
 
-  // Exclude settlements from the "Total Spent" aggregate
   const totalSpent = (groupExpenses || [])
     .filter(exp => !exp.isSettled && exp.category !== 'Settlement')
     .reduce((acc, curr) => acc + curr.amount, 0);
@@ -259,8 +258,8 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
           </Button>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-2 sm:gap-1">
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl md:text-3xl font-bold font-headline text-primary truncate max-w-[200px] sm:max-w-none">{group.name}</h2>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <h2 className="text-2xl md:text-3xl font-bold font-headline text-primary truncate max-w-[240px] sm:max-w-none">{group.name}</h2>
                 <Button 
                   variant="outline" 
                   size="icon" 
@@ -313,7 +312,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                 <CardHeader className="pb-2 px-4 sm:px-6">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Net Position</CardTitle>
-                    <div className="flex items-center gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1">
                       {Math.abs(myNet) > 0.01 && (
                         <Button 
                           variant="ghost" 
@@ -442,7 +441,6 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
         </div>
       </main>
 
-      {/* Settle Up Dialog */}
       <Dialog open={!!settlementTarget} onOpenChange={(open) => !open && setSettlementTarget(null)}>
         <DialogContent className="sm:max-w-[400px] rounded-2xl p-6 border-none shadow-2xl">
           <DialogHeader className="mb-4">
