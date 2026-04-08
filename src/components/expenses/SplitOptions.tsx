@@ -52,9 +52,9 @@ export function SplitOptions({
   });
 
   const splitTypes = [
-    { id: 'EQUAL' as SplitType, label: 'Equal split', icon: Users, color: 'bg-blue-500/10 text-blue-500', description: 'Divide equally among selected members.' },
-    { id: 'UNEQUAL' as SplitType, label: 'Exact amount', icon: Hash, color: 'bg-green-500/10 text-green-500', description: 'Specify exactly how much each person owes.' },
-    { id: 'PERCENTAGE' as SplitType, label: 'Percentage', icon: Percent, color: 'bg-orange-500/10 text-orange-500', description: 'Split by percentage of the total.' },
+    { id: 'EQUAL' as SplitType, label: 'Equal', icon: Users, color: 'bg-blue-500/10 text-blue-500', description: 'Divide equally among selected members.' },
+    { id: 'UNEQUAL' as SplitType, label: 'Exact', icon: Hash, color: 'bg-green-500/10 text-green-500', description: 'Specify exactly how much each person owes.' },
+    { id: 'PERCENTAGE' as SplitType, label: 'Percent', icon: Percent, color: 'bg-orange-500/10 text-orange-500', description: 'Split by percentage of the total.' },
     { id: 'WEIGHT' as SplitType, label: 'Shares', icon: Scale, color: 'bg-purple-500/10 text-purple-500', description: 'Split by number of shares/weights.' },
   ];
 
@@ -66,7 +66,7 @@ export function SplitOptions({
   const toggleUser = (userId: string) => {
     const next = new Set(selectedUserIds);
     if (next.has(userId)) {
-      if (next.size > 1) next.delete(userId); // Ensure at least one is always selected
+      if (next.size > 1) next.delete(userId); 
     } else {
       next.add(userId);
     }
@@ -146,14 +146,14 @@ export function SplitOptions({
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col animate-in slide-in-from-bottom duration-300">
       <header className="flex items-center justify-between px-4 h-16 border-b shrink-0 bg-card">
-        <button onClick={onClose} className="text-sm font-medium text-muted-foreground hover:text-foreground">
+        <button onClick={onClose} className="px-2 py-1 text-sm font-medium text-muted-foreground hover:text-foreground">
           Cancel
         </button>
-        <h1 className="text-lg font-bold font-headline">Split options</h1>
+        <h1 className="text-lg font-bold font-headline">Split Options</h1>
         <button 
           onClick={handleDone} 
           className={cn(
-            "text-sm font-bold transition-opacity", 
+            "px-2 py-1 text-sm font-bold transition-opacity", 
             totals.isValid ? "text-primary" : "text-muted-foreground opacity-50"
           )}
           disabled={!totals.isValid}
@@ -163,8 +163,8 @@ export function SplitOptions({
       </header>
 
       <ScrollArea className="flex-1">
-        <div className="p-6 space-y-8">
-          <div className="flex justify-between gap-3 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="p-4 md:p-6 space-y-6 md:space-y-8">
+          <div className="flex justify-between gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
             {splitTypes.map((type) => {
               const Icon = type.icon;
               const isActive = activeType === type.id;
@@ -173,14 +173,14 @@ export function SplitOptions({
                   key={type.id}
                   onClick={() => setActiveType(type.id)}
                   className={cn(
-                    "flex flex-col items-center gap-2 p-3 min-w-[85px] rounded-2xl transition-all border-2",
+                    "flex flex-col items-center gap-2 p-2.5 min-w-[80px] flex-1 rounded-2xl transition-all border-2",
                     isActive 
                       ? "border-primary bg-primary/5 shadow-sm" 
-                      : "border-transparent hover:bg-muted/50"
+                      : "border-transparent bg-muted/30"
                   )}
                 >
-                  <div className={cn("h-11 w-11 rounded-xl flex items-center justify-center transition-transform", type.color, isActive && "scale-110")}>
-                    <Icon className="h-6 w-6" />
+                  <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center transition-transform", type.color, isActive && "scale-110")}>
+                    <Icon className="h-5 w-5" />
                   </div>
                   <span className={cn("text-[10px] font-bold uppercase tracking-tight text-center leading-none", isActive ? "text-primary" : "text-muted-foreground")}>
                     {type.label}
@@ -190,13 +190,13 @@ export function SplitOptions({
             })}
           </div>
 
-          <div className="text-center space-y-1">
-            <h2 className="text-2xl font-bold font-headline text-foreground">{currentTypeInfo?.label}</h2>
-            <p className="text-sm text-muted-foreground">{currentTypeInfo?.description}</p>
+          <div className="text-center space-y-1.5 px-4">
+            <h2 className="text-xl md:text-2xl font-bold font-headline text-foreground">{currentTypeInfo?.label} Split</h2>
+            <p className="text-xs md:text-sm text-muted-foreground">{currentTypeInfo?.description}</p>
           </div>
 
           <div className="space-y-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-2">Group Members</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-2">Members</p>
             <div className="space-y-2 pb-10">
               {members.map((member) => {
                 const isSelected = selectedUserIds.has(member.uid);
@@ -204,23 +204,23 @@ export function SplitOptions({
                   <div
                     key={member.uid}
                     className={cn(
-                      "flex items-center justify-between p-4 rounded-2xl transition-all border",
+                      "flex items-center justify-between p-3.5 md:p-4 rounded-2xl transition-all border",
                       activeType === 'EQUAL' 
                         ? (isSelected ? "bg-primary/5 border-primary/20" : "bg-card border-border")
                         : "bg-card border-border"
                     )}
                     onClick={() => activeType === 'EQUAL' && toggleUser(member.uid)}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                    <div className="flex items-center gap-3 min-w-0 flex-1 pr-4">
+                      <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
                         {member.name?.[0] || "?"}
                       </div>
-                      <span className="font-bold text-sm text-foreground">
+                      <span className="font-bold text-sm text-foreground truncate">
                         {member.name}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                       {activeType === 'EQUAL' && (
                         <div className={cn(
                           "h-7 w-7 rounded-full flex items-center justify-center transition-all border-2",
@@ -238,7 +238,7 @@ export function SplitOptions({
                             inputMode="decimal"
                             value={values[member.uid]}
                             onChange={(e) => handleValueChange(member.uid, e.target.value)}
-                            className="w-24 h-8 bg-transparent border-0 focus-visible:ring-0 rounded-none px-1 text-right font-bold text-sm"
+                            className="w-20 md:w-24 h-8 bg-transparent border-0 focus-visible:ring-0 rounded-none px-1 text-right font-bold text-sm"
                             placeholder="0.00"
                           />
                         </div>
@@ -251,7 +251,7 @@ export function SplitOptions({
                             inputMode="decimal"
                             value={values[member.uid]}
                             onChange={(e) => handleValueChange(member.uid, e.target.value)}
-                            className="w-16 h-8 bg-transparent border-0 focus-visible:ring-0 rounded-none px-1 text-right font-bold text-sm"
+                            className="w-14 md:w-16 h-8 bg-transparent border-0 focus-visible:ring-0 rounded-none px-1 text-right font-bold text-sm"
                             placeholder="0"
                           />
                           <span className="text-xs text-muted-foreground font-bold">%</span>
@@ -259,27 +259,27 @@ export function SplitOptions({
                       )}
 
                       {activeType === 'WEIGHT' && (
-                        <div className="flex items-center gap-3 bg-muted/30 p-1 rounded-xl border border-border/50">
+                        <div className="flex items-center gap-2 md:gap-3 bg-muted/30 p-1 rounded-xl border border-border/50">
                           <button 
-                            className="h-8 w-8 rounded-lg bg-background flex items-center justify-center hover:bg-muted active:scale-95 transition-all shadow-sm"
+                            className="h-7 w-7 md:h-8 md:w-8 rounded-lg bg-background flex items-center justify-center hover:bg-muted active:scale-95 transition-all shadow-sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               const current = Number(values[member.uid] || 0);
                               handleValueChange(member.uid, Math.max(0, current - 1).toString());
                             }}
                           >
-                            <span className="text-lg font-bold">-</span>
+                            <span className="text-lg font-bold leading-none">-</span>
                           </button>
-                          <span className="w-6 text-center font-bold text-sm">{values[member.uid] || "0"}</span>
+                          <span className="w-5 md:w-6 text-center font-bold text-sm">{values[member.uid] || "0"}</span>
                           <button 
-                            className="h-8 w-8 rounded-lg bg-background flex items-center justify-center hover:bg-muted active:scale-95 transition-all shadow-sm"
+                            className="h-7 w-7 md:h-8 md:w-8 rounded-lg bg-background flex items-center justify-center hover:bg-muted active:scale-95 transition-all shadow-sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               const current = Number(values[member.uid] || 0);
                               handleValueChange(member.uid, (current + 1).toString());
                             }}
                           >
-                            <span className="text-lg font-bold">+</span>
+                            <span className="text-lg font-bold leading-none">+</span>
                           </button>
                         </div>
                       )}
@@ -292,33 +292,33 @@ export function SplitOptions({
         </div>
       </ScrollArea>
 
-      <footer className="shrink-0 border-t bg-card/95 backdrop-blur-md p-6 pb-10 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+      <footer className="shrink-0 border-t bg-card/95 backdrop-blur-md p-5 md:p-6 pb-8 md:pb-10 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
         <div className="flex flex-col gap-4 max-w-lg mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col min-w-0">
               {activeType === 'EQUAL' && (
                 <>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold text-foreground">{symbol}{perPersonAmount.toFixed(2)}</span>
-                    <span className="text-xs text-muted-foreground font-medium">/person</span>
+                  <div className="flex items-baseline gap-1 truncate">
+                    <span className="text-xl md:text-2xl font-black text-foreground tabular-nums">{symbol}{perPersonAmount.toFixed(2)}</span>
+                    <span className="text-[10px] md:text-xs text-muted-foreground font-medium">/person</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
-                    ({selectedUserIds.size} people)
+                  <span className="text-[9px] md:text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                    ({selectedUserIds.size} selected)
                   </span>
                 </>
               )}
 
               {activeType === 'UNEQUAL' && (
                 <>
-                  <div className="flex items-baseline gap-1">
-                    <span className={cn("text-2xl font-bold", Math.abs(totals.remaining) <= 0.01 ? "text-green-500" : "text-foreground")}>
+                  <div className="flex items-baseline gap-1 truncate">
+                    <span className={cn("text-xl md:text-2xl font-black tabular-nums", Math.abs(totals.remaining) <= 0.01 ? "text-green-500" : "text-foreground")}>
                       {symbol}{totals.sum.toFixed(2)}
                     </span>
-                    <span className="text-xs text-muted-foreground font-medium">of {symbol}{totalAmount.toFixed(2)}</span>
+                    <span className="text-[10px] md:text-xs text-muted-foreground font-medium">of {symbol}{totalAmount.toFixed(2)}</span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     {Math.abs(totals.remaining) > 0.01 && <AlertCircle className="h-3 w-3 text-orange-500" />}
-                    <span className={cn("text-[10px] font-bold uppercase tracking-wider", Math.abs(totals.remaining) <= 0.01 ? "text-green-500" : "text-orange-500")}>
+                    <span className={cn("text-[9px] md:text-[10px] font-bold uppercase tracking-wider", Math.abs(totals.remaining) <= 0.01 ? "text-green-500" : "text-orange-500")}>
                       {Math.abs(totals.remaining) <= 0.01 ? "Perfectly split" : `${symbol}${Math.abs(totals.remaining).toFixed(2)} ${totals.remaining > 0 ? "left" : "over"}`}
                     </span>
                   </div>
@@ -327,15 +327,15 @@ export function SplitOptions({
 
               {activeType === 'PERCENTAGE' && (
                 <>
-                  <div className="flex items-baseline gap-1">
-                    <span className={cn("text-2xl font-bold", Math.abs(totals.remaining) <= 0.1 ? "text-green-500" : "text-foreground")}>
+                  <div className="flex items-baseline gap-1 truncate">
+                    <span className={cn("text-xl md:text-2xl font-black tabular-nums", Math.abs(totals.remaining) <= 0.1 ? "text-green-500" : "text-foreground")}>
                       {totals.sum.toFixed(1)}%
                     </span>
-                    <span className="text-xs text-muted-foreground font-medium">of 100%</span>
+                    <span className="text-[10px] md:text-xs text-muted-foreground font-medium">of 100%</span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     {Math.abs(totals.remaining) > 0.1 && <AlertCircle className="h-3 w-3 text-orange-500" />}
-                    <span className={cn("text-[10px] font-bold uppercase tracking-wider", Math.abs(totals.remaining) <= 0.1 ? "text-green-500" : "text-orange-500")}>
+                    <span className={cn("text-[9px] md:text-[10px] font-bold uppercase tracking-wider", Math.abs(totals.remaining) <= 0.1 ? "text-green-500" : "text-orange-500")}>
                       {Math.abs(totals.remaining) <= 0.1 ? "Total reached" : `${Math.abs(totals.remaining).toFixed(1)}% ${totals.remaining > 0 ? "left" : "over"}`}
                     </span>
                   </div>
@@ -344,10 +344,10 @@ export function SplitOptions({
 
               {activeType === 'WEIGHT' && (
                 <>
-                  <div className="flex flex-col">
-                    <span className="text-2xl font-bold text-foreground">Total Shares: {totals.sum}</span>
-                    <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-0.5">
-                      Proportional distribution
+                  <div className="flex flex-col truncate">
+                    <span className="text-xl md:text-2xl font-black text-foreground tabular-nums">Total: {totals.sum} Shares</span>
+                    <span className="text-[9px] md:text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-0.5">
+                      Proportional dist.
                     </span>
                   </div>
                 </>
@@ -357,9 +357,9 @@ export function SplitOptions({
             {activeType === 'EQUAL' && (
               <button 
                 onClick={toggleAll}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-primary/20 hover:bg-primary/5 transition-all active:scale-95"
+                className="flex items-center gap-2 px-4 md:px-5 py-2 md:py-2.5 rounded-2xl border-2 border-primary/20 hover:bg-primary/5 transition-all active:scale-95 shrink-0"
               >
-                <span className="text-sm font-bold text-primary">All</span>
+                <span className="text-xs md:text-sm font-bold text-primary">All</span>
                 <div className={cn(
                   "h-5 w-5 rounded-full flex items-center justify-center transition-all",
                   selectedUserIds.size === members.length ? "bg-primary text-white" : "bg-muted text-transparent"
