@@ -19,7 +19,6 @@ import { getCurrencySymbol, cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { DateRange } from "react-day-picker";
 
 const COLORS = ['#facc15', '#3D737F', '#5A9BA8', '#8FBABF', '#CEC7BF', '#A89E92'];
 
@@ -72,10 +71,7 @@ export default function AnalyticsPage() {
   const [mounted, setMounted] = useState(false);
   const [scope, setScope] = useState<"ALL" | "PERSONAL" | "GROUP">("ALL");
   const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: startOfMonth(new Date()),
-    to: endOfMonth(new Date()),
-  });
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
   useEffect(() => {
     setMounted(true);
@@ -120,13 +116,13 @@ export default function AnalyticsPage() {
     if (scope === "ALL") {
       base = [...personal, ...group];
     } else if (scope === "PERSONAL") {
-      // Apply date filter for Personal scope
+      // Apply single date filter for Personal scope
       base = personal.filter(exp => {
-        if (!date?.from) return true;
+        if (!selectedDate) return true;
         const expDate = new Date(exp.date);
         return isWithinInterval(expDate, { 
-          start: startOfDay(date.from), 
-          end: endOfDay(date.to || date.from) 
+          start: startOfDay(selectedDate), 
+          end: endOfDay(selectedDate) 
         });
       });
     } else if (scope === "GROUP") {
@@ -136,7 +132,7 @@ export default function AnalyticsPage() {
       }
     }
     return base;
-  }, [personalExpenses, groupExpenses, scope, selectedGroupId, date]);
+  }, [personalExpenses, groupExpenses, scope, selectedGroupId, selectedDate]);
 
   // Visual 1: Category Distribution
   const pieData = useMemo(() => {
@@ -151,8 +147,6 @@ export default function AnalyticsPage() {
 
   // Visual 2: Spending Trend
   const trendData = useMemo(() => {
-    // If personal scope with date filter, show trend based on the range if it's multiple months
-    // Otherwise show last 6 months as default
     const months = Array.from({ length: 6 }).map((_, i) => {
       const date = subMonths(new Date(), 5 - i);
       return {
@@ -209,7 +203,7 @@ export default function AnalyticsPage() {
               <div className="space-y-1.5 animate-in fade-in slide-in-from-right-4 duration-300">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
                   <CalendarIcon className="h-3 w-3" />
-                  Date Range
+                  Select Date
                 </label>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -217,31 +211,19 @@ export default function AnalyticsPage() {
                       variant={"outline"}
                       className={cn(
                         "w-[240px] h-10 justify-start text-left font-normal rounded-xl bg-card border-none shadow-sm",
-                        !date && "text-muted-foreground"
+                        !selectedDate && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date?.from ? (
-                        date.to ? (
-                          <>
-                            {format(date.from, "LLL dd")} - {format(date.to, "LLL dd")}
-                          </>
-                        ) : (
-                          format(date.from, "LLL dd, y")
-                        )
-                      ) : (
-                        <span>Pick a date range</span>
-                      )}
+                      {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 rounded-2xl border-none shadow-2xl" align="end">
                     <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
                       initialFocus
-                      mode="range"
-                      defaultMonth={date?.from}
-                      selected={date}
-                      onSelect={setDate}
-                      numberOfMonths={1}
                     />
                   </PopoverContent>
                 </Popover>
@@ -316,7 +298,7 @@ export default function AnalyticsPage() {
                 <PieChart className="h-8 w-8" />
               </div>
               <h3 className="text-xl font-bold font-headline">No data to visualize yet</h3>
-              <p className="text-sm text-muted-foreground">Try adjusting your filters or date range to see distribution and trends.</p>
+              <p className="text-sm text-muted-foreground">Try adjusting your filters or date selection to see distribution and trends.</p>
             </div>
           </Card>
         ) : (
