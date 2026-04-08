@@ -147,8 +147,8 @@ export function Navbar() {
               </p>
             )}
             
-            <Tooltip key="settings" disabled={!isSidebarCollapsed}>
-              <TooltipTrigger asChild>
+            {(() => {
+              const settingsLink = (
                 <Link
                   href="/profile"
                   className={cn(
@@ -166,15 +166,24 @@ export function Navbar() {
                     </span>
                   )}
                 </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="font-bold">Settings</TooltipContent>
-            </Tooltip>
+              );
+
+              if (isSidebarCollapsed) {
+                return (
+                  <Tooltip key="settings">
+                    <TooltipTrigger asChild>{settingsLink}</TooltipTrigger>
+                    <TooltipContent side="right" className="font-bold">Settings</TooltipContent>
+                  </Tooltip>
+                );
+              }
+              return settingsLink;
+            })()}
           </div>
         </div>
 
         <div className="flex flex-col gap-4">
-          <Tooltip key="profile-footer" disabled={!isSidebarCollapsed}>
-            <TooltipTrigger asChild>
+          {(() => {
+            const profileLink = (
               <Link 
                 href="/profile" 
                 className={cn(
@@ -201,12 +210,21 @@ export function Navbar() {
                   </div>
                 )}
               </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="font-bold">{user.name}</TooltipContent>
-          </Tooltip>
+            );
 
-          <Tooltip key="sign-out" disabled={!isSidebarCollapsed}>
-            <TooltipTrigger asChild>
+            if (isSidebarCollapsed) {
+              return (
+                <Tooltip key="profile-footer">
+                  <TooltipTrigger asChild>{profileLink}</TooltipTrigger>
+                  <TooltipContent side="right" className="font-bold">{user.name}</TooltipContent>
+                </Tooltip>
+              );
+            }
+            return profileLink;
+          })()}
+
+          {(() => {
+            const signOutBtn = (
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -221,9 +239,18 @@ export function Navbar() {
                   <span className="animate-in fade-in slide-in-from-left-2 duration-300">Sign Out</span>
                 )}
               </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="font-bold text-destructive">Sign Out</TooltipContent>
-          </Tooltip>
+            );
+
+            if (isSidebarCollapsed) {
+              return (
+                <Tooltip key="sign-out">
+                  <TooltipTrigger asChild>{signOutBtn}</TooltipTrigger>
+                  <TooltipContent side="right" className="font-bold text-destructive">Sign Out</TooltipContent>
+                </Tooltip>
+              );
+            }
+            return signOutBtn;
+          })()}
         </div>
       </nav>
 
