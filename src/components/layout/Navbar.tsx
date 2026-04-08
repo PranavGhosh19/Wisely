@@ -266,7 +266,7 @@ export function Navbar() {
             )}
           >
             <ReceiptText className="h-5 w-5" />
-            <span className="text-[9px] font-bold uppercase tracking-widest">Trans</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest">Transactions</span>
           </Link>
 
           <div className="relative -top-6 px-2">
