@@ -226,7 +226,7 @@ function SettlementsContent({ groupId }: { groupId: string }) {
               <CardHeader className="bg-muted/10 border-b">
                 <CardTitle className="text-lg font-headline flex items-center gap-2">
                   <Coins className="h-5 w-5 text-accent" />
-                  {isGreedyActive ? "Greedy Magic" : "Current Standings"}
+                  {isGreedyActive ? "Smart Settlements" : "Current Standings"}
                 </CardTitle>
                 <CardDescription>
                   {isGreedyActive 
