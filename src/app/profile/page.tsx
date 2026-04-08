@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -99,11 +100,12 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file || !user || !db) return;
 
-    if (file.size > 5 * 1024 * 1024) {
+    // Increased limit from 5MB to 10MB
+    if (file.size > 10 * 1024 * 1024) {
       toast({ 
         variant: "destructive", 
         title: "Image too large", 
-        description: "Please pick an image smaller than 5MB." 
+        description: "Please pick an image smaller than 10MB." 
       });
       return;
     }

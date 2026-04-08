@@ -152,7 +152,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
 
     while (i < tempDebtors.length && j < tempCreditors.length) {
       const amount = Math.min(tempDebtors[i].amount, tempCreditors[j].amount);
-       debts.push({ from: tempDebtors[i].uid, to: tempCreditors[j].uid, amount });
+      debts.push({ from: tempDebtors[i].uid, to: tempCreditors[j].uid, amount });
       tempDebtors[i].amount -= amount;
       tempCreditors[j].amount -= amount;
       if (tempDebtors[i].amount < 0.01) i++;
@@ -275,7 +275,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                   className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm shrink-0"
                   onClick={() => setIsQrOpen(true)}
                 >
-                  <QrCode className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <QrCode className="h-4 w-4 sm:h-5 w-5" />
                 </Button>
               </div>
               <button 
