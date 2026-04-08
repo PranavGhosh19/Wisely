@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { User, Expense, Group } from '@/types';
 
-interface SpenseFlowState {
+interface WiselyState {
   user: User | null;
   expenses: Expense[];
   groups: Group[];
@@ -38,7 +38,7 @@ const DEFAULT_CATEGORIES = [
   "Others"
 ];
 
-export const useStore = create<SpenseFlowState>((set) => ({
+export const useStore = create<WiselyState>((set) => ({
   user: null,
   expenses: [],
   groups: [],
