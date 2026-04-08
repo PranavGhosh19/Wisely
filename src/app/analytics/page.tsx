@@ -13,10 +13,11 @@ import { useStore } from "@/lib/store";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, collectionGroup, query, where } from "firebase/firestore";
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
-import { PieChart, Layers, User, Users, Calendar as CalendarIcon } from "lucide-react";
+import { PieChart, Layers, User, Users, Calendar as CalendarIcon, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getCurrencySymbol, cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const COLORS = ['#facc15', '#3D737F', '#5A9BA8', '#8FBABF', '#CEC7BF', '#A89E92'];
 
@@ -72,7 +73,7 @@ export default function AnalyticsPage() {
   const [mounted, setMounted] = useState(false);
   const [scope, setScope] = useState<"ALL" | "PERSONAL" | "GROUP">("ALL");
   const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     setMounted(true);
@@ -151,19 +152,28 @@ export default function AnalyticsPage() {
 
   // Visual 2: Spending Trend
   const trendData = useMemo(() => {
-    if (filteredExpenses.length === 0) {
+    // Trend should ignore the daily filter but respect the scope
+    let base: any[] = [];
+    const personal = (personalExpenses || []).filter(e => e.category !== 'Settlement');
+    const group = (groupExpenses || []).filter(e => e.category !== 'Settlement');
+
+    if (scope === "ALL") base = [...personal, ...group];
+    else if (scope === "PERSONAL") base = personal;
+    else if (scope === "GROUP") {
+      base = group;
+      if (selectedGroupId !== "all") base = base.filter(exp => exp.groupId === selectedGroupId);
+    }
+
+    if (base.length === 0) {
       // Default to last 6 months if no data
-      return Array.from({ length: 6 }).map((_, i) => {
-        const date = subMonths(new Date(), 5 - i);
-        return {
-          name: format(date, "MMM"),
-          amount: 0
-        };
-      });
+      return Array.from({ length: 6 }).map((_, i) => ({
+        name: format(subMonths(new Date(), 5 - i), "MMM"),
+        amount: 0
+      }));
     }
 
     // Find the earliest date among transactions
-    const minTimestamp = Math.min(...filteredExpenses.map(e => e.date));
+    const minTimestamp = Math.min(...base.map(e => e.date));
     const startDate = startOfMonth(new Date(minTimestamp));
     const today = new Date();
     
@@ -184,7 +194,7 @@ export default function AnalyticsPage() {
       if (months.length > 24) break; 
     }
 
-    filteredExpenses.forEach(exp => {
+    base.forEach(exp => {
       const expDate = new Date(exp.date);
       months.forEach(month => {
         if (isWithinInterval(expDate, { start: month.start, end: month.end })) {
@@ -194,7 +204,7 @@ export default function AnalyticsPage() {
     });
 
     return months.map(m => ({ name: m.name, amount: parseFloat(m.amount.toFixed(2)) }));
-  }, [filteredExpenses]);
+  }, [personalExpenses, groupExpenses, scope, selectedGroupId]);
 
   // Visual 3: Personal vs Group (Also respecting the date filter)
   const splitData = useMemo(() => {
@@ -241,15 +251,25 @@ export default function AnalyticsPage() {
                 <CalendarIcon className="h-3 w-3" />
                 Select Date
               </label>
-              <Input
-                type="date"
-                value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setSelectedDate(val ? parseISO(val) : undefined);
-                }}
-                className="w-full sm:w-[130px] h-10 px-3 rounded-xl bg-card border-none shadow-sm text-sm font-normal focus:ring-2 focus:ring-primary outline-none"
-              />
+              <div className="relative group/date">
+                <Input
+                  type="date"
+                  value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSelectedDate(val ? parseISO(val) : undefined);
+                  }}
+                  className="w-full sm:w-[140px] h-10 px-3 pr-8 rounded-xl bg-card border-none shadow-sm text-sm font-normal focus:ring-2 focus:ring-primary outline-none"
+                />
+                {selectedDate && (
+                  <button 
+                    onClick={() => setSelectedDate(undefined)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="space-y-1.5">
@@ -321,6 +341,11 @@ export default function AnalyticsPage() {
               </div>
               <h3 className="text-xl font-bold font-headline">No data to visualize yet</h3>
               <p className="text-sm text-muted-foreground">Try adjusting your filters or date selection to see distribution and trends.</p>
+              {selectedDate && (
+                <Button variant="outline" onClick={() => setSelectedDate(undefined)} className="rounded-xl mt-4">
+                  Clear Date Filter
+                </Button>
+              )}
             </div>
           </Card>
         ) : (
