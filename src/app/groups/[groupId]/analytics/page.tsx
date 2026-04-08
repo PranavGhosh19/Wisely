@@ -16,7 +16,7 @@ import { format, isToday, isThisMonth } from "date-fns";
 import { ArrowLeft, Filter, Loader2, Users, User } from "lucide-react";
 import { getCurrencySymbol } from "@/lib/utils";
 
-const COLORS = ['#3D737F', '#CEC7BF', '#07161B', '#5A9BA8', '#8FBABF', '#A89E92'];
+const COLORS = ['#3D737F', '#facc15', '#5A9BA8', '#8FBABF', '#CEC7BF', '#A89E92'];
 
 type TimeFilter = 'ALL' | 'MONTH' | 'TODAY';
 type ScopeFilter = 'GROUP' | 'MYSELF';
@@ -290,7 +290,7 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
                   <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
                     <p className="text-[10px] uppercase font-bold opacity-70 tracking-widest mb-1">Total</p>
                     <p className="text-xl font-bold">{symbol}{filteredExpenses.reduce((a, b) => a + b.displayAmount, 0).toFixed(2)}</p>

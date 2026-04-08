@@ -16,7 +16,7 @@ import { PieChart, Layers, User, Users } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getCurrencySymbol } from "@/lib/utils";
 
-const COLORS = ['#3D737F', '#CEC7BF', '#07161B', '#5A9BA8', '#8FBABF', '#A89E92'];
+const COLORS = ['#3D737F', '#facc15', '#5A9BA8', '#8FBABF', '#CEC7BF', '#A89E92'];
 
 /**
  * Custom label renderer for the Pie chart to show labels outside with connecting lines.
