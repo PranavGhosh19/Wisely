@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
@@ -11,12 +12,16 @@ import {
 import { useStore } from "@/lib/store";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, collectionGroup, query, where } from "firebase/firestore";
-import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
-import { PieChart, Layers, User, Users } from "lucide-react";
+import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from "date-fns";
+import { PieChart, Layers, User, Users, Calendar as CalendarIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getCurrencySymbol } from "@/lib/utils";
+import { getCurrencySymbol, cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { DateRange } from "react-day-picker";
 
-const COLORS = ['#3D737F', '#facc15', '#5A9BA8', '#8FBABF', '#CEC7BF', '#A89E92'];
+const COLORS = ['#facc15', '#3D737F', '#5A9BA8', '#8FBABF', '#CEC7BF', '#A89E92'];
 
 /**
  * Custom label renderer for the Pie chart to show labels outside with connecting lines.
@@ -67,6 +72,10 @@ export default function AnalyticsPage() {
   const [mounted, setMounted] = useState(false);
   const [scope, setScope] = useState<"ALL" | "PERSONAL" | "GROUP">("ALL");
   const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
+  const [date, setDate] = useState<DateRange | undefined>({
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date()),
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -111,7 +120,15 @@ export default function AnalyticsPage() {
     if (scope === "ALL") {
       base = [...personal, ...group];
     } else if (scope === "PERSONAL") {
-      base = personal;
+      // Apply date filter for Personal scope
+      base = personal.filter(exp => {
+        if (!date?.from) return true;
+        const expDate = new Date(exp.date);
+        return isWithinInterval(expDate, { 
+          start: startOfDay(date.from), 
+          end: endOfDay(date.to || date.from) 
+        });
+      });
     } else if (scope === "GROUP") {
       base = group;
       if (selectedGroupId !== "all") {
@@ -119,7 +136,7 @@ export default function AnalyticsPage() {
       }
     }
     return base;
-  }, [personalExpenses, groupExpenses, scope, selectedGroupId]);
+  }, [personalExpenses, groupExpenses, scope, selectedGroupId, date]);
 
   // Visual 1: Category Distribution
   const pieData = useMemo(() => {
@@ -132,8 +149,10 @@ export default function AnalyticsPage() {
       .sort((a, b) => b.value - a.value);
   }, [filteredExpenses]);
 
-  // Visual 2: Spending Trend (Last 6 Months)
+  // Visual 2: Spending Trend
   const trendData = useMemo(() => {
+    // If personal scope with date filter, show trend based on the range if it's multiple months
+    // Otherwise show last 6 months as default
     const months = Array.from({ length: 6 }).map((_, i) => {
       const date = subMonths(new Date(), 5 - i);
       return {
@@ -182,10 +201,53 @@ export default function AnalyticsPage() {
         <header className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-3xl font-bold font-headline text-primary">Overall Analytics</h2>
-            <p className="text-muted-foreground">Detailed insights into your spending patterns (excludes settlements).</p>
+            <p className="text-muted-foreground">Detailed insights into your spending patterns.</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
+            {scope === "PERSONAL" && (
+              <div className="space-y-1.5 animate-in fade-in slide-in-from-right-4 duration-300">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
+                  <CalendarIcon className="h-3 w-3" />
+                  Date Range
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-[240px] h-10 justify-start text-left font-normal rounded-xl bg-card border-none shadow-sm",
+                        !date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {date?.from ? (
+                        date.to ? (
+                          <>
+                            {format(date.from, "LLL dd")} - {format(date.to, "LLL dd")}
+                          </>
+                        ) : (
+                          format(date.from, "LLL dd, y")
+                        )
+                      ) : (
+                        <span>Pick a date range</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 rounded-2xl border-none shadow-2xl" align="end">
+                    <Calendar
+                      initialFocus
+                      mode="range"
+                      defaultMonth={date?.from}
+                      selected={date}
+                      onSelect={setDate}
+                      numberOfMonths={1}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
                 <Layers className="h-3 w-3" />
@@ -254,7 +316,7 @@ export default function AnalyticsPage() {
                 <PieChart className="h-8 w-8" />
               </div>
               <h3 className="text-xl font-bold font-headline">No data to visualize yet</h3>
-              <p className="text-sm text-muted-foreground">Add some expenses to see your spending distribution and trends here.</p>
+              <p className="text-sm text-muted-foreground">Try adjusting your filters or date range to see distribution and trends.</p>
             </div>
           </Card>
         ) : (
