@@ -116,21 +116,24 @@ export default function AnalyticsPage() {
     if (scope === "ALL") {
       base = [...personal, ...group];
     } else if (scope === "PERSONAL") {
-      // Apply single date filter for Personal scope
-      base = personal.filter(exp => {
-        if (!selectedDate) return true;
-        const expDate = new Date(exp.date);
-        return isWithinInterval(expDate, { 
-          start: startOfDay(selectedDate), 
-          end: endOfDay(selectedDate) 
-        });
-      });
+      base = personal;
     } else if (scope === "GROUP") {
       base = group;
       if (selectedGroupId !== "all") {
         base = base.filter(exp => exp.groupId === selectedGroupId);
       }
     }
+
+    // Apply global date filter if a date is selected
+    if (selectedDate) {
+      const start = startOfDay(selectedDate);
+      const end = endOfDay(selectedDate);
+      base = base.filter(exp => {
+        const expDate = new Date(exp.date);
+        return isWithinInterval(expDate, { start, end });
+      });
+    }
+
     return base;
   }, [personalExpenses, groupExpenses, scope, selectedGroupId, selectedDate]);
 
@@ -169,19 +172,29 @@ export default function AnalyticsPage() {
     return months.map(m => ({ name: m.name, amount: parseFloat(m.amount.toFixed(2)) }));
   }, [filteredExpenses]);
 
-  // Visual 3: Personal vs Group
+  // Visual 3: Personal vs Group (Also respecting the date filter)
   const splitData = useMemo(() => {
+    const dateStart = selectedDate ? startOfDay(selectedDate) : null;
+    const dateEnd = selectedDate ? endOfDay(selectedDate) : null;
+
+    const filterByDate = (exp: any) => {
+      if (!dateStart || !dateEnd) return true;
+      const expDate = new Date(exp.date);
+      return isWithinInterval(expDate, { start: dateStart, end: dateEnd });
+    };
+
     const personal = (personalExpenses || [])
-      .filter(e => e.category !== 'Settlement')
+      .filter(e => e.category !== 'Settlement' && filterByDate(e))
       .reduce((acc, exp) => acc + exp.amount, 0);
     const group = (groupExpenses || [])
-      .filter(e => e.category !== 'Settlement')
+      .filter(e => e.category !== 'Settlement' && filterByDate(e))
       .reduce((acc, exp) => acc + exp.amount, 0);
+      
     return [
       { name: 'Personal', amount: parseFloat(personal.toFixed(2)) },
       { name: 'Group Shared', amount: parseFloat(group.toFixed(2)) }
     ];
-  }, [personalExpenses, groupExpenses]);
+  }, [personalExpenses, groupExpenses, selectedDate]);
 
   const isLoading = loadingPersonal || loadingGroups;
 
@@ -199,36 +212,34 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            {scope === "PERSONAL" && (
-              <div className="space-y-1.5 animate-in fade-in slide-in-from-right-4 duration-300">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
-                  <CalendarIcon className="h-3 w-3" />
-                  Select Date
-                </label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-[240px] h-10 justify-start text-left font-normal rounded-xl bg-card border-none shadow-sm",
-                        !selectedDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 rounded-2xl border-none shadow-2xl" align="end">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
+            <div className="space-y-1.5 animate-in fade-in slide-in-from-right-4 duration-300">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
+                <CalendarIcon className="h-3 w-3" />
+                Select Date
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-[240px] h-10 justify-start text-left font-normal rounded-xl bg-card border-none shadow-sm",
+                      !selectedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 rounded-2xl border-none shadow-2xl" align="end">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
 
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
