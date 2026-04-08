@@ -1,8 +1,11 @@
 
-// This script runs in the background to handle push notifications when the app is closed.
-importScripts('https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging-compat.js');
+// Give the service worker access to Firebase Messaging.
+// Note: We use the compat version here for simpler standalone script usage.
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
+// Initialize the Firebase app in the service worker by passing in
+// your app's Firebase config object.
 firebase.initializeApp({
   apiKey: "AIzaSyDkA149q4bq9MohFJYbyAMok_hF_ezXZsE",
   authDomain: "wisely-93688.firebaseapp.com",
@@ -13,14 +16,19 @@ firebase.initializeApp({
   measurementId: "G-5WL2L7KTYQ"
 });
 
+// Retrieve an instance of Firebase Messaging so that it can handle background messages.
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  const notificationTitle = payload.notification.title;
+  
+  // Customize notification here
+  const notificationTitle = payload.notification.title || 'Wisely Activity';
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/app-icon.png'
+    body: payload.notification.body || 'New activity in your group.',
+    icon: '/wallet.png', // Fallback icon
+    badge: '/wallet.png',
+    data: payload.data
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);

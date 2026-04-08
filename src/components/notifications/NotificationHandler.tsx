@@ -33,9 +33,13 @@ export function NotificationHandler() {
         if (permission === 'granted') {
           const messaging = getMessaging();
           
+          // Register service worker explicitly for background messaging
+          const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+
           // Request device token
           const token = await getToken(messaging, {
-            vapidKey: 'BPgA6C3oY9eopfHttCljTrm9EgVz6acNkhLBjNWquraG-aDSoPbbEjVu6vnBPGa6e8hNlnOGgoNQMSqrmwPX28U'
+            vapidKey: 'BPgA6C3oY9eopfHttCljTrm9EgVz6acNkhLBjNWquraG-aDSoPbbEjVu6vnBPGa6e8hNlnOGgoNQMSqrmwPX28U',
+            serviceWorkerRegistration: registration
           });
 
           if (token && auth.currentUser) {
