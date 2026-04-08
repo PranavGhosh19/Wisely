@@ -21,17 +21,20 @@ const COLORS = ['#facc15', '#3D737F', '#5A9BA8', '#8FBABF', '#CEC7BF', '#A89E92'
 
 /**
  * Custom label renderer for the Pie chart to show labels outside with connecting lines.
+ * Optimized to keep text within surface bounds.
  */
 const renderCustomizedLabel = (props: any, symbol: string) => {
   const { cx, cy, midAngle, outerRadius, index, name, value } = props;
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
-  const sx = cx + (outerRadius + 5) * cos;
-  const sy = cy + (outerRadius + 5) * sin;
-  const mx = cx + (outerRadius + 15) * cos;
-  const my = cy + (outerRadius + 15) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 12;
+  
+  // Adjusted offsets to keep labels closer to the pie
+  const sx = cx + (outerRadius + 2) * cos;
+  const sy = cy + (outerRadius + 2) * sin;
+  const mx = cx + (outerRadius + 8) * cos;
+  const my = cy + (outerRadius + 8) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 8;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
@@ -40,21 +43,21 @@ const renderCustomizedLabel = (props: any, symbol: string) => {
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={COLORS[index % COLORS.length]} fill="none" strokeWidth={1} />
       <circle cx={ex} cy={ey} r={2} fill={COLORS[index % COLORS.length]} stroke="none" />
       <text 
-        x={ex + (cos >= 0 ? 1 : -1) * 8} 
+        x={ex + (cos >= 0 ? 1 : -1) * 6} 
         y={ey} 
         textAnchor={textAnchor} 
         fill="hsl(var(--foreground))" 
-        style={{ fontSize: '10px', fontWeight: 'bold' }}
+        style={{ fontSize: '9px', fontWeight: 'bold' }}
       >
         {name}
       </text>
       <text 
-        x={ex + (cos >= 0 ? 1 : -1) * 8} 
+        x={ex + (cos >= 0 ? 1 : -1) * 6} 
         y={ey} 
-        dy={12} 
+        dy={10} 
         textAnchor={textAnchor} 
         fill="#facc15" 
-        style={{ fontSize: '9px', fontWeight: 'bold' }}
+        style={{ fontSize: '8px', fontWeight: 'bold' }}
       >
         {`${symbol}${value.toFixed(0)}`}
       </text>
@@ -161,14 +164,13 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
       
       <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-7xl mx-auto w-full">
         <header className="mb-8">
-          <Button 
-            variant="ghost" 
-            className="mb-2 -ml-2 text-muted-foreground hover:text-primary gap-2"
+          <button 
+            className="mb-2 -ml-2 text-muted-foreground hover:text-primary gap-2 flex items-center transition-colors px-2 py-1"
             onClick={() => router.back()}
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Group
-          </Button>
+            <span className="text-sm font-medium">Back to Group</span>
+          </button>
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-3xl font-bold font-headline text-primary">
@@ -257,7 +259,7 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
               </CardHeader>
               <CardContent className="h-[350px] sm:h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <RePieChart margin={{ top: 20, right: 60, left: 60, bottom: 20 }}>
+                  <RePieChart margin={{ top: 20, right: 80, left: 80, bottom: 20 }}>
                     <Pie
                       data={pieData}
                       cx="50%"
@@ -287,7 +289,7 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
               </CardHeader>
               <CardContent className="h-[350px] sm:h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ReBarChart data={barData} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
+                  <ReBarChart data={barData} margin={{ top: 20, right: 20, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                     <XAxis 
                       dataKey="name" 

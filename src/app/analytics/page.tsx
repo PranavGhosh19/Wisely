@@ -22,17 +22,20 @@ const COLORS = ['#facc15', '#3D737F', '#5A9BA8', '#8FBABF', '#CEC7BF', '#A89E92'
 
 /**
  * Custom label renderer for the Pie chart to show labels outside with connecting lines.
+ * Optimized to keep text within surface bounds.
  */
 const renderCustomizedLabel = (props: any, symbol: string) => {
   const { cx, cy, midAngle, outerRadius, index, name, value } = props;
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
-  const sx = cx + (outerRadius + 5) * cos;
-  const sy = cy + (outerRadius + 5) * sin;
-  const mx = cx + (outerRadius + 15) * cos;
-  const my = cy + (outerRadius + 15) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 12;
+  
+  // Adjusted offsets to keep labels closer to the pie
+  const sx = cx + (outerRadius + 2) * cos;
+  const sy = cy + (outerRadius + 2) * sin;
+  const mx = cx + (outerRadius + 8) * cos;
+  const my = cy + (outerRadius + 8) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 8;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
@@ -41,21 +44,21 @@ const renderCustomizedLabel = (props: any, symbol: string) => {
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={COLORS[index % COLORS.length]} fill="none" strokeWidth={1} />
       <circle cx={ex} cy={ey} r={2} fill={COLORS[index % COLORS.length]} stroke="none" />
       <text 
-        x={ex + (cos >= 0 ? 1 : -1) * 8} 
+        x={ex + (cos >= 0 ? 1 : -1) * 6} 
         y={ey} 
         textAnchor={textAnchor} 
         fill="hsl(var(--foreground))" 
-        style={{ fontSize: '10px', fontWeight: 'bold' }}
+        style={{ fontSize: '9px', fontWeight: 'bold' }}
       >
         {name}
       </text>
       <text 
-        x={ex + (cos >= 0 ? 1 : -1) * 8} 
+        x={ex + (cos >= 0 ? 1 : -1) * 6} 
         y={ey} 
-        dy={12} 
+        dy={10} 
         textAnchor={textAnchor} 
         fill="#facc15" 
-        style={{ fontSize: '9px', fontWeight: 'bold' }}
+        style={{ fontSize: '8px', fontWeight: 'bold' }}
       >
         {`${symbol}${value.toFixed(0)}`}
       </text>
@@ -245,7 +248,7 @@ export default function AnalyticsPage() {
                   const val = e.target.value;
                   setSelectedDate(val ? parseISO(val) : undefined);
                 }}
-                className="w-full sm:w-[140px] h-10 px-3 rounded-xl bg-card border-none shadow-sm text-sm font-normal focus:ring-2 focus:ring-primary outline-none"
+                className="w-full sm:w-[130px] h-10 px-3 rounded-xl bg-card border-none shadow-sm text-sm font-normal focus:ring-2 focus:ring-primary outline-none"
               />
             </div>
 
@@ -282,7 +285,7 @@ export default function AnalyticsPage() {
             </div>
 
             {scope === "GROUP" && (
-              <div className="col-span-2 sm:col-auto space-y-1.5 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="col-span-2 sm:col-auto space-y-1.5">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
                   <Users className="h-3 w-3" />
                   Select Group
@@ -331,7 +334,7 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent className="h-[350px] sm:h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <RePieChart margin={{ top: 20, right: 60, left: 60, bottom: 20 }}>
+                  <RePieChart margin={{ top: 20, right: 80, left: 80, bottom: 20 }}>
                     <Pie
                       data={pieData}
                       cx="50%"
@@ -401,7 +404,7 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ReBarChart data={splitData} layout="vertical" margin={{ left: 20, right: 60 }}>
+                  <ReBarChart data={splitData} layout="vertical" margin={{ left: 20, right: 80 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
                     <XAxis 
                       type="number" 
