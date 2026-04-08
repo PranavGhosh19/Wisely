@@ -12,7 +12,6 @@ import {
   ArrowLeft, 
   Users, 
   Receipt, 
-  TrendingUp, 
   QrCode, 
   Copy, 
   Check,
@@ -35,7 +34,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
 import { collection, query, orderBy, doc, updateDoc, arrayUnion, where } from "firebase/firestore";
@@ -65,7 +63,6 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
   const [isJoining, setIsJoining] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [isGreedyActive, setIsGreedyActive] = useState(false);
 
   // Settlement Dialog State
   const [settlementTarget, setSettlementTarget] = useState<SettlementTarget | null>(null);
@@ -289,16 +286,6 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                     <QrCode className="h-5 w-5" />
                   </Button>
                 </div>
-
-                {/* Mobile Toggle */}
-                <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-xl border border-border/50 sm:hidden">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Smart Settle</span>
-                  <Switch 
-                    checked={isGreedyActive} 
-                    onCheckedChange={setIsGreedyActive} 
-                    className="scale-75 data-[state=checked]:bg-primary"
-                  />
-                </div>
               </div>
               <button 
                 className="flex items-center gap-2 mt-0.5 text-sm text-muted-foreground hover:text-primary transition-colors group w-fit"
@@ -307,18 +294,6 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                 <Users className="h-4 w-4 group-hover:scale-110 transition-transform" />
                 <span className="font-medium underline-offset-4 group-hover:underline">{group.members?.length || 0} Members</span>
               </button>
-            </div>
-
-            <div className="hidden sm:flex items-center gap-3 bg-muted/30 px-4 py-2 rounded-2xl border border-border/50">
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground leading-none">Smart Settle</span>
-                <span className="text-[9px] font-medium text-muted-foreground">Greedy Settlement</span>
-              </div>
-              <Switch 
-                checked={isGreedyActive} 
-                onCheckedChange={setIsGreedyActive} 
-                className="data-[state=checked]:bg-primary"
-              />
             </div>
           </div>
         </header>
@@ -488,19 +463,18 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                   <div className="space-y-1">
                     <CardTitle className="font-headline text-lg font-bold flex items-center gap-2">
                       <Coins className="h-5 w-5 text-accent" />
-                      {isGreedyActive ? "Greedy Magic" : "Active Settlements"}
+                      Active Settlements
                     </CardTitle>
                     <CardDescription>
-                      {isGreedyActive ? "Optimized path to zero" : "Individual net standings"}
+                      Individual net standings
                     </CardDescription>
                   </div>
-                  {isGreedyActive && <Zap className="h-5 w-5 text-primary fill-primary animate-pulse" />}
                 </div>
               </CardHeader>
               <CardContent className="p-0">
                 {membersLoading ? (
                   <div className="py-12 flex justify-center"><div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>
-                ) : !isGreedyActive ? (
+                ) : (
                   /* RAW MODE: Show net balances for everyone EXCEPT current user */
                   <div className="divide-y divide-muted">
                     {Object.entries(settlementInfo.stats).filter(([uid, s]) => uid !== user?.uid && Math.abs(s.net) > 0.01).length === 0 ? (
@@ -551,54 +525,6 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                             </div>
                           );
                         })
-                    )}
-                  </div>
-                ) : (
-                  /* GREEDY MODE: Show simplified transfers */
-                  <div className="divide-y divide-muted">
-                    {settlementInfo.debts.length === 0 ? (
-                      <div className="p-12 text-center">
-                        <div className="h-12 w-12 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <Check className="h-6 w-6" />
-                        </div>
-                        <p className="text-sm font-bold">No transfers needed!</p>
-                      </div>
-                    ) : (
-                      settlementInfo.debts.map((debt, idx) => {
-                        const fromUser = memberProfiles?.find(m => m.uid === debt.from);
-                        const toUser = memberProfiles?.find(m => m.uid === debt.to);
-                        const isFromMe = debt.from === user?.uid;
-                        const isToMe = debt.to === user?.uid;
-                        return (
-                          <div key={idx} className="px-6 py-5 group/settle">
-                            <div className="flex items-center gap-3">
-                              <div className="flex -space-x-3">
-                                <Avatar className="h-8 w-8 border-2 border-background shadow-sm">
-                                  <AvatarFallback className="bg-primary/10 text-primary font-bold text-[10px]">{fromUser?.name?.[0] || "?"}</AvatarFallback>
-                                </Avatar>
-                                <Avatar className="h-8 w-8 border-2 border-background shadow-sm">
-                                  <AvatarFallback className="bg-accent/10 text-accent font-bold text-[10px]">{toUser?.name?.[0] || "?"}</AvatarFallback>
-                                </Avatar>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm leading-snug">
-                                  <span className="font-bold">{isFromMe ? "You" : (fromUser?.name || "Member")}</span>
-                                  <span className="text-muted-foreground mx-1">owes</span>
-                                  <span className="font-black text-foreground">{symbol}{debt.amount.toFixed(2)}</span>
-                                  <span className="text-muted-foreground mx-1">to</span>
-                                  <span className="font-bold">{isToMe ? "you" : (toUser?.name || "Member")}</span>
-                                </p>
-                                <button 
-                                  className="h-7 mt-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/10 rounded-lg px-3 transition-all border border-transparent hover:border-primary/20"
-                                  onClick={() => openSettleDialog(debt)}
-                                >
-                                  Settle Up
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
                     )}
                   </div>
                 )}
