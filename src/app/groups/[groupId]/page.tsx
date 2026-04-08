@@ -360,14 +360,13 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                         <Button 
                           variant="ghost" 
                           size="sm" 
+                          asChild
                           className="h-7 px-2 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10 rounded-lg"
-                          onClick={() => {
-                            const myDebt = settlementInfo.debts.find(d => d.from === user?.uid || d.to === user?.uid);
-                            if (myDebt) openSettleDialog(myDebt);
-                          }}
                         >
-                          <Zap className="h-3 w-3 mr-1" />
-                          Settle Up
+                          <Link href={`/groups/${groupId}/settlements`}>
+                            <Zap className="h-3 w-3 mr-1" />
+                            Settle Up
+                          </Link>
                         </Button>
                       )}
                     </div>
