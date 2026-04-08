@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -15,7 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import Image from "next/image";
@@ -38,6 +37,7 @@ export function Navbar() {
   const router = useRouter();
   const auth = useAuth();
   const { user, logout, setInstallPrompt, isSidebarCollapsed, setSidebarCollapsed } = useStore();
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -45,10 +45,25 @@ export function Navbar() {
       setInstallPrompt(e);
     };
 
+    // Keyboard detection for hiding mobile nav
+    const handleFocus = () => setIsKeyboardVisible(true);
+    const handleBlur = () => {
+      setTimeout(() => {
+        const active = document.activeElement;
+        if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) {
+          setIsKeyboardVisible(false);
+        }
+      }, 100);
+    };
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('focusin', handleFocus);
+    window.addEventListener('focusout', handleBlur);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('focusin', handleFocus);
+      window.removeEventListener('focusout', handleBlur);
     };
   }, [setInstallPrompt]);
 
@@ -254,75 +269,77 @@ export function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Bottom Bar */}
-      <nav className="fixed bottom-0 left-0 z-50 w-full border-t bg-background/95 backdrop-blur-md safe-area-bottom md:hidden h-20">
-        <div className="relative flex h-full items-center justify-around px-2">
-          <Link
-            href="/dashboard"
-            className={cn(
-              "flex flex-col items-center gap-1 flex-1 transition-all",
-              pathname === "/dashboard" ? "text-primary" : "text-muted-foreground"
-            )}
-          >
-            <LayoutDashboard className="h-5 w-5" />
-            <span className="text-[9px] font-bold uppercase tracking-widest">Dash</span>
-          </Link>
-
-          <Link
-            href="/transactions"
-            className={cn(
-              "flex flex-col items-center gap-1 flex-1 transition-all",
-              pathname === "/transactions" ? "text-primary" : "text-muted-foreground"
-            )}
-          >
-            <ReceiptText className="h-5 w-5" />
-            <span className="text-[9px] font-bold uppercase tracking-widest">Trans</span>
-          </Link>
-
-          <div className="relative -top-6 px-2">
-            <Button
-              asChild
-              className="h-14 w-14 rounded-full bg-primary shadow-xl shadow-primary/40 hover:scale-105 transition-transform active:scale-90 border-4 border-background"
-              size="icon"
-            >
-              <Link href={addExpenseUrl}>
-                <Plus className="h-8 w-8 text-white" />
-              </Link>
-            </Button>
-          </div>
-
-          <Link
-            href="/groups"
-            className={cn(
-              "flex flex-col items-center gap-1 flex-1 transition-all",
-              pathname.startsWith("/groups") ? "text-primary" : "text-muted-foreground"
-            )}
-          >
-            <Users className="h-5 w-5" />
-            <span className="text-[9px] font-bold uppercase tracking-widest">Groups</span>
-          </Link>
-
-          <Link
-            href="/profile"
-            className={cn(
-              "flex flex-col items-center gap-1 flex-1 transition-all",
-              pathname === "/profile" ? "text-primary" : "text-muted-foreground"
-            )}
-          >
-            <div className={cn(
-              "h-7 w-7 rounded-lg flex items-center justify-center border-2 transition-all overflow-hidden relative",
-              pathname === "/profile" ? "border-primary bg-primary/10" : "border-transparent bg-muted"
-            )}>
-              {user.photoURL ? (
-                <Image src={user.photoURL} alt={user.name} fill className="object-cover" />
-              ) : (
-                <span className="text-[10px] font-bold">{user.name?.[0] || "W"}</span>
+      {/* Mobile Bottom Bar - Hidden when keyboard is active */}
+      {!isKeyboardVisible && (
+        <nav className="fixed bottom-0 left-0 z-50 w-full border-t bg-background/95 backdrop-blur-md safe-area-bottom md:hidden h-20 animate-in fade-in slide-in-from-bottom-10 duration-300">
+          <div className="relative flex h-full items-center justify-around px-2">
+            <Link
+              href="/dashboard"
+              className={cn(
+                "flex flex-col items-center gap-1 flex-1 transition-all",
+                pathname === "/dashboard" ? "text-primary" : "text-muted-foreground"
               )}
+            >
+              <LayoutDashboard className="h-5 w-5" />
+              <span className="text-[9px] font-bold uppercase tracking-widest">Dash</span>
+            </Link>
+
+            <Link
+              href="/transactions"
+              className={cn(
+                "flex flex-col items-center gap-1 flex-1 transition-all",
+                pathname === "/transactions" ? "text-primary" : "text-muted-foreground"
+              )}
+            >
+              <ReceiptText className="h-5 w-5" />
+              <span className="text-[9px] font-bold uppercase tracking-widest">Trans</span>
+            </Link>
+
+            <div className="relative -top-6 px-2">
+              <Button
+                asChild
+                className="h-14 w-14 rounded-full bg-primary shadow-xl shadow-primary/40 hover:scale-105 transition-transform active:scale-90 border-4 border-background"
+                size="icon"
+              >
+                <Link href={addExpenseUrl}>
+                  <Plus className="h-8 w-8 text-white" />
+                </Link>
+              </Button>
             </div>
-            <span className="text-[9px] font-bold uppercase tracking-widest">Me</span>
-          </Link>
-        </div>
-      </nav>
+
+            <Link
+              href="/groups"
+              className={cn(
+                "flex flex-col items-center gap-1 flex-1 transition-all",
+                pathname.startsWith("/groups") ? "text-primary" : "text-muted-foreground"
+              )}
+            >
+              <Users className="h-5 w-5" />
+              <span className="text-[9px] font-bold uppercase tracking-widest">Groups</span>
+            </Link>
+
+            <Link
+              href="/profile"
+              className={cn(
+                "flex flex-col items-center gap-1 flex-1 transition-all",
+                pathname === "/profile" ? "text-primary" : "text-muted-foreground"
+              )}
+            >
+              <div className={cn(
+                "h-7 w-7 rounded-lg flex items-center justify-center border-2 transition-all overflow-hidden relative",
+                pathname === "/profile" ? "border-primary bg-primary/10" : "border-transparent bg-muted"
+              )}>
+                {user.photoURL ? (
+                  <Image src={user.photoURL} alt={user.name} fill className="object-cover" />
+                ) : (
+                  <span className="text-[10px] font-bold">{user.name?.[0] || "W"}</span>
+                )}
+              </div>
+              <span className="text-[9px] font-bold uppercase tracking-widest">Me</span>
+            </Link>
+          </div>
+        </nav>
+      )}
     </TooltipProvider>
   );
 }

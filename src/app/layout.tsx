@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -9,6 +8,7 @@ import { FontSizeSync } from "@/components/font-size-sync";
 import { PwaHandler } from "@/components/pwa-handler";
 import { NotificationHandler } from "@/components/notifications/NotificationHandler";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { KeyboardToolkit } from "@/components/keyboard-toolkit";
 
 const appIcon = PlaceHolderImages.find(img => img.id === "app-icon")?.imageUrl || '/wallet.png';
 
@@ -55,6 +55,7 @@ export default function RootLayout({
             <AuthSync />
             <PwaHandler />
             {children}
+            <KeyboardToolkit />
             <Toaster />
           </FirebaseClientProvider>
         </ThemeProvider>
