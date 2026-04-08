@@ -251,26 +251,24 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
         <header className="mb-6">
           <Button 
             variant="ghost" 
-            className="mb-2 -ml-2 text-muted-foreground hover:text-primary gap-2"
+            className="mb-2 -ml-2 text-muted-foreground hover:text-primary gap-2 px-2"
             onClick={() => router.push("/groups")}
           >
             <ArrowLeft className="h-4 w-4" />
             Groups
           </Button>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-3 sm:gap-1">
-              <div className="flex items-center justify-between sm:justify-start gap-4">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-3xl font-bold font-headline text-primary">{group.name}</h2>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="h-9 w-9 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm"
-                    onClick={() => setIsQrOpen(true)}
-                  >
-                    <QrCode className="h-5 w-5" />
-                  </Button>
-                </div>
+            <div className="flex flex-col gap-2 sm:gap-1">
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl md:text-3xl font-bold font-headline text-primary truncate max-w-[200px] sm:max-w-none">{group.name}</h2>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm shrink-0"
+                  onClick={() => setIsQrOpen(true)}
+                >
+                  <QrCode className="h-4 w-4 sm:h-5 sm:w-5" />
+                </Button>
               </div>
               <button 
                 className="flex items-center gap-2 mt-0.5 text-sm text-muted-foreground hover:text-primary transition-colors group w-fit"
@@ -287,9 +285,9 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
           <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <Card className="border-none shadow-sm bg-card rounded-2xl relative overflow-hidden group/card">
-                <CardHeader className="pb-2">
+                <CardHeader className="pb-2 px-4 sm:px-6">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active Group Spend</CardTitle>
+                    <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active Group Spend</CardTitle>
                     <Button 
                       variant="ghost" 
                       size="sm" 
@@ -303,18 +301,18 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-primary">{symbol}{totalSpent.toFixed(2)}</div>
-                  <div className="flex items-center gap-1 mt-1 text-accent text-[11px] font-bold uppercase">
-                    <Zap className="h-3.5 w-3.5 fill-accent" />
+                <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                  <div className="text-2xl sm:text-3xl font-bold text-primary">{symbol}{totalSpent.toFixed(2)}</div>
+                  <div className="flex items-center gap-1 mt-1 text-accent text-[10px] sm:text-[11px] font-bold uppercase">
+                    <Zap className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-accent" />
                     Unsettled Total
                   </div>
                 </CardContent>
               </Card>
               <Card className="border-none shadow-sm bg-card rounded-2xl relative overflow-hidden group/card">
-                <CardHeader className="pb-2">
+                <CardHeader className="pb-2 px-4 sm:px-6">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Net Position</CardTitle>
+                    <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Net Position</CardTitle>
                     <div className="flex items-center gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
                       {Math.abs(myNet) > 0.01 && (
                         <Button 
@@ -332,16 +330,16 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
                   <div className={cn(
-                    "text-3xl font-bold",
+                    "text-2xl sm:text-3xl font-bold",
                     myNet > 0.01 ? "text-green-500" : 
                     myNet < -0.01 ? "text-destructive" : 
                     "text-foreground"
                   )}>
                     {symbol}{Math.abs(myNet).toFixed(2)}
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-1 uppercase font-bold tracking-tight">
+                  <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-1 uppercase font-bold tracking-tight">
                     {myNet > 0.01 ? "You are owed" : myNet < -0.01 ? "You owe" : "Settled"}
                   </p>
                 </CardContent>
@@ -349,9 +347,9 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
             </div>
 
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
-              <CardHeader className="border-b px-6 py-4 flex flex-row items-center justify-between">
-                <CardTitle className="font-headline text-lg font-bold">Group History</CardTitle>
-                <Button variant="link" asChild className="text-accent font-bold p-0 h-auto">
+              <CardHeader className="border-b px-4 sm:px-6 py-4 flex flex-row items-center justify-between">
+                <CardTitle className="font-headline text-base sm:text-lg font-bold">Group History</CardTitle>
+                <Button variant="link" asChild className="text-accent font-bold p-0 h-auto text-xs sm:text-sm">
                   <Link href={`/groups/${groupId}/transactions`}>All Transactions</Link>
                 </Button>
               </CardHeader>
@@ -382,36 +380,36 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                         <div key={expense.id} className="group flex items-center hover:bg-muted/5 transition-colors">
                           <Link 
                             href={`/expenses/${expense.id}?type=${expense.type}&groupId=${groupId}`}
-                            className="flex-1 flex items-center justify-between px-6 py-5 min-w-0"
+                            className="flex-1 flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 min-w-0"
                           >
-                            <div className="flex items-center gap-4 min-w-0">
+                            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                               <div className={cn(
-                                "h-12 w-12 rounded-full flex items-center justify-center text-xl shrink-0",
+                                "h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center text-lg sm:text-xl shrink-0",
                                 isSettlement ? "bg-accent/10 text-accent" : "bg-primary/10 text-primary"
                               )}>
-                                {isSettlement ? <Coins className="h-6 w-6" /> : (expense.category[0] || "💰")}
+                                {isSettlement ? <Coins className="h-5 w-5 sm:h-6 sm:w-6" /> : (expense.category[0] || "💰")}
                               </div>
                               <div className="min-w-0">
                                 <div className="flex items-center gap-1.5">
-                                  <p className="font-bold text-base truncate">{expense.category}</p>
+                                  <p className="font-bold text-sm sm:text-base truncate">{expense.category}</p>
                                 </div>
                                 <div className="flex items-center gap-2 mt-0.5">
-                                  <span className="text-[11px] font-medium text-muted-foreground uppercase whitespace-nowrap">
+                                  <span className="text-[10px] sm:text-[11px] font-medium text-muted-foreground uppercase whitespace-nowrap">
                                     {mounted ? format(expense.date, "MMM dd") : ""}
                                   </span>
                                   <span className="h-0.5 w-0.5 bg-muted-foreground rounded-full"></span>
-                                  <span className="text-[10px] uppercase font-bold text-accent truncate">
+                                  <span className="text-[9px] sm:text-[10px] uppercase font-bold text-accent truncate">
                                     {payerName} {isSettlement ? "transferred" : "paid"}
                                   </span>
                                 </div>
                               </div>
                             </div>
-                            <div className="text-right shrink-0 px-4">
-                              <p className="font-bold text-lg text-foreground">
+                            <div className="text-right shrink-0 pl-4">
+                              <p className="font-bold text-base sm:text-lg text-foreground">
                                 {isSettlement ? "" : "-"}{symbol}{expense.amount.toFixed(2)}
                               </p>
                               <p className={cn(
-                                "text-[10px] font-bold uppercase tracking-tight",
+                                "text-[9px] sm:text-[10px] font-bold uppercase tracking-tight truncate max-w-[100px] sm:max-w-none",
                                 netImpact > 0.01 ? "text-green-500" : netImpact < -0.01 ? "text-destructive" : "text-muted-foreground"
                               )}>
                                 {isSettlement ? (
@@ -424,7 +422,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                               </p>
                             </div>
                           </Link>
-                          <div className="pr-6 shrink-0">
+                          <div className="pr-4 sm:pr-6 shrink-0 hidden sm:block">
                             {!expense.isSettled && (
                               <Button asChild variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
