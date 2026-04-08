@@ -52,8 +52,8 @@ const renderCustomizedLabel = (props: any, symbol: string) => {
         y={ey} 
         dy={12} 
         textAnchor={textAnchor} 
-        fill="hsl(var(--muted-foreground))" 
-        style={{ fontSize: '9px' }}
+        fill="#facc15" 
+        style={{ fontSize: '9px', fontWeight: 'bold' }}
       >
         {`${symbol}${value.toFixed(0)}`}
       </text>
