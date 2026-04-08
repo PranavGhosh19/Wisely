@@ -10,6 +10,7 @@ export interface User {
   photoURL?: string;
   groupIds: string[];
   currency?: string;
+  isSmartSettleEnabled?: boolean;
 }
 
 export interface SimplifiedDebt {

@@ -12,7 +12,6 @@ import {
   Zap, 
   Check, 
   User as UserIcon,
-  Plus,
   ArrowUpRight,
   ArrowDownLeft
 } from "lucide-react";
@@ -20,7 +19,7 @@ import { useStore } from "@/lib/store";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
 import { collection, query, doc, where } from "firebase/firestore";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { cn, getCurrencySymbol } from "@/lib/utils";
 import {
   Dialog,
@@ -50,6 +49,7 @@ function SettlementsContent({ groupId }: { groupId: string }) {
   const { toast } = useToast();
   
   const [isGreedyActive, setIsGreedyActive] = useState(true);
+  const [hasSetInitial, setHasSetInitial] = useState(false);
   const [settlementTarget, setSettlementTarget] = useState<SettlementTarget | null>(null);
   const [customAmount, setCustomAmount] = useState<string>("");
   const [mounted, setMounted] = useState(false);
@@ -57,6 +57,22 @@ function SettlementsContent({ groupId }: { groupId: string }) {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Initialize preference from Firebase
+  useEffect(() => {
+    if (user && !hasSetInitial && user.isSmartSettleEnabled !== undefined) {
+      setIsGreedyActive(user.isSmartSettleEnabled);
+      setHasSetInitial(true);
+    }
+  }, [user, hasSetInitial]);
+
+  const handleToggleSmartSettle = (checked: boolean) => {
+    setIsGreedyActive(checked);
+    if (user && db) {
+      const userRef = doc(db, "users", user.uid);
+      updateDocumentNonBlocking(userRef, { isSmartSettleEnabled: checked });
+    }
+  };
 
   const groupRef = useMemoFirebase(() => {
     if (!db || !groupId) return null;
@@ -211,7 +227,7 @@ function SettlementsContent({ groupId }: { groupId: string }) {
               </div>
               <Switch 
                 checked={isGreedyActive} 
-                onCheckedChange={setIsGreedyActive} 
+                onCheckedChange={handleToggleSmartSettle} 
                 className="data-[state=checked]:bg-primary"
               />
             </div>
@@ -290,7 +306,7 @@ function SettlementsContent({ groupId }: { groupId: string }) {
                       })
                     )
                   ) : (
-                    /* RAW BALANCES VIEW - REDESIGNED */
+                    /* RAW BALANCES VIEW */
                     (() => {
                       const otherStandings = Object.entries(settlementInfo.stats)
                         .filter(([uid, s]) => uid !== user?.uid && Math.abs(s.net) > 0.01)
