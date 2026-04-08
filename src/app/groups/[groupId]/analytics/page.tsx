@@ -18,6 +18,49 @@ import { getCurrencySymbol } from "@/lib/utils";
 
 const COLORS = ['#3D737F', '#facc15', '#5A9BA8', '#8FBABF', '#CEC7BF', '#A89E92'];
 
+/**
+ * Custom label renderer for the Pie chart to show labels outside with connecting lines.
+ */
+const renderCustomizedLabel = (props: any, symbol: string) => {
+  const { cx, cy, midAngle, outerRadius, index, name, value } = props;
+  const RADIAN = Math.PI / 180;
+  const sin = Math.sin(-RADIAN * midAngle);
+  const cos = Math.cos(-RADIAN * midAngle);
+  const sx = cx + (outerRadius + 5) * cos;
+  const sy = cy + (outerRadius + 5) * sin;
+  const mx = cx + (outerRadius + 15) * cos;
+  const my = cy + (outerRadius + 15) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 12;
+  const ey = my;
+  const textAnchor = cos >= 0 ? 'start' : 'end';
+
+  return (
+    <g>
+      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={COLORS[index % COLORS.length]} fill="none" strokeWidth={1} />
+      <circle cx={ex} cy={ey} r={2} fill={COLORS[index % COLORS.length]} stroke="none" />
+      <text 
+        x={ex + (cos >= 0 ? 1 : -1) * 8} 
+        y={ey} 
+        textAnchor={textAnchor} 
+        fill="hsl(var(--foreground))" 
+        style={{ fontSize: '10px', fontWeight: 'bold' }}
+      >
+        {name}
+      </text>
+      <text 
+        x={ex + (cos >= 0 ? 1 : -1) * 8} 
+        y={ey} 
+        dy={12} 
+        textAnchor={textAnchor} 
+        fill="#facc15" 
+        style={{ fontSize: '9px', fontWeight: 'bold' }}
+      >
+        {`${symbol}${value.toFixed(0)}`}
+      </text>
+    </g>
+  );
+};
+
 type TimeFilter = 'ALL' | 'MONTH' | 'TODAY';
 type ScopeFilter = 'GROUP' | 'MYSELF';
 
@@ -211,17 +254,19 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
                   {scopeFilter === 'GROUP' ? 'Total spent' : 'Your share'} by category
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-[300px] sm:h-[350px]">
+              <CardContent className="h-[350px] sm:h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <RePieChart>
+                  <RePieChart margin={{ top: 20, right: 60, left: 60, bottom: 20 }}>
                     <Pie
                       data={pieData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
+                      innerRadius={50}
+                      outerRadius={70}
                       paddingAngle={5}
                       dataKey="value"
+                      label={(props) => renderCustomizedLabel(props, symbol)}
+                      labelLine={false}
                     >
                       {pieData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -231,7 +276,6 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
                       contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: '1px solid hsl(var(--border))' }}
                       formatter={(value: number) => [`${symbol}${value.toFixed(2)}`, 'Amount']}
                     />
-                    <ReLegend verticalAlign="bottom" height={36}/>
                   </RePieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -244,7 +288,7 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
                   {scopeFilter === 'GROUP' ? 'Group activity' : 'Your individual share'} over time
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-[300px] sm:h-[350px]">
+              <CardContent className="h-[350px] sm:h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <ReBarChart data={barData} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
@@ -290,7 +334,7 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                   <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
                     <p className="text-[10px] uppercase font-bold opacity-70 tracking-widest mb-1">Total</p>
                     <p className="text-xl font-bold">{symbol}{filteredExpenses.reduce((a, b) => a + b.displayAmount, 0).toFixed(2)}</p>
