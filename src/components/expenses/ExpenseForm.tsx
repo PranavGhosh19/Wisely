@@ -251,7 +251,7 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
                 type="date"
                 value={formData.date}
                 onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                className="h-12 rounded-xl bg-muted/20 border-none"
+                className="h-12 rounded-xl bg-muted/20 border-none w-full"
               />
             </div>
           </div>

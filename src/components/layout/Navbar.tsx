@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -127,17 +128,19 @@ export function Navbar() {
                 </Link>
               );
 
-              if (isSidebarCollapsed) {
-                return (
-                  <Tooltip key={item.name}>
-                    <TooltipTrigger asChild>{link}</TooltipTrigger>
-                    <TooltipContent side="right" className="font-bold">
-                      {item.name}
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              }
-              return link;
+              return (
+                <Tooltip key={item.name}>
+                  <TooltipTrigger asChild>
+                    {link}
+                  </TooltipTrigger>
+                  <TooltipContent 
+                    side="right" 
+                    className={cn("font-bold", !isSidebarCollapsed && "hidden")}
+                  >
+                    {item.name}
+                  </TooltipContent>
+                </Tooltip>
+              );
             })}
             
             {!isSidebarCollapsed && (
@@ -146,8 +149,8 @@ export function Navbar() {
               </p>
             )}
             
-            {(() => {
-              const settingsLink = (
+            <Tooltip key="settings">
+              <TooltipTrigger asChild>
                 <Link
                   href="/profile"
                   className={cn(
@@ -165,24 +168,20 @@ export function Navbar() {
                     </span>
                   )}
                 </Link>
-              );
-
-              if (isSidebarCollapsed) {
-                return (
-                  <Tooltip key="settings">
-                    <TooltipTrigger asChild>{settingsLink}</TooltipTrigger>
-                    <TooltipContent side="right" className="font-bold">Settings</TooltipContent>
-                  </Tooltip>
-                );
-              }
-              return settingsLink;
-            })()}
+              </TooltipTrigger>
+              <TooltipContent 
+                side="right" 
+                className={cn("font-bold", !isSidebarCollapsed && "hidden")}
+              >
+                Settings
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
         <div className="flex flex-col gap-4">
-          {(() => {
-            const profileLink = (
+          <Tooltip key="profile-footer">
+            <TooltipTrigger asChild>
               <Link 
                 href="/profile" 
                 className={cn(
@@ -209,21 +208,17 @@ export function Navbar() {
                   </div>
                 )}
               </Link>
-            );
+            </TooltipTrigger>
+            <TooltipContent 
+              side="right" 
+              className={cn("font-bold", !isSidebarCollapsed && "hidden")}
+            >
+              {user.name}
+            </TooltipContent>
+          </Tooltip>
 
-            if (isSidebarCollapsed) {
-              return (
-                <Tooltip key="profile-footer">
-                  <TooltipTrigger asChild>{profileLink}</TooltipTrigger>
-                  <TooltipContent side="right" className="font-bold">{user.name}</TooltipContent>
-                </Tooltip>
-              );
-            }
-            return profileLink;
-          })()}
-
-          {(() => {
-            const signOutBtn = (
+          <Tooltip key="sign-out">
+            <TooltipTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -238,50 +233,46 @@ export function Navbar() {
                   <span className="animate-in fade-in slide-in-from-left-2 duration-300">Sign Out</span>
                 )}
               </Button>
-            );
-
-            if (isSidebarCollapsed) {
-              return (
-                <Tooltip key="sign-out">
-                  <TooltipTrigger asChild>{signOutBtn}</TooltipTrigger>
-                  <TooltipContent side="right" className="font-bold text-destructive">Sign Out</TooltipContent>
-                </Tooltip>
-              );
-            }
-            return signOutBtn;
-          })()}
+            </TooltipTrigger>
+            <TooltipContent 
+              side="right" 
+              className={cn("font-bold text-destructive", !isSidebarCollapsed && "hidden")}
+            >
+              Sign Out
+            </TooltipContent>
+          </Tooltip>
         </div>
       </nav>
 
-      {/* Mobile Bottom Bar - Sticky/Fixed */}
-      <nav className="fixed bottom-0 left-0 z-50 w-full border-t border-primary/10 bg-background/95 backdrop-blur-xl md:hidden animate-in fade-in slide-in-from-bottom-5 duration-300">
-        <div className="relative flex h-20 items-center justify-around px-2 pb-safe">
+      {/* Mobile Bottom Bar - Fixed Permanent */}
+      <nav className="fixed bottom-0 left-0 z-50 w-full border-t bg-background/95 backdrop-blur-md safe-area-bottom md:hidden h-20 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+        <div className="relative flex h-full items-center justify-around px-2">
           <Link
             href="/dashboard"
             className={cn(
               "flex flex-col items-center gap-1 flex-1 transition-all py-2",
-              pathname === "/dashboard" ? "text-primary scale-110" : "text-muted-foreground opacity-70"
+              pathname === "/dashboard" ? "text-primary scale-110" : "text-muted-foreground"
             )}
           >
             <LayoutDashboard className="h-5 w-5" />
-            <span className="text-[8px] font-bold uppercase tracking-widest">Dash</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest">Dash</span>
           </Link>
 
           <Link
             href="/transactions"
             className={cn(
               "flex flex-col items-center gap-1 flex-1 transition-all py-2",
-              pathname === "/transactions" ? "text-primary scale-110" : "text-muted-foreground opacity-70"
+              pathname === "/transactions" ? "text-primary scale-110" : "text-muted-foreground"
             )}
           >
             <ReceiptText className="h-5 w-5" />
-            <span className="text-[8px] font-bold uppercase tracking-widest">Trans</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest">Trans</span>
           </Link>
 
-          <div className="relative -top-6 px-4">
+          <div className="relative -top-6 px-2">
             <Button
               asChild
-              className="h-14 w-14 rounded-full bg-primary shadow-[0_8px_30px_rgb(61,115,127,0.4)] hover:scale-105 transition-transform active:scale-90 border-[6px] border-background"
+              className="h-14 w-14 rounded-full bg-primary shadow-xl shadow-primary/40 hover:scale-105 transition-transform active:scale-90 border-4 border-background"
               size="icon"
             >
               <Link href={addExpenseUrl}>
@@ -294,23 +285,23 @@ export function Navbar() {
             href="/groups"
             className={cn(
               "flex flex-col items-center gap-1 flex-1 transition-all py-2",
-              pathname.startsWith("/groups") ? "text-primary scale-110" : "text-muted-foreground opacity-70"
+              pathname.startsWith("/groups") ? "text-primary scale-110" : "text-muted-foreground"
             )}
           >
             <Users className="h-5 w-5" />
-            <span className="text-[8px] font-bold uppercase tracking-widest">Groups</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest">Groups</span>
           </Link>
 
           <Link
             href="/profile"
             className={cn(
               "flex flex-col items-center gap-1 flex-1 transition-all py-2",
-              pathname === "/profile" ? "text-primary scale-110" : "text-muted-foreground opacity-70"
+              pathname === "/profile" ? "text-primary scale-110" : "text-muted-foreground"
             )}
           >
             <div className={cn(
-              "h-6 w-6 rounded-lg flex items-center justify-center border-2 transition-all overflow-hidden relative",
-              pathname === "/profile" ? "border-primary bg-primary/10 shadow-[0_0_10px_rgba(61,115,127,0.3)]" : "border-transparent bg-muted"
+              "h-7 w-7 rounded-lg flex items-center justify-center border-2 transition-all overflow-hidden relative",
+              pathname === "/profile" ? "border-primary bg-primary/10" : "border-transparent bg-muted"
             )}>
               {user.photoURL ? (
                 <Image src={user.photoURL} alt={user.name} fill className="object-cover" />
@@ -318,7 +309,7 @@ export function Navbar() {
                 <span className="text-[10px] font-bold">{user.name?.[0] || "W"}</span>
               )}
             </div>
-            <span className="text-[8px] font-bold uppercase tracking-widest">Me</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest">Me</span>
           </Link>
         </div>
       </nav>

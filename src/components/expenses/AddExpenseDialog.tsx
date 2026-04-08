@@ -144,7 +144,6 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
         expenseData.groupId = formData.groupId;
         expenseData.groupMemberIds = selectedGroup.members; 
         
-        // Simple equal split default for dialog-based quick adds
         const splitAmount = amount / (selectedGroup.members?.length || 1);
         expenseData.splitBetween = (selectedGroup.members || []).map(uid => ({
           userId: uid,
@@ -262,7 +261,7 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                  className="h-11 rounded-xl"
+                  className="h-11 rounded-xl w-full"
                 />
               </div>
               <div className="space-y-2">
