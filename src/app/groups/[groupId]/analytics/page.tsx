@@ -1,3 +1,4 @@
+
 "use client";
 
 import { use, useMemo, useState, useEffect } from "react";
@@ -305,6 +306,7 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
                       tickFormatter={(value) => `${symbol}${value}`}
                     />
                     <ReTooltip 
+                      cursor={{ fill: 'transparent' }}
                       contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: '1px solid hsl(var(--border))' }}
                       formatter={(value: number) => [`${symbol}${value.toFixed(2)}`, 'Amount']}
                     />

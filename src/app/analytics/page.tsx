@@ -405,6 +405,7 @@ export default function AnalyticsPage() {
                       tick={{ fontSize: 12, fontWeight: 600, fill: 'hsl(var(--foreground))' }}
                     />
                     <ReTooltip 
+                      cursor={{ fill: 'transparent' }}
                       contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: '1px solid hsl(var(--border))' }}
                       formatter={(value: number) => [`${symbol}${value.toFixed(2)}`, 'Amount']}
                     />
