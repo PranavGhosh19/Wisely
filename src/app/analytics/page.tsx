@@ -148,15 +148,38 @@ export default function AnalyticsPage() {
 
   // Visual 2: Spending Trend
   const trendData = useMemo(() => {
-    const months = Array.from({ length: 6 }).map((_, i) => {
-      const date = subMonths(new Date(), 5 - i);
-      return {
-        name: format(date, "MMM"),
-        start: startOfMonth(date),
-        end: endOfMonth(date),
+    if (filteredExpenses.length === 0) {
+      // Default to last 6 months if no data
+      return Array.from({ length: 6 }).map((_, i) => {
+        const date = subMonths(new Date(), 5 - i);
+        return {
+          name: format(date, "MMM"),
+          amount: 0
+        };
+      });
+    }
+
+    // Find the earliest date among transactions
+    const minTimestamp = Math.min(...filteredExpenses.map(e => e.date));
+    const startDate = startOfMonth(new Date(minTimestamp));
+    const today = new Date();
+    
+    const months = [];
+    let current = new Date(startDate);
+    
+    // Generate months from start transaction to today
+    while (current <= today || format(current, "yyyy-MM") === format(today, "yyyy-MM")) {
+      months.push({
+        name: format(current, "MMM"),
+        start: startOfMonth(current),
+        end: endOfMonth(current),
         amount: 0
-      };
-    });
+      });
+      // Move to next month
+      current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
+      // Safety break to prevent UI breakage if data is somehow years old
+      if (months.length > 24) break; 
+    }
 
     filteredExpenses.forEach(exp => {
       const expDate = new Date(exp.date);
