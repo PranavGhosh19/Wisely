@@ -215,7 +215,7 @@ export default function AnalyticsPage() {
                 <CalendarIcon className="h-3 w-3" />
                 Select Date
               </label>
-              <div className="relative w-full sm:w-[200px]">
+              <div className="relative w-full sm:w-[160px]">
                 <Input
                   type="date"
                   value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
