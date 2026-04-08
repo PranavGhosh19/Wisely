@@ -231,7 +231,7 @@ function SettlementsContent({ groupId }: { groupId: string }) {
                 <CardDescription>
                   {isGreedyActive 
                     ? "The most efficient way to zero out everyone's debt." 
-                    : "Individual net balances for all group members."}
+                    : "Individual net balances for group members."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
@@ -289,13 +289,26 @@ function SettlementsContent({ groupId }: { groupId: string }) {
                     )
                   ) : (
                     /* RAW BALANCES VIEW */
-                    Object.entries(settlementInfo.stats)
-                      .filter(([uid, s]) => Math.abs(s.net) > 0.01)
-                      .sort((a, b) => b[1].net - a[1].net)
-                      .map(([uid, stats]) => {
+                    (() => {
+                      const otherStandings = Object.entries(settlementInfo.stats)
+                        .filter(([uid, s]) => uid !== user?.uid && Math.abs(s.net) > 0.01)
+                        .sort((a, b) => b[1].net - a[1].net);
+
+                      if (otherStandings.length === 0) {
+                        return (
+                          <div className="p-16 text-center">
+                            <div className="h-16 w-16 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                              <Check className="h-8 w-8" />
+                            </div>
+                            <h3 className="text-xl font-bold font-headline">No other active balances</h3>
+                            <p className="text-muted-foreground mt-1">Everyone else in the group is settled up.</p>
+                          </div>
+                        );
+                      }
+
+                      return otherStandings.map(([uid, stats]) => {
                         const mUser = memberProfiles?.find(m => m.uid === uid);
                         const isOwed = stats.net > 0.01;
-                        const isMe = uid === user?.uid;
                         const suggestedDebt = settlementInfo.debts.find(d => d.from === uid || d.to === uid);
 
                         return (
@@ -307,7 +320,7 @@ function SettlementsContent({ groupId }: { groupId: string }) {
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <p className="font-bold text-base">{mUser?.name || "Member"} {isMe && "(You)"}</p>
+                                <p className="font-bold text-base">{mUser?.name || "Member"}</p>
                                 <p className={cn("text-[10px] font-black uppercase tracking-widest", isOwed ? "text-green-500" : "text-destructive")}>
                                   {isOwed ? "Is Owed" : "Owes Money"}
                                 </p>
@@ -330,7 +343,8 @@ function SettlementsContent({ groupId }: { groupId: string }) {
                             </div>
                           </div>
                         );
-                      })
+                      });
+                    })()
                   )}
                 </div>
               </CardContent>
