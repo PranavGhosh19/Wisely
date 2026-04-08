@@ -115,7 +115,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
     if (!group?.members || !groupExpenses) return { stats: {}, debts: [] };
     
     const stats: Record<string, { net: number; paid: number; share: number }> = {};
-    group.members.forEach(uid => stats[uid] = { net: 0, paid: 0, share: 0 });
+    group.members.forEach(uid => stats[uid] = { net: 0; paid: 0; share: 0 });
 
     groupExpenses.filter(exp => !exp.isSettled).forEach(exp => {
       const isTransfer = exp.category === 'Settlement';
@@ -224,6 +224,12 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
       toast({ title: "Link copied!", description: "Invite link is ready to share." });
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const handleShareWhatsapp = () => {
+    const text = `Join my group "${group?.name || 'Shared Expenses'}" on Wisely to track and split expenses together! ${shareUrl}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   if (groupLoading) {
@@ -542,7 +548,13 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                 <span className="flex-1 text-[10px] sm:text-xs truncate text-muted-foreground font-mono block overflow-hidden">{shareUrl}</span>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-primary shrink-0 rounded-md" onClick={copyToClipboard}>{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</Button>
               </div>
-              <Button className="w-full rounded-xl font-bold h-12 gap-2 text-sm bg-primary shadow-lg shadow-primary/10 transition-all active:scale-95" onClick={copyToClipboard}><Share2 className="h-4 w-4" />Share Group Link</Button>
+              <Button 
+                className="w-full rounded-xl font-bold h-12 gap-2 text-sm bg-primary shadow-lg shadow-primary/10 transition-all active:scale-95" 
+                onClick={handleShareWhatsapp}
+              >
+                <Share2 className="h-4 w-4" />
+                Share Group Link
+              </Button>
             </div>
           </div>
         </DialogContent>
