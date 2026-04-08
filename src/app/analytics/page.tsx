@@ -209,23 +209,21 @@ export default function AnalyticsPage() {
             <p className="text-muted-foreground">Detailed insights into your spending patterns.</p>
           </div>
 
-          <div className="grid grid-cols-2 sm:flex sm:flex-row gap-3 sm:gap-4">
-            <div className="space-y-1.5 animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="grid grid-cols-2 sm:flex sm:flex-row gap-3 sm:gap-4 items-end">
+            <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
                 <CalendarIcon className="h-3 w-3" />
                 Select Date
               </label>
-              <div className="relative w-full sm:w-[140px]">
-                <Input
-                  type="date"
-                  value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setSelectedDate(val ? parseISO(val) : undefined);
-                  }}
-                  className="w-full h-10 px-3 rounded-xl bg-card border-none shadow-sm text-sm font-normal focus:ring-2 focus:ring-primary outline-none"
-                />
-              </div>
+              <Input
+                type="date"
+                value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedDate(val ? parseISO(val) : undefined);
+                }}
+                className="w-full sm:w-[140px] h-10 px-3 rounded-xl bg-card border-none shadow-sm text-sm font-normal focus:ring-2 focus:ring-primary outline-none"
+              />
             </div>
 
             <div className="space-y-1.5">
