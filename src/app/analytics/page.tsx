@@ -211,7 +211,7 @@ export default function AnalyticsPage() {
             <p className="text-muted-foreground">Detailed insights into your spending patterns.</p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="grid grid-cols-2 sm:flex sm:flex-row gap-3 sm:gap-4">
             <div className="space-y-1.5 animate-in fade-in slide-in-from-right-4 duration-300">
               <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
                 <CalendarIcon className="h-3 w-3" />
@@ -222,12 +222,14 @@ export default function AnalyticsPage() {
                   <Button
                     variant={"outline"}
                     className={cn(
-                      "w-[240px] h-10 justify-start text-left font-normal rounded-xl bg-card border-none shadow-sm",
+                      "w-full sm:w-[200px] h-10 justify-start text-left font-normal rounded-xl bg-card border-none shadow-sm",
                       !selectedDate && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                    <span className="truncate">
+                      {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                    </span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 rounded-2xl border-none shadow-2xl" align="end">
@@ -247,7 +249,7 @@ export default function AnalyticsPage() {
                 View Scope
               </label>
               <Select value={scope} onValueChange={(val: any) => setScope(val)}>
-                <SelectTrigger className="w-[180px] h-10 rounded-xl bg-card border-none shadow-sm">
+                <SelectTrigger className="w-full sm:w-[180px] h-10 rounded-xl bg-card border-none shadow-sm">
                   <SelectValue placeholder="Select Scope" />
                 </SelectTrigger>
                 <SelectContent>
@@ -274,13 +276,13 @@ export default function AnalyticsPage() {
             </div>
 
             {scope === "GROUP" && (
-              <div className="space-y-1.5 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="col-span-2 sm:col-auto space-y-1.5 animate-in fade-in slide-in-from-right-4 duration-300">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
                   <Users className="h-3 w-3" />
                   Select Group
                 </label>
                 <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
-                  <SelectTrigger className="w-[180px] h-10 rounded-xl bg-card border-none shadow-sm">
+                  <SelectTrigger className="w-full sm:w-[180px] h-10 rounded-xl bg-card border-none shadow-sm">
                     <SelectValue placeholder="Which Group?" />
                   </SelectTrigger>
                   <SelectContent>
