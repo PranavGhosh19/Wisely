@@ -253,35 +253,35 @@ export function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Bottom Bar - Permanent */}
-      <nav className="fixed bottom-0 left-0 z-50 w-full border-t bg-background/95 backdrop-blur-md safe-area-bottom md:hidden h-20 animate-in fade-in slide-in-from-bottom-10 duration-300">
-        <div className="relative flex h-full items-center justify-around px-2">
+      {/* Mobile Bottom Bar - Sticky/Fixed */}
+      <nav className="fixed bottom-0 left-0 z-50 w-full border-t border-primary/10 bg-background/95 backdrop-blur-xl md:hidden animate-in fade-in slide-in-from-bottom-5 duration-300">
+        <div className="relative flex h-20 items-center justify-around px-2 pb-safe">
           <Link
             href="/dashboard"
             className={cn(
-              "flex flex-col items-center gap-1 flex-1 transition-all",
-              pathname === "/dashboard" ? "text-primary" : "text-muted-foreground"
+              "flex flex-col items-center gap-1 flex-1 transition-all py-2",
+              pathname === "/dashboard" ? "text-primary scale-110" : "text-muted-foreground opacity-70"
             )}
           >
             <LayoutDashboard className="h-5 w-5" />
-            <span className="text-[9px] font-bold uppercase tracking-widest">Dash</span>
+            <span className="text-[8px] font-bold uppercase tracking-widest">Dash</span>
           </Link>
 
           <Link
             href="/transactions"
             className={cn(
-              "flex flex-col items-center gap-1 flex-1 transition-all",
-              pathname === "/transactions" ? "text-primary" : "text-muted-foreground"
+              "flex flex-col items-center gap-1 flex-1 transition-all py-2",
+              pathname === "/transactions" ? "text-primary scale-110" : "text-muted-foreground opacity-70"
             )}
           >
             <ReceiptText className="h-5 w-5" />
-            <span className="text-[9px] font-bold uppercase tracking-widest">Trans</span>
+            <span className="text-[8px] font-bold uppercase tracking-widest">Trans</span>
           </Link>
 
-          <div className="relative -top-6 px-2">
+          <div className="relative -top-6 px-4">
             <Button
               asChild
-              className="h-14 w-14 rounded-full bg-primary shadow-xl shadow-primary/40 hover:scale-105 transition-transform active:scale-90 border-4 border-background"
+              className="h-14 w-14 rounded-full bg-primary shadow-[0_8px_30px_rgb(61,115,127,0.4)] hover:scale-105 transition-transform active:scale-90 border-[6px] border-background"
               size="icon"
             >
               <Link href={addExpenseUrl}>
@@ -293,24 +293,24 @@ export function Navbar() {
           <Link
             href="/groups"
             className={cn(
-              "flex flex-col items-center gap-1 flex-1 transition-all",
-              pathname.startsWith("/groups") ? "text-primary" : "text-muted-foreground"
+              "flex flex-col items-center gap-1 flex-1 transition-all py-2",
+              pathname.startsWith("/groups") ? "text-primary scale-110" : "text-muted-foreground opacity-70"
             )}
           >
             <Users className="h-5 w-5" />
-            <span className="text-[9px] font-bold uppercase tracking-widest">Groups</span>
+            <span className="text-[8px] font-bold uppercase tracking-widest">Groups</span>
           </Link>
 
           <Link
             href="/profile"
             className={cn(
-              "flex flex-col items-center gap-1 flex-1 transition-all",
-              pathname === "/profile" ? "text-primary" : "text-muted-foreground"
+              "flex flex-col items-center gap-1 flex-1 transition-all py-2",
+              pathname === "/profile" ? "text-primary scale-110" : "text-muted-foreground opacity-70"
             )}
           >
             <div className={cn(
-              "h-7 w-7 rounded-lg flex items-center justify-center border-2 transition-all overflow-hidden relative",
-              pathname === "/profile" ? "border-primary bg-primary/10" : "border-transparent bg-muted"
+              "h-6 w-6 rounded-lg flex items-center justify-center border-2 transition-all overflow-hidden relative",
+              pathname === "/profile" ? "border-primary bg-primary/10 shadow-[0_0_10px_rgba(61,115,127,0.3)]" : "border-transparent bg-muted"
             )}>
               {user.photoURL ? (
                 <Image src={user.photoURL} alt={user.name} fill className="object-cover" />
@@ -318,7 +318,7 @@ export function Navbar() {
                 <span className="text-[10px] font-bold">{user.name?.[0] || "W"}</span>
               )}
             </div>
-            <span className="text-[9px] font-bold uppercase tracking-widest">Me</span>
+            <span className="text-[8px] font-bold uppercase tracking-widest">Me</span>
           </Link>
         </div>
       </nav>
