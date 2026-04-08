@@ -143,6 +143,12 @@ function SettlementsContent({ groupId }: { groupId: string }) {
     return { stats, debts };
   }, [group?.members, groupExpenses]);
 
+  // Filter debts to only show those involving the current user
+  const involvedDebts = useMemo(() => {
+    if (!user) return [];
+    return settlementInfo.debts.filter(debt => debt.from === user.uid || debt.to === user.uid);
+  }, [settlementInfo.debts, user]);
+
   const openSettleDialog = (debt: { from: string; to: string; amount: number }) => {
     const fromUser = memberProfiles?.find(m => m.uid === debt.from);
     const toUser = memberProfiles?.find(m => m.uid === debt.to);
@@ -247,23 +253,23 @@ function SettlementsContent({ groupId }: { groupId: string }) {
                 </CardTitle>
                 <CardDescription>
                   {isGreedyActive 
-                    ? "The most efficient way to zero out everyone's debt." 
+                    ? "Personalized transfers to balance your account efficiently." 
                     : "Individual net balances for group members."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y divide-muted">
                   {isGreedyActive ? (
-                    settlementInfo.debts.length === 0 ? (
+                    involvedDebts.length === 0 ? (
                       <div className="p-16 text-center">
                         <div className="h-16 w-16 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
                           <Check className="h-8 w-8" />
                         </div>
-                        <h3 className="text-xl font-bold font-headline">Group is perfectly balanced!</h3>
-                        <p className="text-muted-foreground mt-1">No transfers are needed at this time.</p>
+                        <h3 className="text-xl font-bold font-headline">You are all settled!</h3>
+                        <p className="text-muted-foreground mt-1">No smart transfers currently involve your account.</p>
                       </div>
                     ) : (
-                      settlementInfo.debts.map((debt, idx) => {
+                      involvedDebts.map((debt, idx) => {
                         const fromUser = memberProfiles?.find(m => m.uid === debt.from);
                         const toUser = memberProfiles?.find(m => m.uid === debt.to);
                         const isFromMe = debt.from === user?.uid;
