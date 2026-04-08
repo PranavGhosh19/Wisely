@@ -17,7 +17,7 @@ import { format, isToday, isThisMonth } from "date-fns";
 import { ArrowLeft, Filter, Loader2, Users, User } from "lucide-react";
 import { getCurrencySymbol } from "@/lib/utils";
 
-const COLORS = ['#3D737F', '#facc15', '#5A9BA8', '#8FBABF', '#CEC7BF', '#A89E92'];
+const COLORS = ['#facc15', '#3D737F', '#5A9BA8', '#8FBABF', '#CEC7BF', '#A89E92'];
 
 /**
  * Custom label renderer for the Pie chart to show labels outside with connecting lines.
@@ -317,7 +317,7 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
                       barSize={30} 
                       label={{ 
                         position: 'top', 
-                        fill: 'hsl(var(--foreground))', 
+                        fill: '#facc15', 
                         fontSize: 10, 
                         fontWeight: 600,
                         offset: 8,

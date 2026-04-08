@@ -215,7 +215,7 @@ export default function AnalyticsPage() {
                 <CalendarIcon className="h-3 w-3" />
                 Select Date
               </label>
-              <div className="relative w-full sm:w-[160px]">
+              <div className="relative w-full sm:w-[140px]">
                 <Input
                   type="date"
                   value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
@@ -369,7 +369,7 @@ export default function AnalyticsPage() {
                       activeDot={{ r: 6, strokeWidth: 0 }}
                       label={{ 
                         position: 'top', 
-                        fill: 'hsl(var(--foreground))', 
+                        fill: '#facc15', 
                         fontSize: 10, 
                         fontWeight: 600,
                         offset: 12,
@@ -416,7 +416,7 @@ export default function AnalyticsPage() {
                       barSize={40} 
                       label={{ 
                         position: 'right', 
-                        fill: 'hsl(var(--foreground))', 
+                        fill: '#facc15', 
                         fontSize: 10, 
                         fontWeight: 600,
                         offset: 8,
