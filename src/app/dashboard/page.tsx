@@ -169,7 +169,7 @@ export default function Dashboard() {
                 <p className="text-sm font-medium leading-relaxed">
                   {categoryData.length > 0 ? (
                     <>
-                      Your biggest expense category is <span className="text-primary font-bold">"{categoryData[0]?.name}"</span>, 
+                      Your biggest expense category is <span className="text-[#facc15] font-bold">"{categoryData[0]?.name}"</span>, 
                       accounting for {((categoryData[0]?.value / (totalOverallSpent || 1)) * 100).toFixed(1)}% of your total outgoings. 
                       Consider reviewing this area to optimize your monthly budget.
                     </>
