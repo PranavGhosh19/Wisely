@@ -7,8 +7,8 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
-  PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, 
-  BarChart as ReBarChart, Bar, XAxis, YAxis, CartesianGrid, Legend as ReLegend
+  PieChart as RePieChart, Pie, Cell, ResponsiveContainer,
+  BarChart as ReBarChart, Bar, XAxis, YAxis, CartesianGrid
 } from "recharts";
 import { useStore } from "@/lib/store";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
@@ -273,10 +273,6 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <ReTooltip 
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: '1px solid hsl(var(--border))' }}
-                      formatter={(value: number) => [`${symbol}${value.toFixed(2)}`, 'Amount']}
-                    />
                   </RePieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -304,11 +300,6 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
                       tickLine={false} 
                       tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                       tickFormatter={(value) => `${symbol}${value}`}
-                    />
-                    <ReTooltip 
-                      cursor={{ fill: 'transparent' }}
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: '1px solid hsl(var(--border))' }}
-                      formatter={(value: number) => [`${symbol}${value.toFixed(2)}`, 'Amount']}
                     />
                     <Bar 
                       dataKey="amount" 
