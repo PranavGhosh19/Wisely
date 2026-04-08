@@ -290,7 +290,7 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                   <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
                     <p className="text-[10px] uppercase font-bold opacity-70 tracking-widest mb-1">Total</p>
                     <p className="text-xl font-bold">{symbol}{filteredExpenses.reduce((a, b) => a + b.displayAmount, 0).toFixed(2)}</p>
@@ -302,10 +302,6 @@ export default function GroupAnalyticsPage({ params }: { params: Promise<{ group
                   <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
                     <p className="text-[10px] uppercase font-bold opacity-70 tracking-widest mb-1">Top Cat</p>
                     <p className="text-xl font-bold truncate">{pieData[0]?.name || "N/A"}</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
-                    <p className="text-[10px] uppercase font-bold opacity-70 tracking-widest mb-1">Entries</p>
-                    <p className="text-xl font-bold">{filteredExpenses.length}</p>
                   </div>
                 </div>
               </CardContent>
