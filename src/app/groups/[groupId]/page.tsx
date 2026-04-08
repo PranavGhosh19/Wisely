@@ -115,7 +115,9 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
     if (!group?.members || !groupExpenses) return { stats: {}, debts: [] };
     
     const stats: Record<string, { net: number; paid: number; share: number }> = {};
-    group.members.forEach(uid => stats[uid] = { net: 0; paid: 0; share: 0 });
+    group.members.forEach(uid => 
+      stats[uid] = { net: 0, paid: 0, share: 0 }
+    );
 
     groupExpenses.filter(exp => !exp.isSettled).forEach(exp => {
       const isTransfer = exp.category === 'Settlement';
@@ -551,7 +553,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
               </div>
               <Button 
                 className="w-full rounded-xl font-bold h-12 gap-2 text-sm bg-primary shadow-lg shadow-primary/10 transition-all active:scale-95" 
-                onClick={handleShareWhatsapp}
+                onClick={handleShareToWhatsApp}
               >
                 <Share2 className="h-4 w-4" />
                 Share Group Link
