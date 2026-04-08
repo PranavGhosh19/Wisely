@@ -1,4 +1,3 @@
-
 "use client";
 
 import { use, useEffect, useState, useMemo, Suspense } from "react";
@@ -180,20 +179,6 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
     }
   };
 
-  const openSettleDialog = (debt: { from: string; to: string; amount: number }) => {
-    const fromUser = memberProfiles?.find(m => m.uid === debt.from);
-    const toUser = memberProfiles?.find(m => m.uid === debt.to);
-    
-    setSettlementTarget({
-      from: debt.from,
-      to: debt.to,
-      amount: debt.amount,
-      fromName: debt.from === user?.uid ? "You" : (fromUser?.name || "Member"),
-      toName: debt.to === user?.uid ? "you" : (toUser?.name || "Member")
-    });
-    setCustomAmount(debt.amount.toFixed(2));
-  };
-
   const handleIndividualSettle = () => {
     if (!db || !groupId || !settlementTarget) return;
     
@@ -298,8 +283,8 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
           </div>
         </header>
 
-        <div className="grid gap-6 lg:grid-cols-3 mb-8">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid gap-6 lg:grid-cols-1 mb-8">
+          <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <Card className="border-none shadow-sm bg-card rounded-2xl relative overflow-hidden group/card">
                 <CardHeader className="pb-2">
@@ -451,81 +436,6 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                         </div>
                       );
                     })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-          <div className="space-y-6">
-            <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden h-fit">
-              <CardHeader className="border-b px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="font-headline text-lg font-bold flex items-center gap-2">
-                      <Coins className="h-5 w-5 text-accent" />
-                      Active Settlements
-                    </CardTitle>
-                    <CardDescription>
-                      Individual net standings
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                {membersLoading ? (
-                  <div className="py-12 flex justify-center"><div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>
-                ) : (
-                  /* RAW MODE: Show net balances for everyone EXCEPT current user */
-                  <div className="divide-y divide-muted">
-                    {Object.entries(settlementInfo.stats).filter(([uid, s]) => uid !== user?.uid && Math.abs(s.net) > 0.01).length === 0 ? (
-                      <div className="p-12 text-center">
-                        <div className="h-12 w-12 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <Check className="h-6 w-6" />
-                        </div>
-                        <p className="text-sm font-bold">Everyone is settled!</p>
-                      </div>
-                    ) : (
-                      Object.entries(settlementInfo.stats)
-                        .filter(([uid, s]) => uid !== user?.uid && Math.abs(s.net) > 0.01)
-                        .sort((a, b) => b[1].net - a[1].net)
-                        .map(([uid, stats]) => {
-                          const mUser = memberProfiles?.find(m => m.uid === uid);
-                          const isOwed = stats.net > 0.01;
-                          // Find a relevant debt to suggest a settlement pair
-                          const suggestedDebt = settlementInfo.debts.find(d => d.from === uid || d.to === uid);
-                          
-                          return (
-                            <div key={uid} className="px-6 py-4 flex items-center justify-between group/row">
-                              <div className="flex items-center gap-3">
-                                <Avatar className="h-8 w-8 border-2 border-background">
-                                  <AvatarFallback className={cn("font-bold text-[10px]", isOwed ? "bg-green-500/10 text-green-500" : "bg-destructive/10 text-destructive")}>
-                                    {mUser?.name?.[0] || "?"}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex flex-col">
-                                  <span className="text-sm font-bold truncate max-w-[100px]">{mUser?.name || "Member"}</span>
-                                  {suggestedDebt && (
-                                    <button 
-                                      className="text-[9px] font-bold uppercase tracking-widest text-primary hover:underline text-left"
-                                      onClick={() => openSettleDialog(suggestedDebt)}
-                                    >
-                                      Settle Up
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <p className={cn("text-sm font-black", isOwed ? "text-green-500" : "text-destructive")}>
-                                  {isOwed ? "+" : "-"}{symbol}{Math.abs(stats.net).toFixed(2)}
-                                </p>
-                                <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-tighter">
-                                  {isOwed ? "is owed" : "owes"}
-                                </p>
-                              </div>
-                            </div>
-                          );
-                        })
-                    )}
                   </div>
                 )}
               </CardContent>
