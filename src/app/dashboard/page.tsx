@@ -24,10 +24,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Dashboard() {
   const router = useRouter();
-  const { user, isLoading: storeLoading } = useStore();
+  const { user, isLoading: storeLoading, categories: storeCategories } = useStore();
   const db = useFirestore();
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
@@ -36,7 +37,7 @@ export default function Dashboard() {
   const [clickCount, setClickCount] = useState(0);
   const [lastClickTime, setLastClickTime] = useState(0);
   const [isBudgetDialogOpen, setIsBudgetDialogOpen] = useState(false);
-  const [budgetInput, setBudgetInput] = useState("");
+  const [categoryBudgets, setCategoryBudgets] = useState<Record<string, string>>({});
   const [savingBudget, setSavingBudget] = useState(false);
 
   useEffect(() => {
@@ -46,13 +47,23 @@ export default function Dashboard() {
     }
   }, [user, router, storeLoading]);
 
+  // Sync initial budgets when dialog opens
+  useEffect(() => {
+    if (isBudgetDialogOpen && user) {
+      const initial: Record<string, string> = {};
+      storeCategories.forEach(cat => {
+        initial[cat] = user.categoryBudgets?.[cat]?.toString() || "0";
+      });
+      setCategoryBudgets(initial);
+    }
+  }, [isBudgetDialogOpen, user, storeCategories]);
+
   // Handle hidden triple click
   const handleTotalExpensesClick = () => {
     const now = Date.now();
     if (now - lastClickTime < 500) {
       const nextCount = clickCount + 1;
       if (nextCount === 3) {
-        setBudgetInput(user?.monthlyBudget?.toString() || "");
         setIsBudgetDialogOpen(true);
         setClickCount(0);
       } else {
@@ -66,18 +77,25 @@ export default function Dashboard() {
 
   const handleSaveBudget = async () => {
     if (!user || !db) return;
-    const amount = parseFloat(budgetInput);
-    if (isNaN(amount) || amount < 0) {
-      toast({ variant: "destructive", title: "Invalid amount", description: "Please enter a valid budget." });
-      return;
+    
+    const updates: Record<string, number> = {};
+    let total = 0;
+    
+    for (const [cat, val] of Object.entries(categoryBudgets)) {
+      const num = parseFloat(val);
+      if (!isNaN(num) && num >= 0) {
+        updates[cat] = num;
+        total += num;
+      }
     }
 
     setSavingBudget(true);
     try {
       await updateDoc(doc(db, "users", user.uid), {
-        monthlyBudget: amount
+        categoryBudgets: updates,
+        monthlyBudget: total // Maintain total for backward compatibility/quick access
       });
-      toast({ title: "Budget Saved", description: "Your monthly goal has been updated." });
+      toast({ title: "Budgets Saved", description: "Your category targets have been updated." });
       setIsBudgetDialogOpen(false);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: error.message });
@@ -111,8 +129,8 @@ export default function Dashboard() {
   const { data: groupExpenses } = useCollection(groupExpensesQuery);
 
   // Calculate Category Data for Insights (Excluding Settlements)
-  const categoryData = useMemo(() => {
-    if (!personalExpenses && !groupExpenses) return [];
+  const categorySpending = useMemo(() => {
+    if (!personalExpenses && !groupExpenses) return {};
     
     const categories: Record<string, number> = {};
     
@@ -133,10 +151,14 @@ export default function Dashboard() {
         }
       });
 
-    return Object.entries(categories)
+    return categories;
+  }, [personalExpenses, groupExpenses, user?.uid]);
+
+  const categoryData = useMemo(() => {
+    return Object.entries(categorySpending)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
-  }, [personalExpenses, groupExpenses, user?.uid]);
+  }, [categorySpending]);
 
   // Aggregate stats excluding Settlements
   const activePersonalExpenses = (personalExpenses || []).filter(exp => exp.category !== 'Settlement');
@@ -151,11 +173,16 @@ export default function Dashboard() {
 
   const totalOverallSpent = totalPersonalSpent + totalUserGroupShare;
 
-  // Determine budget status for dynamic coloring
+  // Determine budget status for dynamic coloring based on total budget
+  const totalBudget = useMemo(() => {
+    if (!user?.categoryBudgets) return user?.monthlyBudget || 0;
+    return Object.values(user.categoryBudgets).reduce((a, b) => a + b, 0);
+  }, [user?.categoryBudgets, user?.monthlyBudget]);
+
   const budgetPercentage = useMemo(() => {
-    if (!user?.monthlyBudget || user.monthlyBudget <= 0) return null;
-    return (totalOverallSpent / user.monthlyBudget) * 100;
-  }, [user?.monthlyBudget, totalOverallSpent]);
+    if (totalBudget <= 0) return null;
+    return (totalOverallSpent / totalBudget) * 100;
+  }, [totalBudget, totalOverallSpent]);
 
   const budgetTheme = useMemo(() => {
     if (budgetPercentage === null) return { color: "bg-primary", icon: CreditCard, label: "Total Expenses" };
@@ -266,26 +293,43 @@ export default function Dashboard() {
                     )}
                   </p>
                   
-                  {user.monthlyBudget && user.monthlyBudget > 0 && (
+                  {totalBudget > 0 && (
                     <div className="pt-2 border-t border-border/50">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] uppercase font-bold text-muted-foreground">Monthly Budget Progress</span>
-                        <span className="text-[10px] font-bold">{Math.min(100, (totalOverallSpent / user.monthlyBudget) * 100).toFixed(0)}%</span>
+                        <span className="text-[10px] uppercase font-bold text-muted-foreground">Overall Budget Progress</span>
+                        <span className="text-[10px] font-bold">{Math.min(100, (totalOverallSpent / totalBudget) * 100).toFixed(0)}%</span>
                       </div>
                       <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
                         <div 
                           className={cn(
                             "h-full transition-all duration-500",
-                            totalOverallSpent > user.monthlyBudget ? 'bg-destructive' : 'bg-primary'
+                            totalOverallSpent > totalBudget ? 'bg-destructive' : 'bg-primary'
                           )}
-                          style={{ width: `${Math.min(100, (totalOverallSpent / user.monthlyBudget) * 100)}%` }}
+                          style={{ width: `${Math.min(100, (totalOverallSpent / totalBudget) * 100)}%` }}
                         />
                       </div>
-                      <p className="text-[10px] mt-1 text-muted-foreground">
-                        {totalOverallSpent > user.monthlyBudget 
-                          ? `You are ${symbol}${(totalOverallSpent - user.monthlyBudget).toFixed(2)} over your goal.` 
-                          : `You have ${symbol}${(user.monthlyBudget - totalOverallSpent).toFixed(2)} remaining for the month.`}
-                      </p>
+                      
+                      {/* Detailed Category Alerts if applicable */}
+                      <div className="mt-3 space-y-2">
+                        {storeCategories.map(cat => {
+                          const budget = user.categoryBudgets?.[cat] || 0;
+                          const spent = categorySpending[cat] || 0;
+                          if (budget > 0 && spent > budget * 0.8) {
+                            return (
+                              <div key={cat} className="flex items-center justify-between text-[10px] bg-background/50 p-1.5 rounded-lg border border-border/30">
+                                <span className="font-bold uppercase opacity-70">{cat}</span>
+                                <span className={cn(
+                                  "font-black",
+                                  spent > budget ? "text-destructive" : "text-orange-500"
+                                )}>
+                                  {spent > budget ? "OVER BUDGET" : "NEAR LIMIT"}
+                                </span>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -301,45 +345,64 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Monthly Budget Dialog (Hidden Feature) */}
+      {/* Category Budget Dialog (Hidden Feature) */}
       <Dialog open={isBudgetDialogOpen} onOpenChange={setIsBudgetDialogOpen}>
-        <DialogContent className="sm:max-w-[400px] rounded-2xl">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[450px] rounded-2xl max-h-[85vh] flex flex-col p-0">
+          <DialogHeader className="p-6 pb-2">
             <DialogTitle className="font-headline text-xl flex items-center gap-2">
               <Target className="h-5 w-5 text-primary" />
-              Monthly Budget
+              Category Budgets
             </DialogTitle>
             <DialogDescription>
-              Set a monthly spending limit to track your progress on the dashboard.
+              Set monthly spending limits for each category.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="budget" className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Target Amount ({symbol})</Label>
-              <Input 
-                id="budget"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                className="h-14 rounded-xl text-2xl font-bold bg-muted/30 border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus-visible:ring-0"
-                value={budgetInput}
-                onChange={(e) => setBudgetInput(e.target.value)}
-                autoFocus
-              />
-              <p className="text-[10px] text-muted-foreground italic">
-                Set to 0 to disable budget tracking.
-              </p>
+          <ScrollArea className="flex-1 px-6 py-4">
+            <div className="space-y-4">
+              {storeCategories.map(cat => (
+                <div key={cat} className="flex items-center gap-4 group">
+                  <div className="flex-1 min-w-0">
+                    <Label htmlFor={`budget-${cat}`} className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                      {cat}
+                    </Label>
+                    <div className="relative mt-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">{symbol}</span>
+                      <Input 
+                        id={`budget-${cat}`}
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        className="h-11 pl-8 rounded-xl font-bold bg-muted/20 border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus-visible:ring-1 focus-visible:ring-primary"
+                        value={categoryBudgets[cat] || ""}
+                        onChange={(e) => setCategoryBudgets(prev => ({ ...prev, [cat]: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-right pt-5">
+                    <span className="text-[9px] font-bold text-muted-foreground block uppercase">Spent</span>
+                    <span className="text-xs font-bold">{symbol}{(categorySpending[cat] || 0).toFixed(0)}</span>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          </ScrollArea>
 
-          <DialogFooter className="gap-2">
-            <Button variant="outline" className="rounded-xl h-11" onClick={() => setIsBudgetDialogOpen(false)}>Cancel</Button>
-            <Button className="flex-1 rounded-xl h-11 font-bold bg-primary shadow-lg shadow-primary/10" onClick={handleSaveBudget} disabled={savingBudget}>
-              {savingBudget ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Save Budget
-            </Button>
-          </DialogFooter>
+          <div className="p-6 pt-2 border-t mt-auto">
+            <div className="flex items-center justify-between mb-4 bg-primary/5 p-3 rounded-xl border border-primary/10">
+              <span className="text-xs font-bold uppercase tracking-widest text-primary">Total Budget</span>
+              <span className="text-lg font-black text-primary">
+                {symbol}{Object.values(categoryBudgets).reduce((acc, val) => acc + (parseFloat(val) || 0), 0).toFixed(2)}
+              </span>
+            </div>
+            <DialogFooter className="gap-2 sm:flex-row flex-col">
+              <Button variant="ghost" className="rounded-xl h-11 order-2 sm:order-1" onClick={() => setIsBudgetDialogOpen(false)}>Cancel</Button>
+              <Button className="flex-1 rounded-xl h-11 font-bold bg-primary shadow-lg shadow-primary/10 order-1 sm:order-2" onClick={handleSaveBudget} disabled={savingBudget}>
+                {savingBudget ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Save All Targets
+              </Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

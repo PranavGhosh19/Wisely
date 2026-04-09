@@ -11,6 +11,7 @@ export interface User {
   groupIds: string[];
   currency?: string;
   monthlyBudget?: number;
+  categoryBudgets?: Record<string, number>;
   isSmartSettleEnabled?: boolean;
 }
 
