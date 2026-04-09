@@ -293,7 +293,7 @@ export default function Dashboard() {
                 type="number"
                 step="0.01"
                 placeholder="0.00"
-                className="h-14 rounded-xl text-2xl font-bold bg-muted/30 border-none"
+                className="h-14 rounded-xl text-2xl font-bold bg-muted/30 border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 value={budgetInput}
                 onChange={(e) => setBudgetInput(e.target.value)}
                 autoFocus
