@@ -162,6 +162,51 @@ export default function ProfilePage() {
     window.location.href = whatsappUrl;
   };
 
+  const handleTestNotification = async () => {
+    if (!("Notification" in window)) {
+      toast({
+        variant: "destructive",
+        title: "Not supported",
+        description: "Your browser does not support notifications."
+      });
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+    
+    if (permission === 'granted') {
+      toast({
+        title: "Notification Scheduled",
+        description: "You will receive a test message in 60 seconds. You can background the app now."
+      });
+
+      setTimeout(async () => {
+        // Use service worker for better reliability when backgrounded
+        if ('serviceWorker' in navigator) {
+          try {
+            const registration = await navigator.serviceWorker.ready;
+            registration.showNotification('Wisely', {
+              body: 'Testing',
+              icon: 'https://placehold.co/512x512/3D737F/FFFFFF?text=W',
+              badge: 'https://placehold.co/512x512/3D737F/FFFFFF?text=W',
+              tag: 'test-notification'
+            });
+          } catch (e) {
+            new Notification('Wisely', { body: 'Testing' });
+          }
+        } else {
+          new Notification('Wisely', { body: 'Testing' });
+        }
+      }, 60000);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Permission Denied",
+        description: "Please enable notifications in your browser settings to test this feature."
+      });
+    }
+  };
+
   const appearanceOptions = [
     { id: 'light', name: 'Light', icon: Sun },
     { id: 'dark', name: 'Dark', icon: Moon },
@@ -348,6 +393,22 @@ export default function ProfilePage() {
                     <Share2 className="h-4 w-4" />
                   </div>
                   <span className="text-sm font-medium">Refer a Friend</span>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+
+              <button 
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
+                onClick={handleTestNotification}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-yellow-500/10 flex items-center justify-center text-yellow-500">
+                    <Bell className="h-4 w-4" />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-medium">Notifications</span>
+                    <span className="text-[10px] text-muted-foreground font-bold uppercase">Send test in 1 min</span>
+                  </div>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
