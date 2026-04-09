@@ -243,7 +243,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          h2 className="text-2xl font-bold">Group not found</h2>
+          <h2 className="text-2xl font-bold">Group not found</h2>
           <Button variant="link" onClick={() => router.push("/groups")}>Back to Groups</Button>
         </div>
       </div>

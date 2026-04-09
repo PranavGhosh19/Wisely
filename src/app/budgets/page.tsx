@@ -200,7 +200,7 @@ export default function BudgetsPage() {
                   <BarChart 
                     data={chartData} 
                     layout="vertical"
-                    margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                    margin={{ top: 5, right: 40, left: 40, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
                     <XAxis 
@@ -257,6 +257,14 @@ export default function BudgetsPage() {
                       stackId="a" 
                       fill="hsl(var(--primary))" 
                       barSize={24}
+                      label={{ 
+                        position: 'insideRight', 
+                        fill: '#facc15', 
+                        fontSize: 9, 
+                        fontWeight: 800,
+                        offset: 8,
+                        formatter: (val: number) => val > 0 ? `${symbol}${val.toFixed(0)}` : ''
+                      }}
                     />
                     <Bar 
                       dataKey="Remaining" 
@@ -265,6 +273,14 @@ export default function BudgetsPage() {
                       opacity={0.15}
                       radius={[0, 4, 4, 0]}
                       barSize={24}
+                      label={{ 
+                        position: 'insideRight', 
+                        fill: '#facc15', 
+                        fontSize: 9, 
+                        fontWeight: 800,
+                        offset: 8,
+                        formatter: (val: number) => val > 0 ? `${symbol}${val.toFixed(0)}` : ''
+                      }}
                     />
                     <Bar 
                       dataKey="Over Budget" 
@@ -272,6 +288,14 @@ export default function BudgetsPage() {
                       fill="hsl(var(--destructive))" 
                       radius={[0, 4, 4, 0]}
                       barSize={24}
+                      label={{ 
+                        position: 'right', 
+                        fill: '#facc15', 
+                        fontSize: 9, 
+                        fontWeight: 800,
+                        offset: 8,
+                        formatter: (val: number) => val > 0 ? `${symbol}${val.toFixed(0)}` : ''
+                      }}
                     />
                   </BarChart>
                 </ResponsiveContainer>
