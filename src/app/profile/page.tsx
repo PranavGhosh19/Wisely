@@ -101,11 +101,11 @@ export default function ProfilePage() {
     if (!file || !user || !db) return;
 
     // Increased limit from 5MB to 10MB
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       toast({ 
         variant: "destructive", 
         title: "Image too large", 
-        description: "Please pick an image smaller than 10MB." 
+        description: "Please pick an image smaller than 20MB." 
       });
       return;
     }
@@ -157,7 +157,7 @@ export default function ProfilePage() {
   };
 
   const handleReferFriend = () => {
-    const text = `Hey! I'm using Wisely to track my expenses and split bills with friends. It's really helpful, check it out: https://wisely.app`;
+    const text = `Hey! I'm using Wisely to track my expenses and split bills with friends. It's really helpful, check it out: https://wisely-pi.vercel.app`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.location.href = whatsappUrl;
   };
