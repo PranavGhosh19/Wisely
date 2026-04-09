@@ -8,10 +8,10 @@ import { useStore } from "@/lib/store";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Wallet, Users, CreditCard, PieChart as PieChartIcon, ArrowRight, Target, Loader2 } from "lucide-react";
+import { Plus, Wallet, Users, CreditCard, PieChart as PieChartIcon, ArrowRight, Target, Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, orderBy, where, collectionGroup, doc, updateDoc } from "firebase/firestore";
-import { getCurrencySymbol } from "@/lib/utils";
+import { getCurrencySymbol, cn } from "@/lib/utils";
 import { LoadingScreen } from "@/components/layout/loading-screen";
 import {
   Dialog,
@@ -138,10 +138,6 @@ export default function Dashboard() {
       .sort((a, b) => b.value - a.value);
   }, [personalExpenses, groupExpenses, user?.uid]);
 
-  if (storeLoading || !user) {
-    return <LoadingScreen />;
-  }
-
   // Aggregate stats excluding Settlements
   const activePersonalExpenses = (personalExpenses || []).filter(exp => exp.category !== 'Settlement');
   const totalPersonalSpent = activePersonalExpenses.reduce((acc, curr) => acc + curr.amount, 0);
@@ -149,11 +145,29 @@ export default function Dashboard() {
   const totalUserGroupShare = (groupExpenses || [])
     .filter(exp => !exp.isSettled && exp.category !== 'Settlement')
     .reduce((acc, curr) => {
-      const mySplit = curr.splitBetween?.find((s: any) => s.userId === user.uid);
+      const mySplit = curr.splitBetween?.find((s: any) => s.userId === user?.uid);
       return acc + (mySplit?.amount || 0);
     }, 0);
 
   const totalOverallSpent = totalPersonalSpent + totalUserGroupShare;
+
+  // Determine budget status for dynamic coloring
+  const budgetPercentage = useMemo(() => {
+    if (!user?.monthlyBudget || user.monthlyBudget <= 0) return null;
+    return (totalOverallSpent / user.monthlyBudget) * 100;
+  }, [user?.monthlyBudget, totalOverallSpent]);
+
+  const budgetTheme = useMemo(() => {
+    if (budgetPercentage === null) return { color: "bg-primary", icon: CreditCard, label: "Total Expenses" };
+    if (budgetPercentage < 60) return { color: "bg-emerald-600", icon: CheckCircle2, label: "Budget Safe" };
+    if (budgetPercentage < 90) return { color: "bg-orange-500", icon: AlertTriangle, label: "Budget Alert" };
+    return { color: "bg-destructive", icon: Target, label: "Budget Reached" };
+  }, [budgetPercentage]);
+
+  if (storeLoading || !user) {
+    return <LoadingScreen />;
+  }
+
   const symbol = getCurrencySymbol(user.currency);
 
   return (
@@ -201,13 +215,25 @@ export default function Dashboard() {
 
           <Card 
             onClick={handleTotalExpensesClick}
-            className="border-none shadow-sm bg-primary text-primary-foreground rounded-2xl p-4 flex items-center justify-between h-20 relative overflow-hidden group cursor-pointer active:scale-[0.98] transition-all"
+            className={cn(
+              "border-none shadow-sm text-primary-foreground rounded-2xl p-4 flex items-center justify-between h-20 relative overflow-hidden group cursor-pointer active:scale-[0.98] transition-all duration-500",
+              budgetTheme.color
+            )}
           >
             <div className="flex items-center gap-3 relative z-10">
               <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                <CreditCard className="h-5 w-5 text-white" />
+                <budgetTheme.icon className="h-5 w-5 text-white" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest opacity-80 leading-tight">Total Expenses</span>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold uppercase tracking-widest opacity-80 leading-tight">
+                  {budgetTheme.label}
+                </span>
+                {budgetPercentage !== null && (
+                  <span className="text-[8px] font-bold opacity-60 uppercase">
+                    {budgetPercentage.toFixed(0)}% of Goal
+                  </span>
+                )}
+              </div>
             </div>
             <div className="text-xl font-bold relative z-10 shrink-0">{symbol}{totalOverallSpent.toFixed(2)}</div>
           </Card>
@@ -248,7 +274,10 @@ export default function Dashboard() {
                       </div>
                       <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
                         <div 
-                          className={`h-full transition-all duration-500 ${totalOverallSpent > user.monthlyBudget ? 'bg-destructive' : 'bg-primary'}`}
+                          className={cn(
+                            "h-full transition-all duration-500",
+                            totalOverallSpent > user.monthlyBudget ? 'bg-destructive' : 'bg-primary'
+                          )}
                           style={{ width: `${Math.min(100, (totalOverallSpent / user.monthlyBudget) * 100)}%` }}
                         />
                       </div>
@@ -293,7 +322,7 @@ export default function Dashboard() {
                 type="number"
                 step="0.01"
                 placeholder="0.00"
-                className="h-14 rounded-xl text-2xl font-bold bg-muted/30 border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="h-14 rounded-xl text-2xl font-bold bg-muted/30 border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus-visible:ring-0"
                 value={budgetInput}
                 onChange={(e) => setBudgetInput(e.target.value)}
                 autoFocus
