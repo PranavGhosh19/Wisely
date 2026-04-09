@@ -273,14 +273,6 @@ export default function BudgetsPage() {
                       opacity={0.15}
                       radius={[0, 4, 4, 0]}
                       barSize={24}
-                      label={{ 
-                        position: 'insideRight', 
-                        fill: '#facc15', 
-                        fontSize: 9, 
-                        fontWeight: 800,
-                        offset: 8,
-                        formatter: (val: number) => val > 0 ? `${symbol}${val.toFixed(0)}` : ''
-                      }}
                     />
                     <Bar 
                       dataKey="Over Budget" 
