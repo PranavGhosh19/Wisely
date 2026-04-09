@@ -1,3 +1,4 @@
+
 export type ExpenseType = 'PERSONAL' | 'GROUP';
 export type SplitType = 'EQUAL' | 'UNEQUAL' | 'PERCENTAGE' | 'WEIGHT';
 
@@ -9,6 +10,7 @@ export interface User {
   photoURL?: string;
   groupIds: string[];
   currency?: string;
+  monthlyBudget?: number;
   isSmartSettleEnabled?: boolean;
 }
 
