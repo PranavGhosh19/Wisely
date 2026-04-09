@@ -47,11 +47,12 @@ export default function BudgetsPage() {
     }
   }, [user, router, storeLoading]);
 
-  // Fetch Expenses for spending comparison
+  // Fetch range for current month
   const now = new Date();
   const monthStart = startOfMonth(now).getTime();
   const monthEnd = endOfMonth(now).getTime();
 
+  // Fetch Personal Expenses
   const personalExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -62,16 +63,15 @@ export default function BudgetsPage() {
     );
   }, [db, user, monthStart, monthEnd]);
 
+  // Fetch Group Expenses - Simplified query to avoid index complexity
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
       collectionGroup(db, "expenses"),
       where("groupMemberIds", "array-contains", user.uid),
-      where("isDeleted", "==", false),
-      where("date", ">=", monthStart),
-      where("date", "<=", monthEnd)
+      where("isDeleted", "==", false)
     );
-  }, [db, user, monthStart, monthEnd]);
+  }, [db, user]);
 
   const { data: personalExpenses } = useCollection(personalExpensesQuery);
   const { data: groupExpenses } = useCollection(groupExpensesQuery);
@@ -87,7 +87,7 @@ export default function BudgetsPage() {
     }
   }, [user, categories]);
 
-  // Calculate actual spending per category
+  // Calculate actual spending per category with client-side date filtering
   const actualSpending = useMemo(() => {
     const spending: Record<string, number> = {};
     categories.forEach(cat => spending[cat] = 0);
@@ -99,6 +99,9 @@ export default function BudgetsPage() {
     });
 
     groupExpenses?.forEach(exp => {
+      // Client-side date filter to satisfy complex logic without needing composite indexes
+      if (exp.date < monthStart || exp.date > monthEnd) return;
+
       if (spending[exp.category] !== undefined) {
         const mySplit = exp.splitBetween?.find((s: any) => s.userId === user?.uid);
         if (mySplit) {
@@ -108,7 +111,7 @@ export default function BudgetsPage() {
     });
 
     return spending;
-  }, [personalExpenses, groupExpenses, categories, user?.uid]);
+  }, [personalExpenses, groupExpenses, categories, user?.uid, monthStart, monthEnd]);
 
   // Prepare chart data for STACKED visualization
   const chartData = useMemo(() => {
