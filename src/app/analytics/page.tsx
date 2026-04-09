@@ -470,24 +470,23 @@ export default function AnalyticsPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <ReBarChart 
                       data={budgetChartData} 
-                      layout="vertical"
-                      margin={{ top: 5, right: 40, left: 40, bottom: 5 }}
+                      margin={{ top: 20, right: 20, left: 20, bottom: 60 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                       <XAxis 
-                        type="number"
+                        dataKey="name" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 10, fontWeight: 700, fill: 'hsl(var(--foreground))' }}
+                        interval={0}
+                        angle={-45}
+                        textAnchor="end"
+                      />
+                      <YAxis 
                         axisLine={false} 
                         tickLine={false} 
                         tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                         tickFormatter={(value) => `${symbol}${value}`}
-                      />
-                      <YAxis 
-                        dataKey="name" 
-                        type="category"
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fontSize: 10, fontWeight: 700, fill: 'hsl(var(--foreground))' }}
-                        width={100}
                       />
                       <Tooltip 
                         cursor={{ fill: 'hsl(var(--muted))', opacity: 0.1 }}
@@ -527,9 +526,8 @@ export default function AnalyticsPage() {
                         dataKey="Current Spend" 
                         stackId="a" 
                         fill="hsl(var(--primary))" 
-                        barSize={24}
                         label={{ 
-                          position: 'insideRight', 
+                          position: 'top', 
                           fill: '#facc15', 
                           fontSize: 9, 
                           fontWeight: 800,
@@ -542,17 +540,13 @@ export default function AnalyticsPage() {
                         stackId="a" 
                         fill="hsl(var(--primary))" 
                         opacity={0.15}
-                        radius={[0, 4, 4, 0]}
-                        barSize={24}
                       />
                       <Bar 
                         dataKey="Over Budget" 
                         stackId="a" 
                         fill="hsl(var(--destructive))" 
-                        radius={[0, 4, 4, 0]}
-                        barSize={24}
                         label={{ 
-                          position: 'right', 
+                          position: 'top', 
                           fill: '#facc15', 
                           fontSize: 9, 
                           fontWeight: 800,
