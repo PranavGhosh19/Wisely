@@ -225,7 +225,7 @@ export default function AnalyticsPage() {
 
   // Visual 4: Budget Distribution (Current Month Comparison)
   const budgetChartData = useMemo(() => {
-    if (!user || !user.categoryBudgets || !storeCategories) return [];
+    if (!user || !storeCategories) return [];
     
     const now = new Date();
     const start = startOfMonth(now).getTime();
@@ -259,7 +259,7 @@ export default function AnalyticsPage() {
         originalBudget: budget,
         originalSpent: spent
       };
-    }).filter(item => item.originalBudget > 0 || item.originalSpent > 0);
+    }).filter(item => item.originalSpent > 0.01); // Hide categories with 0 spending
   }, [user, storeCategories, personalExpenses, groupExpenses]);
 
   const isLoading = loadingPersonal || loadingGroups;
@@ -462,9 +462,9 @@ export default function AnalyticsPage() {
                 <CardHeader>
                   <CardTitle className="font-headline text-lg flex items-center gap-2">
                     <BarChart3 className="h-5 w-5 text-primary" />
-                    Monthly Budget Distribution
+                    Budget Distribution
                   </CardTitle>
-                  <CardDescription>Current Month Spend vs. Planned Category Targets</CardDescription>
+                  <CardDescription>Spend vs. Target (Monthly)</CardDescription>
                 </CardHeader>
                 <CardContent className="h-[400px] sm:h-[500px]">
                   <ResponsiveContainer width="100%" height="100%">
