@@ -22,14 +22,13 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer, 
-  Legend,
-  Cell
+  Legend
 } from "recharts";
 import { startOfMonth, endOfMonth } from "date-fns";
 
 /**
  * Dedicated page for managing category-level budgets.
- * Includes a comparison chart between Budget and Actual Spends.
+ * Includes a stacked bar chart comparing Budget vs. Actual Spends.
  */
 export default function BudgetsPage() {
   const router = useRouter();
@@ -111,13 +110,21 @@ export default function BudgetsPage() {
     return spending;
   }, [personalExpenses, groupExpenses, categories, user?.uid]);
 
-  // Prepare chart data
+  // Prepare chart data for STACKED visualization
   const chartData = useMemo(() => {
-    return categories.map(cat => ({
-      name: cat,
-      Budget: parseFloat(categoryBudgets[cat] || "0"),
-      Spent: actualSpending[cat] || 0
-    })).filter(item => item.Budget > 0 || item.Spent > 0);
+    return categories.map(cat => {
+      const budget = parseFloat(categoryBudgets[cat] || "0");
+      const spent = actualSpending[cat] || 0;
+      
+      return {
+        name: cat,
+        "Current Spend": Math.min(spent, budget),
+        "Remaining": Math.max(0, budget - spent),
+        "Over Budget": Math.max(0, spent - budget),
+        originalBudget: budget,
+        originalSpent: spent
+      };
+    }).filter(item => item.originalBudget > 0 || item.originalSpent > 0);
   }, [categories, categoryBudgets, actualSpending]);
 
   const handleSave = async () => {
@@ -171,7 +178,7 @@ export default function BudgetsPage() {
           
           <div className="flex flex-col gap-2">
             <h1 className="text-3xl font-bold font-headline text-primary tracking-tight">Category Budgets</h1>
-            <p className="text-muted-foreground">Compare your targets with actual monthly spending.</p>
+            <p className="text-muted-foreground">Monitor and adjust your monthly spending targets.</p>
           </div>
         </header>
 
@@ -181,55 +188,87 @@ export default function BudgetsPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg font-headline flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-primary" />
-                  Budget vs. Spends
+                  Budget Distribution
                 </CardTitle>
-                <CardDescription>Visual comparison for the current month</CardDescription>
+                <CardDescription>Stacked view of spent vs. remaining capacity</CardDescription>
               </CardHeader>
-              <CardContent className="h-[300px] sm:h-[400px] pt-4">
+              <CardContent className="h-[350px] sm:h-[450px] pt-4">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <BarChart 
+                    data={chartData} 
+                    layout="vertical"
+                    margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
                     <XAxis 
-                      dataKey="name" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 10, fontWeight: 600, fill: 'hsl(var(--muted-foreground))' }}
-                    />
-                    <YAxis 
+                      type="number"
                       axisLine={false} 
                       tickLine={false} 
                       tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                       tickFormatter={(value) => `${symbol}${value}`}
                     />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category"
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fontWeight: 700, fill: 'hsl(var(--foreground))' }}
+                      width={80}
+                    />
                     <Tooltip 
                       cursor={{ fill: 'hsl(var(--muted))', opacity: 0.1 }}
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        borderColor: 'hsl(var(--border))',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        fontWeight: 'bold'
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-card border border-border p-3 rounded-xl shadow-xl space-y-1 animate-in fade-in zoom-in-95 duration-200">
+                              <p className="font-bold text-xs uppercase tracking-widest text-muted-foreground mb-2">{data.name}</p>
+                              <div className="flex justify-between gap-8 items-center">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase">Budget:</span>
+                                <span className="text-xs font-bold">{symbol}{data.originalBudget.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between gap-8 items-center">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase">Spent:</span>
+                                <span className="text-xs font-bold text-primary">{symbol}{data.originalSpent.toFixed(2)}</span>
+                              </div>
+                              {data.originalSpent > data.originalBudget && (
+                                <div className="pt-1 mt-1 border-t border-border flex justify-between gap-8 items-center">
+                                  <span className="text-[10px] font-black text-destructive uppercase">Overlimit:</span>
+                                  <span className="text-xs font-black text-destructive">{symbol}{(data.originalSpent - data.originalBudget).toFixed(2)}</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+                        return null;
                       }}
-                      formatter={(val: number) => [`${symbol}${val.toFixed(2)}`]}
                     />
                     <Legend 
                       verticalAlign="top" 
                       align="right" 
                       iconType="circle"
-                      wrapperStyle={{ paddingBottom: '20px', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}
+                      wrapperStyle={{ paddingBottom: '20px', fontSize: '9px', fontWeight: 'bold', textTransform: 'uppercase' }}
                     />
                     <Bar 
-                      dataKey="Budget" 
+                      dataKey="Current Spend" 
+                      stackId="a" 
                       fill="hsl(var(--primary))" 
-                      radius={[4, 4, 0, 0]} 
-                      barSize={30}
-                      opacity={0.3}
+                      barSize={24}
                     />
                     <Bar 
-                      dataKey="Spent" 
+                      dataKey="Remaining" 
+                      stackId="a" 
                       fill="hsl(var(--primary))" 
-                      radius={[4, 4, 0, 0]} 
-                      barSize={30}
+                      opacity={0.15}
+                      radius={[0, 4, 4, 0]}
+                      barSize={24}
+                    />
+                    <Bar 
+                      dataKey="Over Budget" 
+                      stackId="a" 
+                      fill="hsl(var(--destructive))" 
+                      radius={[0, 4, 4, 0]}
+                      barSize={24}
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -268,7 +307,10 @@ export default function BudgetsPage() {
                           Spent: {symbol}{(actualSpending[cat] || 0).toFixed(2)}
                         </span>
                         {user.categoryBudgets?.[cat] !== undefined && (
-                          <span className="text-[9px] font-bold text-primary uppercase">
+                          <span className={cn(
+                            "text-[9px] font-bold uppercase",
+                            (actualSpending[cat] || 0) > (user.categoryBudgets[cat] || 0) ? "text-destructive" : "text-primary"
+                          )}>
                             Limit: {symbol}{user.categoryBudgets[cat]}
                           </span>
                         )}
