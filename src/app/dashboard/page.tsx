@@ -8,37 +8,21 @@ import { useStore } from "@/lib/store";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Wallet, Users, CreditCard, PieChart as PieChartIcon, ArrowRight, Target, Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Plus, Wallet, Users, CreditCard, PieChart as PieChartIcon, ArrowRight, Target, CheckCircle2, AlertTriangle } from "lucide-react";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
-import { collection, query, orderBy, where, collectionGroup, doc, updateDoc } from "firebase/firestore";
+import { collection, query, orderBy, where, collectionGroup } from "firebase/firestore";
 import { getCurrencySymbol, cn } from "@/lib/utils";
 import { LoadingScreen } from "@/components/layout/loading-screen";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Dashboard() {
   const router = useRouter();
   const { user, isLoading: storeLoading, categories: storeCategories } = useStore();
   const db = useFirestore();
-  const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
 
   // Hidden interaction state
   const [clickCount, setClickCount] = useState(0);
   const [lastClickTime, setLastClickTime] = useState(0);
-  const [isBudgetDialogOpen, setIsBudgetDialogOpen] = useState(false);
-  const [categoryBudgets, setCategoryBudgets] = useState<Record<string, string>>({});
-  const [savingBudget, setSavingBudget] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -47,24 +31,13 @@ export default function Dashboard() {
     }
   }, [user, router, storeLoading]);
 
-  // Sync initial budgets when dialog opens
-  useEffect(() => {
-    if (isBudgetDialogOpen && user) {
-      const initial: Record<string, string> = {};
-      storeCategories.forEach(cat => {
-        initial[cat] = user.categoryBudgets?.[cat]?.toString() || "0";
-      });
-      setCategoryBudgets(initial);
-    }
-  }, [isBudgetDialogOpen, user, storeCategories]);
-
-  // Handle hidden triple click
+  // Handle hidden triple click to navigate to budgets
   const handleTotalExpensesClick = () => {
     const now = Date.now();
     if (now - lastClickTime < 500) {
       const nextCount = clickCount + 1;
       if (nextCount === 3) {
-        setIsBudgetDialogOpen(true);
+        router.push("/budgets");
         setClickCount(0);
       } else {
         setClickCount(nextCount);
@@ -73,35 +46,6 @@ export default function Dashboard() {
       setClickCount(1);
     }
     setLastClickTime(now);
-  };
-
-  const handleSaveBudget = async () => {
-    if (!user || !db) return;
-    
-    const updates: Record<string, number> = {};
-    let total = 0;
-    
-    for (const [cat, val] of Object.entries(categoryBudgets)) {
-      const num = parseFloat(val);
-      if (!isNaN(num) && num >= 0) {
-        updates[cat] = num;
-        total += num;
-      }
-    }
-
-    setSavingBudget(true);
-    try {
-      await updateDoc(doc(db, "users", user.uid), {
-        categoryBudgets: updates,
-        monthlyBudget: total // Maintain total for backward compatibility/quick access
-      });
-      toast({ title: "Budgets Saved", description: "Your category targets have been updated." });
-      setIsBudgetDialogOpen(false);
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: error.message });
-    } finally {
-      setSavingBudget(false);
-    }
   };
 
   // Personal Expenses Query
@@ -268,7 +212,6 @@ export default function Dashboard() {
 
         {/* Analyst & Stats Section */}
         <div className="grid gap-6">
-          {/* Analyst Insights Card */}
           <Card className="border-none shadow-sm bg-card rounded-2xl">
             <CardHeader>
               <CardTitle className="text-lg font-headline flex items-center gap-2">
@@ -309,7 +252,6 @@ export default function Dashboard() {
                         />
                       </div>
                       
-                      {/* Detailed Category Alerts if applicable */}
                       <div className="mt-3 space-y-2">
                         {storeCategories.map(cat => {
                           const budget = user.categoryBudgets?.[cat] || 0;
@@ -344,67 +286,6 @@ export default function Dashboard() {
           </Card>
         </div>
       </main>
-
-      {/* Category Budget Dialog (Hidden Feature) */}
-      <Dialog open={isBudgetDialogOpen} onOpenChange={setIsBudgetDialogOpen}>
-        <DialogContent className="sm:max-w-[450px] rounded-2xl max-h-[85vh] flex flex-col p-0">
-          <DialogHeader className="p-6 pb-2">
-            <DialogTitle className="font-headline text-xl flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" />
-              Category Budgets
-            </DialogTitle>
-            <DialogDescription>
-              Set monthly spending limits for each category.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <ScrollArea className="flex-1 px-6 py-4">
-            <div className="space-y-4">
-              {storeCategories.map(cat => (
-                <div key={cat} className="flex items-center gap-4 group">
-                  <div className="flex-1 min-w-0">
-                    <Label htmlFor={`budget-${cat}`} className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
-                      {cat}
-                    </Label>
-                    <div className="relative mt-1">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">{symbol}</span>
-                      <Input 
-                        id={`budget-${cat}`}
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        className="h-11 pl-8 rounded-xl font-bold bg-muted/20 border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus-visible:ring-1 focus-visible:ring-primary"
-                        value={categoryBudgets[cat] || ""}
-                        onChange={(e) => setCategoryBudgets(prev => ({ ...prev, [cat]: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                  <div className="text-right pt-5">
-                    <span className="text-[9px] font-bold text-muted-foreground block uppercase">Spent</span>
-                    <span className="text-xs font-bold">{symbol}{(categorySpending[cat] || 0).toFixed(0)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-
-          <div className="p-6 pt-2 border-t mt-auto">
-            <div className="flex items-center justify-between mb-4 bg-primary/5 p-3 rounded-xl border border-primary/10">
-              <span className="text-xs font-bold uppercase tracking-widest text-primary">Total Budget</span>
-              <span className="text-lg font-black text-primary">
-                {symbol}{Object.values(categoryBudgets).reduce((acc, val) => acc + (parseFloat(val) || 0), 0).toFixed(2)}
-              </span>
-            </div>
-            <DialogFooter className="gap-2 sm:flex-row flex-col">
-              <Button variant="ghost" className="rounded-xl h-11 order-2 sm:order-1" onClick={() => setIsBudgetDialogOpen(false)}>Cancel</Button>
-              <Button className="flex-1 rounded-xl h-11 font-bold bg-primary shadow-lg shadow-primary/10 order-1 sm:order-2" onClick={handleSaveBudget} disabled={savingBudget}>
-                {savingBudget ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                Save All Targets
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
