@@ -538,8 +538,8 @@ export default function AnalyticsPage() {
                       <Bar 
                         dataKey="Remaining" 
                         stackId="a" 
-                        fill="hsl(var(--primary))" 
-                        opacity={0.15}
+                        fill="#22c55e" 
+                        opacity={0.3}
                       />
                       <Bar 
                         dataKey="Over Budget" 
