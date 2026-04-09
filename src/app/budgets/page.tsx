@@ -12,23 +12,13 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { doc, updateDoc, collection, query, where, collectionGroup } from "firebase/firestore";
-import { ArrowLeft, Target, Loader2, Save, TrendingUp, BarChart3 } from "lucide-react";
+import { ArrowLeft, Target, Loader2, Save, TrendingUp } from "lucide-react";
 import { getCurrencySymbol, cn } from "@/lib/utils";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  Legend
-} from "recharts";
 import { startOfMonth, endOfMonth } from "date-fns";
 
 /**
  * Dedicated page for managing category-level budgets.
- * Includes a stacked bar chart comparing Budget vs. Actual Spends.
+ * Visual comparison moved to Analytics for better overview.
  */
 export default function BudgetsPage() {
   const router = useRouter();
@@ -63,7 +53,7 @@ export default function BudgetsPage() {
     );
   }, [db, user, monthStart, monthEnd]);
 
-  // Fetch Group Expenses - Simplified query to avoid index complexity
+  // Fetch Group Expenses
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -99,7 +89,6 @@ export default function BudgetsPage() {
     });
 
     groupExpenses?.forEach(exp => {
-      // Client-side date filter to satisfy complex logic without needing composite indexes
       if (exp.date < monthStart || exp.date > monthEnd) return;
 
       if (spending[exp.category] !== undefined) {
@@ -112,23 +101,6 @@ export default function BudgetsPage() {
 
     return spending;
   }, [personalExpenses, groupExpenses, categories, user?.uid, monthStart, monthEnd]);
-
-  // Prepare chart data for STACKED visualization
-  const chartData = useMemo(() => {
-    return categories.map(cat => {
-      const budget = parseFloat(categoryBudgets[cat] || "0");
-      const spent = actualSpending[cat] || 0;
-      
-      return {
-        name: cat,
-        "Current Spend": Math.min(spent, budget),
-        "Remaining": Math.max(0, budget - spent),
-        "Over Budget": Math.max(0, spent - budget),
-        originalBudget: budget,
-        originalSpent: spent
-      };
-    }).filter(item => item.originalBudget > 0 || item.originalSpent > 0);
-  }, [categories, categoryBudgets, actualSpending]);
 
   const handleSave = async () => {
     if (!user || !db) return;
@@ -181,120 +153,11 @@ export default function BudgetsPage() {
           
           <div className="flex flex-col gap-2">
             <h1 className="text-3xl font-bold font-headline text-primary tracking-tight">Category Budgets</h1>
-            <p className="text-muted-foreground">Monitor and adjust your monthly spending targets.</p>
+            <p className="text-muted-foreground">Monitor and adjust your monthly spending targets. Comparison charts are available on the Analytics page.</p>
           </div>
         </header>
 
         <div className="grid gap-6">
-          {chartData.length > 0 && (
-            <Card className="border-none shadow-sm bg-card rounded-3xl overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-headline flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-primary" />
-                  Budget Distribution
-                </CardTitle>
-                <CardDescription>Stacked view of spent vs. remaining capacity</CardDescription>
-              </CardHeader>
-              <CardContent className="h-[350px] sm:h-[450px] pt-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart 
-                    data={chartData} 
-                    layout="vertical"
-                    margin={{ top: 5, right: 40, left: 40, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
-                    <XAxis 
-                      type="number"
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                      tickFormatter={(value) => `${symbol}${value}`}
-                    />
-                    <YAxis 
-                      dataKey="name" 
-                      type="category"
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 10, fontWeight: 700, fill: 'hsl(var(--foreground))' }}
-                      width={80}
-                    />
-                    <Tooltip 
-                      cursor={{ fill: 'hsl(var(--muted))', opacity: 0.1 }}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-card border border-border p-3 rounded-xl shadow-xl space-y-1 animate-in fade-in zoom-in-95 duration-200">
-                              <p className="font-bold text-xs uppercase tracking-widest text-muted-foreground mb-2">{data.name}</p>
-                              <div className="flex justify-between gap-8 items-center">
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase">Budget:</span>
-                                <span className="text-xs font-bold">{symbol}{data.originalBudget.toFixed(2)}</span>
-                              </div>
-                              <div className="flex justify-between gap-8 items-center">
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase">Spent:</span>
-                                <span className="text-xs font-bold text-primary">{symbol}{data.originalSpent.toFixed(2)}</span>
-                              </div>
-                              {data.originalSpent > data.originalBudget && (
-                                <div className="pt-1 mt-1 border-t border-border flex justify-between gap-8 items-center">
-                                  <span className="text-[10px] font-black text-destructive uppercase">Overlimit:</span>
-                                  <span className="text-xs font-black text-destructive">{symbol}{(data.originalSpent - data.originalBudget).toFixed(2)}</span>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Legend 
-                      verticalAlign="top" 
-                      align="right" 
-                      iconType="circle"
-                      wrapperStyle={{ paddingBottom: '20px', fontSize: '9px', fontWeight: 'bold', textTransform: 'uppercase' }}
-                    />
-                    <Bar 
-                      dataKey="Current Spend" 
-                      stackId="a" 
-                      fill="hsl(var(--primary))" 
-                      barSize={24}
-                      label={{ 
-                        position: 'insideRight', 
-                        fill: '#facc15', 
-                        fontSize: 9, 
-                        fontWeight: 800,
-                        offset: 8,
-                        formatter: (val: number) => val > 0 ? `${symbol}${val.toFixed(0)}` : ''
-                      }}
-                    />
-                    <Bar 
-                      dataKey="Remaining" 
-                      stackId="a" 
-                      fill="hsl(var(--primary))" 
-                      opacity={0.15}
-                      radius={[0, 4, 4, 0]}
-                      barSize={24}
-                    />
-                    <Bar 
-                      dataKey="Over Budget" 
-                      stackId="a" 
-                      fill="hsl(var(--destructive))" 
-                      radius={[0, 4, 4, 0]}
-                      barSize={24}
-                      label={{ 
-                        position: 'right', 
-                        fill: '#facc15', 
-                        fontSize: 9, 
-                        fontWeight: 800,
-                        offset: 8,
-                        formatter: (val: number) => val > 0 ? `${symbol}${val.toFixed(0)}` : ''
-                      }}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
-
           <Card className="border-none shadow-sm bg-card rounded-3xl overflow-hidden">
             <CardHeader className="bg-primary/5 border-b border-primary/10 py-6 px-6">
               <div className="flex items-center justify-between">

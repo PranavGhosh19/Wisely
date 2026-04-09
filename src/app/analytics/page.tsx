@@ -7,13 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { 
   PieChart as RePieChart, Pie, Cell, ResponsiveContainer, 
   BarChart as ReBarChart, Bar, XAxis, YAxis, CartesianGrid,
-  LineChart as ReLineChart, Line
+  LineChart as ReLineChart, Line, Tooltip, Legend
 } from "recharts";
 import { useStore } from "@/lib/store";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, collectionGroup, query, where } from "firebase/firestore";
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
-import { PieChart, Layers, User, Users, Calendar as CalendarIcon, X } from "lucide-react";
+import { PieChart, Layers, User, Users, Calendar as CalendarIcon, X, BarChart3 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getCurrencySymbol, cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -68,7 +68,7 @@ const renderCustomizedLabel = (props: any, symbol: string) => {
 };
 
 export default function AnalyticsPage() {
-  const { user } = useStore();
+  const { user, categories: storeCategories } = useStore();
   const db = useFirestore();
   const [mounted, setMounted] = useState(false);
   const [scope, setScope] = useState<"ALL" | "PERSONAL" | "GROUP">("ALL");
@@ -109,7 +109,7 @@ export default function AnalyticsPage() {
   }, [db, user]);
   const { data: userGroups } = useCollection(groupsQuery);
 
-  // Combine and Filter data for global insights (Excluding Settlements)
+  // Combined and Filtered data for visual reports
   const filteredExpenses = useMemo(() => {
     let base: any[] = [];
     const personal = (personalExpenses || []).filter(e => e.category !== 'Settlement');
@@ -126,7 +126,6 @@ export default function AnalyticsPage() {
       }
     }
 
-    // Apply global date filter if a date is selected
     if (selectedDate) {
       const start = startOfDay(selectedDate);
       const end = endOfDay(selectedDate);
@@ -152,7 +151,6 @@ export default function AnalyticsPage() {
 
   // Visual 2: Spending Trend
   const trendData = useMemo(() => {
-    // Trend should ignore the daily filter but respect the scope
     let base: any[] = [];
     const personal = (personalExpenses || []).filter(e => e.category !== 'Settlement');
     const group = (groupExpenses || []).filter(e => e.category !== 'Settlement');
@@ -165,14 +163,12 @@ export default function AnalyticsPage() {
     }
 
     if (base.length === 0) {
-      // Default to last 6 months if no data
       return Array.from({ length: 6 }).map((_, i) => ({
         name: format(subMonths(new Date(), 5 - i), "MMM"),
         amount: 0
       }));
     }
 
-    // Find the earliest date among transactions
     const minTimestamp = Math.min(...base.map(e => e.date));
     const startDate = startOfMonth(new Date(minTimestamp));
     const today = new Date();
@@ -180,7 +176,6 @@ export default function AnalyticsPage() {
     const months = [];
     let current = new Date(startDate);
     
-    // Generate months from start transaction to today
     while (current <= today || format(current, "yyyy-MM") === format(today, "yyyy-MM")) {
       months.push({
         name: format(current, "MMM"),
@@ -188,9 +183,7 @@ export default function AnalyticsPage() {
         end: endOfMonth(current),
         amount: 0
       });
-      // Move to next month
       current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
-      // Safety break to prevent UI breakage if data is somehow years old
       if (months.length > 24) break; 
     }
 
@@ -206,7 +199,7 @@ export default function AnalyticsPage() {
     return months.map(m => ({ name: m.name, amount: parseFloat(m.amount.toFixed(2)) }));
   }, [personalExpenses, groupExpenses, scope, selectedGroupId]);
 
-  // Visual 3: Personal vs Group (Also respecting the date filter)
+  // Visual 3: Personal vs Group
   const splitData = useMemo(() => {
     const dateStart = selectedDate ? startOfDay(selectedDate) : null;
     const dateEnd = selectedDate ? endOfDay(selectedDate) : null;
@@ -229,6 +222,45 @@ export default function AnalyticsPage() {
       { name: 'Group Shared', amount: parseFloat(group.toFixed(2)) }
     ];
   }, [personalExpenses, groupExpenses, selectedDate]);
+
+  // Visual 4: Budget Distribution (Current Month Comparison)
+  const budgetChartData = useMemo(() => {
+    if (!user || !user.categoryBudgets || !storeCategories) return [];
+    
+    const now = new Date();
+    const start = startOfMonth(now).getTime();
+    const end = endOfMonth(now).getTime();
+
+    const spending: Record<string, number> = {};
+    storeCategories.forEach(cat => spending[cat] = 0);
+
+    const personal = (personalExpenses || []).filter(e => !e.isDeleted && e.category !== 'Settlement' && e.date >= start && e.date <= end);
+    const group = (groupExpenses || []).filter(e => !e.isDeleted && e.category !== 'Settlement' && e.date >= start && e.date <= end);
+
+    personal.forEach(exp => {
+      if (spending[exp.category] !== undefined) spending[exp.category] += exp.amount;
+    });
+
+    group.forEach(exp => {
+      const mySplit = exp.splitBetween?.find((s: any) => s.userId === user.uid);
+      if (mySplit && spending[exp.category] !== undefined) {
+        spending[exp.category] += mySplit.amount;
+      }
+    });
+
+    return storeCategories.map(cat => {
+      const budget = user.categoryBudgets?.[cat] || 0;
+      const spent = spending[cat] || 0;
+      return {
+        name: cat,
+        "Current Spend": Math.min(spent, budget),
+        "Remaining": Math.max(0, budget - spent),
+        "Over Budget": Math.max(0, spent - budget),
+        originalBudget: budget,
+        originalSpent: spent
+      };
+    }).filter(item => item.originalBudget > 0 || item.originalSpent > 0);
+  }, [user, storeCategories, personalExpenses, groupExpenses]);
 
   const isLoading = loadingPersonal || loadingGroups;
 
@@ -350,6 +382,7 @@ export default function AnalyticsPage() {
           </Card>
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
+            {/* Category Pie Chart */}
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="font-headline text-lg">Category Distribution</CardTitle>
@@ -380,6 +413,7 @@ export default function AnalyticsPage() {
               </CardContent>
             </Card>
 
+            {/* Spending Line Chart */}
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="font-headline text-lg">Spending Trend</CardTitle>
@@ -422,6 +456,117 @@ export default function AnalyticsPage() {
               </CardContent>
             </Card>
 
+            {/* Monthly Budget Distribution Stacked Bar Chart */}
+            {budgetChartData.length > 0 && (
+              <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="font-headline text-lg flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-primary" />
+                    Monthly Budget Distribution
+                  </CardTitle>
+                  <CardDescription>Current Month Spend vs. Planned Category Targets</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[400px] sm:h-[500px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ReBarChart 
+                      data={budgetChartData} 
+                      layout="vertical"
+                      margin={{ top: 5, right: 40, left: 40, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
+                      <XAxis 
+                        type="number"
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                        tickFormatter={(value) => `${symbol}${value}`}
+                      />
+                      <YAxis 
+                        dataKey="name" 
+                        type="category"
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 10, fontWeight: 700, fill: 'hsl(var(--foreground))' }}
+                        width={100}
+                      />
+                      <Tooltip 
+                        cursor={{ fill: 'hsl(var(--muted))', opacity: 0.1 }}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="bg-card border border-border p-3 rounded-xl shadow-xl space-y-1">
+                                <p className="font-bold text-xs uppercase tracking-widest text-muted-foreground mb-2">{data.name}</p>
+                                <div className="flex justify-between gap-8 items-center">
+                                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Budget:</span>
+                                  <span className="text-xs font-bold">{symbol}{data.originalBudget.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between gap-8 items-center">
+                                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Spent:</span>
+                                  <span className="text-xs font-bold text-primary">{symbol}{data.originalSpent.toFixed(2)}</span>
+                                </div>
+                                {data.originalSpent > data.originalBudget && (
+                                  <div className="pt-1 mt-1 border-t border-border flex justify-between gap-8 items-center">
+                                    <span className="text-[10px] font-black text-destructive uppercase">Overlimit:</span>
+                                    <span className="text-xs font-black text-destructive">{symbol}{(data.originalSpent - data.originalBudget).toFixed(2)}</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Legend 
+                        verticalAlign="top" 
+                        align="right" 
+                        iconType="circle"
+                        wrapperStyle={{ paddingBottom: '20px', fontSize: '9px', fontWeight: 'bold', textTransform: 'uppercase' }}
+                      />
+                      <Bar 
+                        dataKey="Current Spend" 
+                        stackId="a" 
+                        fill="hsl(var(--primary))" 
+                        barSize={24}
+                        label={{ 
+                          position: 'insideRight', 
+                          fill: '#facc15', 
+                          fontSize: 9, 
+                          fontWeight: 800,
+                          offset: 8,
+                          formatter: (val: number) => val > 0 ? `${symbol}${val.toFixed(0)}` : ''
+                        }}
+                      />
+                      <Bar 
+                        dataKey="Remaining" 
+                        stackId="a" 
+                        fill="hsl(var(--primary))" 
+                        opacity={0.15}
+                        radius={[0, 4, 4, 0]}
+                        barSize={24}
+                      />
+                      <Bar 
+                        dataKey="Over Budget" 
+                        stackId="a" 
+                        fill="hsl(var(--destructive))" 
+                        radius={[0, 4, 4, 0]}
+                        barSize={24}
+                        label={{ 
+                          position: 'right', 
+                          fill: '#facc15', 
+                          fontSize: 9, 
+                          fontWeight: 800,
+                          offset: 8,
+                          formatter: (val: number) => val > 0 ? `${symbol}${val.toFixed(0)}` : ''
+                        }}
+                      />
+                    </ReBarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Personal vs Group Summary Bar Chart */}
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden md:col-span-2">
               <CardHeader>
                 <CardTitle className="font-headline text-lg">Personal vs Group Expenses</CardTitle>
