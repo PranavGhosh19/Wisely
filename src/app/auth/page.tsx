@@ -80,7 +80,6 @@ function AuthContent() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
         toast({ title: "Welcome Back", description: "Successfully signed in." });
-        // Explicitly redirect for faster feedback
         router.replace(redirectUrl);
       }
     } catch (error: any) {
@@ -122,7 +121,6 @@ function AuthContent() {
           router.push("/profile/currency?setup=true");
         } else {
           toast({ title: "Welcome", description: "Successfully signed in with Google." });
-          // Explicit navigation for better performance
           router.replace(redirectUrl);
         }
       }

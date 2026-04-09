@@ -100,7 +100,7 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file || !user || !db) return;
 
-    // Increased limit from 5MB to 10MB
+    // Support uploads up to 20MB
     if (file.size > 20 * 1024 * 1024) {
       toast({ 
         variant: "destructive", 
