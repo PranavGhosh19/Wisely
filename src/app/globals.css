@@ -4,29 +4,31 @@
 
 @layer base {
   :root {
-    --background: 196 59% 7%;
-    --foreground: 34 11% 95%;
-    --card: 196 50% 10%;
-    --card-foreground: 34 11% 95%;
-    --popover: 196 50% 10%;
-    --popover-foreground: 34 11% 95%;
+    /* Professional Light Theme (PRD Aligned) */
+    --background: 248 20% 96%;
+    --foreground: 196 59% 7%;
+    --card: 0 0% 100%;
+    --card-foreground: 196 59% 7%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 196 59% 7%;
     --primary: 190 35% 37%;
-    --primary-foreground: 34 11% 95%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 34 11% 77%;
     --secondary-foreground: 196 59% 7%;
-    --muted: 196 30% 15%;
-    --muted-foreground: 34 5% 70%;
+    --muted: 248 10% 90%;
+    --muted-foreground: 196 10% 40%;
     --accent: 34 11% 77%;
     --accent-foreground: 196 59% 7%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 196 30% 15%;
-    --input: 196 30% 15%;
+    --border: 248 10% 85%;
+    --input: 248 10% 85%;
     --ring: 190 35% 37%;
     --radius: 1rem;
   }
 
   .dark {
+    /* Professional Dark Theme */
     --background: 196 59% 7%;
     --foreground: 34 11% 95%;
     --card: 196 50% 10%;
