@@ -7,12 +7,15 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore } from "@/firebase";
 import { doc, updateDoc } from "firebase/firestore";
-import { ArrowLeft, Globe, Loader2, Save, Check } from "lucide-react";
+import { ArrowLeft, Globe, Loader2, Save, Check, Search, ChevronDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 const CURRENCIES = [
   { code: "AED", label: "United Arab Emirates Dirham (د.إ)" },
@@ -183,17 +186,30 @@ function CurrencyContent() {
   
   const [loading, setLoading] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState(user?.currency || "");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   // Sort currencies alphabetically by label
   const sortedCurrencies = useMemo(() => {
     return [...CURRENCIES].sort((a, b) => a.label.localeCompare(b.label));
   }, []);
 
+  const filteredCurrencies = useMemo(() => {
+    return sortedCurrencies.filter(c => 
+      c.label.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      c.code.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [sortedCurrencies, searchQuery]);
+
   useEffect(() => {
     if (user?.currency) {
       setSelectedCurrency(user.currency);
     }
   }, [user]);
+
+  const selectedCurrencyLabel = useMemo(() => {
+    return CURRENCIES.find(c => c.code === selectedCurrency)?.label || "Pick a currency...";
+  }, [selectedCurrency]);
 
   const handleUpdateCurrency = async () => {
     if (!db || !user || !selectedCurrency) return;
@@ -259,18 +275,73 @@ function CurrencyContent() {
               <Label htmlFor="currency" className="font-bold text-sm uppercase tracking-widest text-muted-foreground px-1">
                 Select Currency
               </Label>
-              <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-                <SelectTrigger id="currency" className="h-14 rounded-2xl bg-muted/30 border-none text-base font-medium">
-                  <SelectValue placeholder="Pick a currency..." />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl shadow-2xl border-none max-h-[300px]">
-                  {sortedCurrencies.map((c) => (
-                    <SelectItem key={c.code} value={c.code} className="h-12 rounded-xl">
-                      {c.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              
+              <Popover open={isPickerOpen} onOpenChange={setIsPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="currency"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={isPickerOpen}
+                    className="w-full h-14 rounded-2xl bg-muted/30 border-none text-base font-medium justify-between px-4 hover:bg-muted/40 transition-colors"
+                  >
+                    <span className="truncate pr-4">{selectedCurrencyLabel}</span>
+                    <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-2xl border-none shadow-2xl overflow-hidden bg-card" align="start">
+                  <div className="p-3 border-b flex items-center gap-3 bg-muted/10">
+                    <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <Input
+                      placeholder="Search currency name or code..."
+                      className="h-9 border-none bg-transparent focus-visible:ring-0 px-0 placeholder:text-muted-foreground/60"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                  <ScrollArea className="h-72">
+                    <div className="p-1 space-y-0.5">
+                      {filteredCurrencies.map((currency) => {
+                        const isSelected = selectedCurrency === currency.code;
+                        return (
+                          <button
+                            key={currency.code}
+                            className={cn(
+                              "flex w-full items-center justify-between px-3 py-3 rounded-xl text-sm transition-all group",
+                              isSelected 
+                                ? "bg-primary text-primary-foreground font-bold" 
+                                : "hover:bg-muted text-foreground"
+                            )}
+                            onClick={() => {
+                              setSelectedCurrency(currency.code);
+                              setIsPickerOpen(false);
+                              setSearchQuery("");
+                            }}
+                          >
+                            <div className="flex flex-col items-start min-w-0">
+                              <span className="truncate text-left">{currency.label}</span>
+                              <span className={cn(
+                                "text-[10px] uppercase font-bold tracking-widest",
+                                isSelected ? "text-primary-foreground/70" : "text-muted-foreground"
+                              )}>
+                                {currency.code}
+                              </span>
+                            </div>
+                            {isSelected && <Check className="h-4 w-4 shrink-0 ml-2" />}
+                          </button>
+                        );
+                      })}
+                      {filteredCurrencies.length === 0 && (
+                        <div className="py-10 text-center flex flex-col items-center gap-2">
+                          <Globe className="h-8 w-8 text-muted-foreground opacity-20" />
+                          <p className="text-xs text-muted-foreground font-medium">No currency matches your search.</p>
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <Button 
