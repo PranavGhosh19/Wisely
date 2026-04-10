@@ -245,7 +245,10 @@ export function Navbar() {
       </nav>
 
       {/* Mobile Bottom Bar - Fixed Permanent */}
-      <nav className="fixed bottom-0 left-0 z-50 w-full border-t bg-background/95 backdrop-blur-md safe-area-bottom md:hidden h-20 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+      <nav 
+        className="fixed bottom-0 left-0 z-50 w-full border-t bg-background/95 backdrop-blur-md safe-area-bottom md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
+        style={{ height: '80px' }}
+      >
         <div className="relative flex h-full items-center justify-around px-2">
           <Link
             href="/dashboard"
