@@ -177,25 +177,27 @@ export default function ProfilePage() {
     if (permission === 'granted') {
       toast({
         title: "Notification Scheduled",
-        description: "You will receive a test message in 60 seconds. You can background the app now."
+        description: "A test notification will trigger in 60 seconds. You can background the app now."
       });
 
+      // Use a timeout to simulate a delay
       setTimeout(async () => {
-        // Use service worker for better reliability when backgrounded
+        // We use the service worker to show the notification so it works in the background
         if ('serviceWorker' in navigator) {
           try {
             const registration = await navigator.serviceWorker.ready;
             registration.showNotification('Wisely', {
-              body: 'Testing',
+              body: 'Testing: This is your scheduled notification alert!',
               icon: 'https://placehold.co/512x512/3D737F/FFFFFF?text=W',
               badge: 'https://placehold.co/512x512/3D737F/FFFFFF?text=W',
-              tag: 'test-notification'
+              tag: 'test-notification',
+              vibrate: [200, 100, 200]
             });
           } catch (e) {
-            new Notification('Wisely', { body: 'Testing' });
+            new Notification('Wisely', { body: 'Testing: Local fallback notification.' });
           }
         } else {
-          new Notification('Wisely', { body: 'Testing' });
+          new Notification('Wisely', { body: 'Testing: Browser fallback notification.' });
         }
       }, 60000);
     } else {
