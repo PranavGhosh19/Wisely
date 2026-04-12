@@ -472,12 +472,7 @@ export default function ProfilePage() {
 
               <button 
                 className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
-                onClick={() => {
-                  toast({
-                    title: "Feedback Submitted",
-                    description: "Thank you for your feedback! We'll use it to improve Wisely.",
-                  });
-                }}
+                onClick={() => router.push("/profile/feedback")}
               >
                 <div className="flex items-center gap-3">
                   <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">

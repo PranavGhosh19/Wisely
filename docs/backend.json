@@ -63,6 +63,20 @@
         "settlements": { "type": "array", "items": { "type": "object" }, "description": "Simplified debts/transfers needed to zero out." },
         "isSmartSettleEnabled": { "type": "boolean", "description": "Group preference for optimized settlement view." }
       }
+    },
+    "Feedback": {
+      "title": "Feedback",
+      "description": "User feedback submission.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["userId", "message", "createdAt"]
     }
   },
   "auth": {
@@ -84,6 +98,10 @@
     "/users/{userId}/personalExpenses/{expenseId}": {
       "schema": "Expense",
       "description": "Private personal expenses."
+    },
+    "/feedback/{feedbackId}": {
+      "schema": "Feedback",
+      "description": "User feedback submissions."
     }
   }
 }
