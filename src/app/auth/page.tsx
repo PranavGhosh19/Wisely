@@ -15,8 +15,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
   signInWithPopup,
-  GoogleAuthProvider,
-  OAuthProvider
+  GoogleAuthProvider
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useAuth, useFirestore } from "@/firebase";
@@ -138,50 +137,11 @@ function AuthContent() {
     }
   };
 
-  const handleAppleSignIn = async () => {
-    if (!auth || !db) return;
-    setLoading(true);
-    const provider = new OAuthProvider('apple.com');
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const firebaseUser = result.user;
-
-      const userDocRef = doc(db, "users", firebaseUser.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        const userProfile = {
-          uid: firebaseUser.uid,
-          name: firebaseUser.displayName || "",
-          email: firebaseUser.email || "",
-          groupIds: [],
-          currency: "", 
-        };
-        await setDoc(userDocRef, userProfile);
-        router.push("/profile/setup-name");
-      } else {
-        const data = userDoc.data();
-        if (!data?.name) {
-          router.push("/profile/setup-name");
-        } else if (!data?.currency) {
-          router.push("/profile/currency?setup=true");
-        } else {
-          toast({ title: "Welcome", description: "Successfully signed in with Apple." });
-          router.replace(redirectUrl);
-        }
-      }
-    } catch (error: any) {
-      if (error.code === 'auth/popup-closed-by-user') {
-        setLoading(false);
-        return;
-      }
-      toast({ 
-        variant: "destructive", 
-        title: "Apple Sign-In Failed", 
-        description: error.message || "An error occurred during Apple sign-in." 
-      });
-      setLoading(false);
-    }
+  const handleAppleSignIn = () => {
+    toast({
+      title: "Notice",
+      description: "currently this is on testing mode only, please use Google account",
+    });
   };
 
   return (
