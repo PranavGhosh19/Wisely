@@ -30,7 +30,8 @@ import {
   Globe,
   Type,
   Camera,
-  Loader2
+  Loader2,
+  MessageSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth, useFirestore } from "@/firebase";
@@ -368,7 +369,7 @@ export default function ProfilePage() {
           </Card>
 
           <div className="space-y-2">
-            <p className="text-[10px] font-bold uppercase text-muted-foreground px-2 tracking-widest">Preferences</p>
+            <p className="text-[10px] font-bold uppercase text-muted-foreground px-2 tracking-widest">Preferences & Feedback</p>
             <div className="bg-card rounded-2xl overflow-hidden shadow-sm border-none">
               <button 
                 className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
@@ -465,6 +466,24 @@ export default function ProfilePage() {
                     <Share2 className="h-4 w-4" />
                   </div>
                   <span className="text-sm font-medium">Add to iOS Home Screen</span>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+
+              <button 
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
+                onClick={() => {
+                  toast({
+                    title: "Feedback Submitted",
+                    description: "Thank you for your feedback! We'll use it to improve Wisely.",
+                  });
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                    <MessageSquare className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-medium">Give Feedback</span>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>

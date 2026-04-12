@@ -140,7 +140,7 @@ function AuthContent() {
   const handleAppleSignIn = () => {
     toast({
       title: "Notice",
-      description: "currently this is on testing mode only, please use Google account",
+      description: "Please use Google account as Apple is under testing mode. Thanks for coorporation :-)",
     });
   };
 
