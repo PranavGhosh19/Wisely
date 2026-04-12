@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore } from "@/firebase";
-import { doc, collection } from "firebase/firestore";
+import { doc } from "firebase/firestore";
 import { ArrowLeft, MessageSquare, Send, Loader2, CheckCircle2 } from "lucide-react";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
@@ -78,9 +78,11 @@ export default function FeedbackPage() {
             <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-6">
               <CheckCircle2 className="h-10 w-10" />
             </div>
-            <h2 className="text-2xl font-bold font-headline text-primary mb-2">Thank You!</h2>
+            <h2 className="text-2xl font-bold font-headline text-primary mb-2">
+              Thank you so much, {user.name.split(" ")[0]}.
+            </h2>
             <p className="text-muted-foreground mb-8">
-              Your feedback has been successfully submitted. We review every suggestion to improve your experience.
+              This helps us a lot!
             </p>
             <Button onClick={() => router.push("/profile")} className="w-full h-12 rounded-2xl font-bold">
               Back to Settings
