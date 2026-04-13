@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -10,12 +9,13 @@ import {
   LogOut, 
   Plus, 
   Settings,
-  ReceiptText
+  ReceiptText,
+  WifiOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { useEffect, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import Image from "next/image";
@@ -39,14 +39,27 @@ function NavbarContent() {
   const searchParams = useSearchParams();
   const auth = useAuth();
   const { user, logout, setInstallPrompt, isSidebarCollapsed, setSidebarCollapsed } = useStore();
+  const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    if (typeof window !== 'undefined') {
+      setIsOnline(navigator.onLine);
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+    }
+
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setInstallPrompt(e);
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    
     return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, [setInstallPrompt]);
@@ -85,9 +98,16 @@ function NavbarContent() {
                 W
               </div>
               {!isSidebarCollapsed && (
-                <h1 className="text-2xl font-bold font-headline text-primary tracking-tight animate-in fade-in slide-in-from-left-4 duration-300">
-                  Wisely
-                </h1>
+                <div className="flex flex-col">
+                  <h1 className="text-2xl font-bold font-headline text-primary tracking-tight leading-none">
+                    Wisely
+                  </h1>
+                  {!isOnline && (
+                    <span className="text-[8px] font-black text-orange-500 uppercase tracking-widest mt-1 flex items-center gap-1">
+                      <WifiOff className="h-2 w-2" /> Offline Mode
+                    </span>
+                  )}
+                </div>
               )}
             </button>
           </div>
@@ -124,7 +144,7 @@ function NavbarContent() {
                       )}
                     </Link>
                   </TooltipTrigger>
-                  <TooltipContent side="right" className={cn("font-bold", !isSidebarCollapsed && "hidden")}>
+                  <TooltipContent side="right" className={cn("z-[100] font-bold", !isSidebarCollapsed && "hidden")}>
                     {item.name}
                   </TooltipContent>
                 </Tooltip>
@@ -157,7 +177,7 @@ function NavbarContent() {
                   )}
                 </Link>
               </TooltipTrigger>
-              <TooltipContent side="right" className={cn("font-bold", !isSidebarCollapsed && "hidden")}>
+              <TooltipContent side="right" className={cn("z-[100] font-bold", !isSidebarCollapsed && "hidden")}>
                 Settings
               </TooltipContent>
             </Tooltip>
@@ -189,7 +209,7 @@ function NavbarContent() {
                 )}
               </Link>
             </TooltipTrigger>
-            <TooltipContent side="right" className={cn("font-bold", !isSidebarCollapsed && "hidden")}>
+            <TooltipContent side="right" className={cn("z-[100] font-bold", !isSidebarCollapsed && "hidden")}>
               {user.name}
             </TooltipContent>
           </Tooltip>
@@ -211,7 +231,7 @@ function NavbarContent() {
                 )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right" className={cn("font-bold text-destructive", !isSidebarCollapsed && "hidden")}>
+            <TooltipContent side="right" className={cn("z-[100] font-bold text-destructive", !isSidebarCollapsed && "hidden")}>
               Sign Out
             </TooltipContent>
           </Tooltip>
@@ -242,7 +262,7 @@ function NavbarContent() {
             )}
           >
             <ReceiptText className="h-5 w-5" />
-            <span className="text-[9px] font-bold uppercase tracking-widest">Transactions</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest">History</span>
           </Link>
 
           <div className="relative -top-6 px-2">
@@ -288,6 +308,11 @@ function NavbarContent() {
             <span className="text-[9px] font-bold uppercase tracking-widest">Me</span>
           </Link>
         </div>
+        {!isOnline && (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full bg-orange-500 text-white px-3 py-1 rounded-t-lg text-[8px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center gap-1.5">
+            <WifiOff className="h-2 w-2" /> Offline Mode
+          </div>
+        )}
       </nav>
     </TooltipProvider>
   );

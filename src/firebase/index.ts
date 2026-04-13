@@ -3,7 +3,7 @@
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, enableMultiTabIndexedDbPersistence } from 'firebase/firestore'
+import { getFirestore, enableMultiTabIndexedDbPersistence, CACHE_SIZE_UNLIMITED } from 'firebase/firestore';
 
 /**
  * Initializes Firebase with a standard pattern that works across 
@@ -13,7 +13,6 @@ export function initializeFirebase() {
   let firebaseApp: FirebaseApp;
 
   if (!getApps().length) {
-    // Explicitly pass config to avoid "no-options" error in serverless/non-hosting environments
     firebaseApp = initializeApp(firebaseConfig);
   } else {
     firebaseApp = getApp();
@@ -28,13 +27,13 @@ export function getSdks(firebaseApp: FirebaseApp) {
 
   // Enable offline persistence for Firestore
   if (typeof window !== 'undefined') {
-    enableMultiTabIndexedDbPersistence(firestore).catch((err) => {
+    enableMultiTabIndexedDbPersistence(firestore, {
+      forceOwnership: false
+    }).catch((err) => {
       if (err.code === 'failed-precondition') {
-        // Multiple tabs open, persistence can only be enabled in one tab at a time.
-        console.warn("Firestore persistence failed: Multiple tabs open.");
+        console.warn("Firestore persistence: Multiple tabs open, persistence limited to one tab.");
       } else if (err.code === 'unimplemented') {
-        // The current browser does not support all of the features required to enable persistence
-        console.warn("Firestore persistence failed: Browser not supported.");
+        console.warn("Firestore persistence: Browser not supported.");
       }
     });
   }
