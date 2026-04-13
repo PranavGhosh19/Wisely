@@ -13,6 +13,7 @@ export interface User {
   monthlyBudget?: number;
   categoryBudgets?: Record<string, number>;
   isSmartSettleEnabled?: boolean;
+  lastBudgetPromptMonth?: string;
 }
 
 export interface SimplifiedDebt {

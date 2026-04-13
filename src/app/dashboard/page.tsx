@@ -13,6 +13,7 @@ import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, orderBy, where, collectionGroup } from "firebase/firestore";
 import { getCurrencySymbol, cn } from "@/lib/utils";
 import { LoadingScreen } from "@/components/layout/loading-screen";
+import { BudgetRolloverPrompt } from "@/components/budgets/BudgetRolloverPrompt";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -144,6 +145,7 @@ export default function Dashboard() {
   return (
     <div className="flex min-h-screen flex-col md:flex-row bg-background">
       <Navbar />
+      <BudgetRolloverPrompt />
       
       <main className="flex-1 p-4 md:p-8 pb-28 md:pb-8 max-w-7xl mx-auto w-full">
         <header className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
