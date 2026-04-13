@@ -14,17 +14,10 @@ import { collection, query, where } from "firebase/firestore";
 import { cn, getCurrencySymbol } from "@/lib/utils";
 import { calculateGroupBalances } from "@/lib/balances";
 
-/**
- * Group Card that calculates the user's net balance on-the-fly.
- * This component fetches expenses for the group and computes the net position
- * without relying on cached aggregation fields.
- */
 function GroupCard({ group, userId, currencyCode }: { group: any; userId: string; currencyCode?: string }) {
   const router = useRouter();
   const db = useFirestore();
   
-  // Fetch expenses for this specific group to calculate balance on-the-fly.
-  // We must filter by groupMemberIds to satisfy Firestore Security Rules for listing.
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !group.id || !userId) return null;
     return query(
@@ -36,7 +29,6 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
 
   const { data: groupExpenses } = useCollection(groupExpensesQuery);
 
-  // Calculate net balance for the current user based on fetched records
   const balance = useMemo(() => {
     if (!groupExpenses || !userId) return 0;
     const stats = calculateGroupBalances(group.members || [], groupExpenses);
@@ -44,14 +36,13 @@ function GroupCard({ group, userId, currencyCode }: { group: any; userId: string
   }, [groupExpenses, userId, group.members]);
 
   const symbol = getCurrencySymbol(currencyCode);
-  
   const isOwed = balance > 0.01;
   const isOwe = balance < -0.01;
 
   return (
     <Card 
       className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-card group rounded-2xl h-24 flex flex-col justify-center overflow-hidden"
-      onClick={() => router.push(`/groups/${group.id}`)}
+      onClick={() => router.push(`/groups/details?groupId=${group.id}`)}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4">
         <div className="flex flex-col min-w-0 pr-2">

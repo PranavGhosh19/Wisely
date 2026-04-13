@@ -32,7 +32,6 @@ export default function AllTransactionsPage() {
     setMounted(true);
   }, []);
 
-  // Fetch Personal Expenses
   const personalQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -43,7 +42,6 @@ export default function AllTransactionsPage() {
   }, [db, user]);
   const { data: personalExpenses, isLoading: loadingPersonal } = useCollection(personalQuery);
 
-  // Fetch Group Expenses
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -54,7 +52,6 @@ export default function AllTransactionsPage() {
   }, [db, user]);
   const { data: groupExpenses, isLoading: loadingGroups } = useCollection(groupExpensesQuery);
 
-  // Fetch User's Groups for name mapping
   const groupsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(collection(db, "groups"), where("members", "array-contains", user.uid));
@@ -69,7 +66,6 @@ export default function AllTransactionsPage() {
     return map;
   }, [userGroups]);
 
-  // Combine and process
   const allTransactions = useMemo(() => {
     const merged = [...(personalExpenses || []), ...(groupExpenses || [])];
     return merged
@@ -80,7 +76,6 @@ export default function AllTransactionsPage() {
       .sort((a, b) => b.date - a.date);
   }, [personalExpenses, groupExpenses, searchTerm]);
 
-  // Group by month
   const groupedTransactions = useMemo(() => {
     const groups: Record<string, any[]> = {};
     allTransactions.forEach((tx) => {
@@ -160,7 +155,7 @@ export default function AllTransactionsPage() {
                       {group.items.map((tx) => (
                         <Link 
                           key={tx.id} 
-                          href={`/expenses/${tx.id}?type=${tx.type}${tx.groupId ? `&groupId=${tx.groupId}` : ''}`}
+                          href={`/expenses/details?id=${tx.id}&type=${tx.type}${tx.groupId ? `&groupId=${tx.groupId}` : ''}`}
                           className="group flex items-center justify-between px-6 py-5 hover:bg-muted/5 transition-colors"
                         >
                           <div className="flex items-center gap-4 min-w-0">

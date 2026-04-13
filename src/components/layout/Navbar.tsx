@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { 
   LayoutDashboard, 
   Users, 
@@ -15,7 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import Image from "next/image";
@@ -33,9 +33,10 @@ const navItems = [
   { name: "Analytics", href: "/analytics", icon: PieChart },
 ];
 
-export function Navbar() {
+function NavbarContent() {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const auth = useAuth();
   const { user, logout, setInstallPrompt, isSidebarCollapsed, setSidebarCollapsed } = useStore();
 
@@ -44,9 +45,7 @@ export function Navbar() {
       e.preventDefault();
       setInstallPrompt(e);
     };
-
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
@@ -63,16 +62,13 @@ export function Navbar() {
     router.push("/");
   };
 
-  const groupMatch = pathname.match(/^\/groups\/([^/]+)$/);
-  const contextGroupId = groupMatch ? groupMatch[1] : undefined;
-  
+  const contextGroupId = searchParams.get('groupId');
   const addExpenseUrl = contextGroupId 
     ? `/expenses/add?type=GROUP&groupId=${contextGroupId}` 
     : `/expenses/add`;
 
   return (
     <TooltipProvider delayDuration={0}>
-      {/* Desktop Sidebar */}
       <nav 
         className={cn(
           "hidden md:flex sticky top-0 h-screen flex-col justify-between border-r bg-card/50 backdrop-blur-xl p-6 shrink-0 transition-all duration-300 ease-in-out overflow-hidden",
@@ -107,36 +103,28 @@ export function Navbar() {
               const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
               
-              const link = (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-2xl transition-all group py-3",
-                    isSidebarCollapsed ? "justify-center px-0" : "px-4",
-                    isActive 
-                      ? "text-primary bg-primary/10 shadow-sm" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  )}
-                >
-                  <Icon className={cn("h-5 w-5 transition-transform group-hover:scale-110", isActive && "text-primary")} />
-                  {!isSidebarCollapsed && (
-                    <span className="text-sm font-semibold truncate animate-in fade-in slide-in-from-left-2 duration-300">
-                      {item.name}
-                    </span>
-                  )}
-                </Link>
-              );
-
               return (
                 <Tooltip key={item.name}>
                   <TooltipTrigger asChild>
-                    {link}
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-3 rounded-2xl transition-all group py-3",
+                        isSidebarCollapsed ? "justify-center px-0" : "px-4",
+                        isActive 
+                          ? "text-primary bg-primary/10 shadow-sm" 
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      )}
+                    >
+                      <Icon className={cn("h-5 w-5 transition-transform group-hover:scale-110", isActive && "text-primary")} />
+                      {!isSidebarCollapsed && (
+                        <span className="text-sm font-semibold truncate animate-in fade-in slide-in-from-left-2 duration-300">
+                          {item.name}
+                        </span>
+                      )}
+                    </Link>
                   </TooltipTrigger>
-                  <TooltipContent 
-                    side="right" 
-                    className={cn("font-bold", !isSidebarCollapsed && "hidden")}
-                  >
+                  <TooltipContent side="right" className={cn("font-bold", !isSidebarCollapsed && "hidden")}>
                     {item.name}
                   </TooltipContent>
                 </Tooltip>
@@ -169,10 +157,7 @@ export function Navbar() {
                   )}
                 </Link>
               </TooltipTrigger>
-              <TooltipContent 
-                side="right" 
-                className={cn("font-bold", !isSidebarCollapsed && "hidden")}
-              >
+              <TooltipContent side="right" className={cn("font-bold", !isSidebarCollapsed && "hidden")}>
                 Settings
               </TooltipContent>
             </Tooltip>
@@ -191,12 +176,7 @@ export function Navbar() {
               >
                 <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold shadow-sm ring-2 ring-background shrink-0 overflow-hidden relative">
                   {user.photoURL ? (
-                    <Image 
-                      src={user.photoURL} 
-                      alt={user.name} 
-                      fill 
-                      className="object-cover"
-                    />
+                    <Image src={user.photoURL} alt={user.name} fill className="object-cover" />
                   ) : (
                     user.name?.[0] || "?"
                   )}
@@ -209,10 +189,7 @@ export function Navbar() {
                 )}
               </Link>
             </TooltipTrigger>
-            <TooltipContent 
-              side="right" 
-              className={cn("font-bold", !isSidebarCollapsed && "hidden")}
-            >
+            <TooltipContent side="right" className={cn("font-bold", !isSidebarCollapsed && "hidden")}>
               {user.name}
             </TooltipContent>
           </Tooltip>
@@ -234,17 +211,13 @@ export function Navbar() {
                 )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent 
-              side="right" 
-              className={cn("font-bold text-destructive", !isSidebarCollapsed && "hidden")}
-            >
+            <TooltipContent side="right" className={cn("font-bold text-destructive", !isSidebarCollapsed && "hidden")}>
               Sign Out
             </TooltipContent>
           </Tooltip>
         </div>
       </nav>
 
-      {/* Mobile Bottom Bar - Fixed Permanent */}
       <nav 
         className="fixed bottom-0 left-0 z-50 w-full border-t bg-background/95 backdrop-blur-md safe-area-bottom md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
         style={{ height: '80px' }}
@@ -317,5 +290,13 @@ export function Navbar() {
         </div>
       </nav>
     </TooltipProvider>
+  );
+}
+
+export function Navbar() {
+  return (
+    <Suspense fallback={null}>
+      <NavbarContent />
+    </Suspense>
   );
 }
