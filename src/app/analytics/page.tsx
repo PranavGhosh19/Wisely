@@ -19,11 +19,12 @@ import { getCurrencySymbol, cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
+// Exact palette: Sort order implies Yellow for top, then teals and greys
 const COLORS = ['#facc15', '#3D737F', '#5A9BA8', '#8FBABF', '#CEC7BF', '#A89E92'];
 
 /**
  * Custom label renderer for the Pie chart to show labels outside with connecting lines.
- * Optimized to keep text within surface bounds.
+ * Optimized for the Donut design.
  */
 const renderCustomizedLabel = (props: any, symbol: string) => {
   const { cx, cy, midAngle, outerRadius, index, name, value } = props;
@@ -31,37 +32,36 @@ const renderCustomizedLabel = (props: any, symbol: string) => {
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
   
-  // Adjusted offsets to keep labels closer to the pie
   const sx = cx + (outerRadius + 2) * cos;
   const sy = cy + (outerRadius + 2) * sin;
-  const mx = cx + (outerRadius + 8) * cos;
-  const my = cy + (outerRadius + 8) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 8;
+  const mx = cx + (outerRadius + 15) * cos;
+  const my = cy + (outerRadius + 15) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 12;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
   return (
     <g>
-      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={COLORS[index % COLORS.length]} fill="none" strokeWidth={1} />
-      <circle cx={ex} cy={ey} r={2} fill={COLORS[index % COLORS.length]} stroke="none" />
+      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={COLORS[index % COLORS.length]} fill="none" strokeWidth={1.5} />
+      <circle cx={ex} cy={ey} r={2.5} fill={COLORS[index % COLORS.length]} stroke="none" />
       <text 
-        x={ex + (cos >= 0 ? 1 : -1) * 6} 
+        x={ex + (cos >= 0 ? 1 : -1) * 8} 
         y={ey} 
         textAnchor={textAnchor} 
         fill="hsl(var(--foreground))" 
-        style={{ fontSize: '9px', fontWeight: 'bold' }}
+        style={{ fontSize: '10px', fontWeight: '800', fontFamily: 'var(--font-headline)' }}
       >
         {name}
       </text>
       <text 
-        x={ex + (cos >= 0 ? 1 : -1) * 6} 
+        x={ex + (cos >= 0 ? 1 : -1) * 8} 
         y={ey} 
-        dy={10} 
+        dy={14} 
         textAnchor={textAnchor} 
         fill="#facc15" 
-        style={{ fontSize: '8px', fontWeight: 'bold' }}
+        style={{ fontSize: '9px', fontWeight: '900', fontFamily: 'var(--font-headline)' }}
       >
-        {`${symbol}${value.toFixed(0)}`}
+        {`${symbol}${value.toLocaleString()}`}
       </text>
     </g>
   );
@@ -81,7 +81,6 @@ export default function AnalyticsPage() {
 
   const symbol = getCurrencySymbol(user?.currency);
 
-  // Fetch Personal Expenses
   const personalQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -91,7 +90,6 @@ export default function AnalyticsPage() {
   }, [db, user]);
   const { data: personalExpenses, isLoading: loadingPersonal } = useCollection(personalQuery);
 
-  // Fetch Group Expenses
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -102,14 +100,12 @@ export default function AnalyticsPage() {
   }, [db, user]);
   const { data: groupExpenses, isLoading: loadingGroups } = useCollection(groupExpensesQuery);
 
-  // Fetch User's Groups for the sub-filter
   const groupsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(collection(db, "groups"), where("members", "array-contains", user.uid));
   }, [db, user]);
   const { data: userGroups } = useCollection(groupsQuery);
 
-  // Combined and Filtered data for visual reports
   const filteredExpenses = useMemo(() => {
     let base: any[] = [];
     const personal = (personalExpenses || []).filter(e => e.category !== 'Settlement');
@@ -138,7 +134,6 @@ export default function AnalyticsPage() {
     return base;
   }, [personalExpenses, groupExpenses, scope, selectedGroupId, selectedDate]);
 
-  // Visual 1: Category Distribution
   const pieData = useMemo(() => {
     const categories: Record<string, number> = {};
     filteredExpenses.forEach(exp => {
@@ -149,7 +144,6 @@ export default function AnalyticsPage() {
       .sort((a, b) => b.value - a.value);
   }, [filteredExpenses]);
 
-  // Visual 2: Spending Trend
   const trendData = useMemo(() => {
     let base: any[] = [];
     const personal = (personalExpenses || []).filter(e => e.category !== 'Settlement');
@@ -199,7 +193,6 @@ export default function AnalyticsPage() {
     return months.map(m => ({ name: m.name, amount: parseFloat(m.amount.toFixed(2)) }));
   }, [personalExpenses, groupExpenses, scope, selectedGroupId]);
 
-  // Visual 3: Personal vs Group
   const splitData = useMemo(() => {
     const dateStart = selectedDate ? startOfDay(selectedDate) : null;
     const dateEnd = selectedDate ? endOfDay(selectedDate) : null;
@@ -223,7 +216,6 @@ export default function AnalyticsPage() {
     ];
   }, [personalExpenses, groupExpenses, selectedDate]);
 
-  // Visual 4: Budget Distribution (Current Month Comparison)
   const budgetChartData = useMemo(() => {
     if (!user || !storeCategories) return [];
     
@@ -259,7 +251,7 @@ export default function AnalyticsPage() {
         originalBudget: budget,
         originalSpent: spent
       };
-    }).filter(item => item.originalSpent > 0.01); // Hide categories with 0 spending
+    }).filter(item => item.originalSpent > 0.01);
   }, [user, storeCategories, personalExpenses, groupExpenses]);
 
   const isLoading = loadingPersonal || loadingGroups;
@@ -382,7 +374,7 @@ export default function AnalyticsPage() {
           </Card>
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
-            {/* Category Pie Chart */}
+            {/* Category Pie Chart - Applied Specific Donut Design */}
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="font-headline text-lg">Category Distribution</CardTitle>
@@ -390,9 +382,9 @@ export default function AnalyticsPage() {
                   {scope === "ALL" ? "Combined" : scope === "PERSONAL" ? "Personal" : "Group"} spending by category
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-[350px] sm:h-[400px]">
+              <CardContent className="h-[450px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <RePieChart margin={{ top: 20, right: 80, left: 80, bottom: 20 }}>
+                  <RePieChart margin={{ top: 40, right: 100, left: 100, bottom: 40 }}>
                     <Pie
                       data={pieData}
                       cx="50%"
@@ -403,9 +395,15 @@ export default function AnalyticsPage() {
                       dataKey="value"
                       label={(props) => renderCustomizedLabel(props, symbol)}
                       labelLine={false}
+                      stroke="none"
                     >
                       {pieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={COLORS[index % COLORS.length]} 
+                          stroke="hsl(var(--card))"
+                          strokeWidth={2}
+                        />
                       ))}
                     </Pie>
                   </RePieChart>
@@ -413,13 +411,12 @@ export default function AnalyticsPage() {
               </CardContent>
             </Card>
 
-            {/* Spending Line Chart */}
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="font-headline text-lg">Spending Trend</CardTitle>
                 <CardDescription>Monthly movement across selected scope</CardDescription>
               </CardHeader>
-              <CardContent className="h-[350px] sm:h-[400px]">
+              <CardContent className="h-[450px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <ReLineChart data={trendData} margin={{ top: 30, right: 20, left: 20, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
@@ -456,7 +453,6 @@ export default function AnalyticsPage() {
               </CardContent>
             </Card>
 
-            {/* Monthly Budget Distribution Stacked Bar Chart */}
             {budgetChartData.length > 0 && (
               <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden md:col-span-2">
                 <CardHeader>
@@ -560,7 +556,6 @@ export default function AnalyticsPage() {
               </Card>
             )}
 
-            {/* Personal vs Group Summary Bar Chart */}
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden md:col-span-2">
               <CardHeader>
                 <CardTitle className="font-headline text-lg">Personal vs Group Expenses</CardTitle>
