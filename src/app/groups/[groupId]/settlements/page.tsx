@@ -12,7 +12,8 @@ import {
   Check, 
   User as UserIcon,
   ArrowUpRight,
-  ArrowDownLeft
+  ArrowDownLeft,
+  Loader2
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
@@ -32,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { User, Expense, Group, SimplifiedDebt } from "@/types";
 
 interface SettlementTarget {
   from: string;
@@ -61,7 +63,7 @@ function SettlementsContent({ groupId }: { groupId: string }) {
     if (!db || !groupId) return null;
     return doc(db, "groups", groupId);
   }, [db, groupId]);
-  const { data: group, isLoading: groupLoading } = useDoc(groupRef);
+  const { data: group, isLoading: groupLoading } = useDoc<Group>(groupRef);
 
   // Initialize preference from Group Firebase data
   useEffect(() => {
@@ -87,7 +89,7 @@ function SettlementsContent({ groupId }: { groupId: string }) {
       where("isDeleted", "==", false)
     );
   }, [db, groupId, user]);
-  const { data: groupExpenses, isLoading: expensesLoading } = useCollection(groupExpensesQuery);
+  const { data: groupExpenses, isLoading: expensesLoading } = useCollection<Expense>(groupExpensesQuery);
 
   const membersQuery = useMemoFirebase(() => {
     if (!db || !group?.members || group.members.length === 0) return null;
@@ -96,13 +98,15 @@ function SettlementsContent({ groupId }: { groupId: string }) {
       where("uid", "in", group.members.slice(0, 30))
     );
   }, [db, group?.members]);
-  const { data: memberProfiles, isLoading: membersLoading } = useCollection(membersQuery);
+  const { data: memberProfiles, isLoading: membersLoading } = useCollection<User>(membersQuery);
 
   const settlementInfo = useMemo(() => {
-    if (!group?.members || !groupExpenses) return { stats: {}, debts: [] };
+    if (!group?.members || !groupExpenses) return { stats: {}, debts: [], rawDebts: [] };
     
     const stats: Record<string, { net: number }> = {};
     group.members.forEach(uid => stats[uid] = { net: 0 });
+
+    const rawDebtMap: Record<string, number> = {};
 
     groupExpenses.filter(exp => !exp.isSettled).forEach(exp => {
       if (stats[exp.paidBy]) {
@@ -112,9 +116,35 @@ function SettlementsContent({ groupId }: { groupId: string }) {
         if (stats[split.userId]) {
           stats[split.userId].net -= split.amount;
         }
+
+        // Calculate direct (raw) debts from this transaction
+        if (split.userId !== exp.paidBy && split.amount > 0.01) {
+          const key = `${split.userId}_${exp.paidBy}`;
+          rawDebtMap[key] = (rawDebtMap[key] || 0) + split.amount;
+        }
       });
     });
 
+    // Net out raw debts (A->B and B->A)
+    const rawDebts: SimplifiedDebt[] = [];
+    const processed = new Set<string>();
+    Object.keys(rawDebtMap).forEach(key => {
+      if (processed.has(key)) return;
+      const [u1, u2] = key.split('_');
+      const revKey = `${u2}_${u1}`;
+      const a1 = rawDebtMap[key] || 0;
+      const a2 = rawDebtMap[revKey] || 0;
+      
+      if (a1 > a2) {
+        rawDebts.push({ from: u1, to: u2, amount: a1 - a2 });
+      } else if (a2 > a1) {
+        rawDebts.push({ from: u2, to: u1, amount: a2 - a1 });
+      }
+      processed.add(key);
+      processed.add(revKey);
+    });
+
+    // Greedy simplification for "Smart Settle"
     const debtors = Object.entries(stats)
       .filter(([_, s]) => s.net < -0.01)
       .map(([uid, s]) => ({ uid, amount: Math.abs(s.net) }))
@@ -125,22 +155,21 @@ function SettlementsContent({ groupId }: { groupId: string }) {
       .map(([uid, s]) => ({ uid, amount: s.net }))
       .sort((a, b) => b.amount - a.amount);
 
-    const debts: { from: string; to: string; amount: number }[] = [];
-    
+    const optimizedDebts: SimplifiedDebt[] = [];
     let i = 0, j = 0;
     const tempDebtors = JSON.parse(JSON.stringify(debtors));
     const tempCreditors = JSON.parse(JSON.stringify(creditors));
 
     while (i < tempDebtors.length && j < tempCreditors.length) {
       const amount = Math.min(tempDebtors[i].amount, tempCreditors[j].amount);
-      debts.push({ from: tempDebtors[i].uid, to: tempCreditors[j].uid, amount });
+      optimizedDebts.push({ from: tempDebtors[i].uid, to: tempCreditors[j].uid, amount });
       tempDebtors[i].amount -= amount;
       tempCreditors[j].amount -= amount;
       if (tempDebtors[i].amount < 0.01) i++;
       if (tempCreditors[j].amount < 0.01) j++;
     }
 
-    return { stats, debts };
+    return { stats, debts: optimizedDebts, rawDebts };
   }, [group?.members, groupExpenses]);
 
   // Filter debts to only show those involving the current user
@@ -149,7 +178,15 @@ function SettlementsContent({ groupId }: { groupId: string }) {
     return settlementInfo.debts.filter(debt => debt.from === user.uid || debt.to === user.uid);
   }, [settlementInfo.debts, user]);
 
-  const openSettleDialog = (debt: { from: string; to: string; amount: number }) => {
+  // Filter raw debts to only show those involving the current user
+  const involvedRawDebts = useMemo(() => {
+    if (!user) return [];
+    return settlementInfo.rawDebts.filter(debt => debt.from === user.uid || debt.to === user.uid);
+  }, [settlementInfo.rawDebts, user]);
+
+  const activeDebtsToShow = isGreedyActive ? involvedDebts : involvedRawDebts;
+
+  const openSettleDialog = (debt: SimplifiedDebt) => {
     const fromUser = memberProfiles?.find(m => m.uid === debt.from);
     const toUser = memberProfiles?.find(m => m.uid === debt.to);
     
@@ -187,7 +224,7 @@ function SettlementsContent({ groupId }: { groupId: string }) {
         splitBetween: [{ userId: settlementTarget.to, amount: amount }],
         splitType: "UNEQUAL",
         isSettled: false,
-        notes: `Smart Settlement Recording`,
+        notes: isGreedyActive ? "Smart Settlement Recording" : "Direct Settlement Recording",
         groupId: groupId,
         groupMemberIds: group?.members || [],
         isDeleted: false
@@ -241,7 +278,7 @@ function SettlementsContent({ groupId }: { groupId: string }) {
 
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
-            <Zap className="h-8 w-8 text-primary animate-pulse" />
+            <Loader2 className="h-8 w-8 text-primary animate-spin" />
           </div>
         ) : (
           <div className="space-y-6">
@@ -254,152 +291,64 @@ function SettlementsContent({ groupId }: { groupId: string }) {
                 <CardDescription>
                   {isGreedyActive 
                     ? "Personalized transfers to balance your account efficiently." 
-                    : "Individual net balances for group members."}
+                    : "Your direct debt relationships within this group."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y divide-muted">
-                  {isGreedyActive ? (
-                    involvedDebts.length === 0 ? (
-                      <div className="p-16 text-center">
-                        <div className="h-16 w-16 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <Check className="h-8 w-8" />
-                        </div>
-                        <h3 className="text-xl font-bold font-headline">You are all settled!</h3>
-                        <p className="text-muted-foreground mt-1">No smart transfers currently involve your account.</p>
+                  {activeDebtsToShow.length === 0 ? (
+                    <div className="p-16 text-center">
+                      <div className="h-16 w-16 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Check className="h-8 w-8" />
                       </div>
-                    ) : (
-                      involvedDebts.map((debt, idx) => {
-                        const fromUser = memberProfiles?.find(m => m.uid === debt.from);
-                        const toUser = memberProfiles?.find(m => m.uid === debt.to);
-                        const isFromMe = debt.from === user?.uid;
-                        const isToMe = debt.to === user?.uid;
-
-                        return (
-                          <div key={idx} className="p-6 hover:bg-muted/5 transition-colors group">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                              <div className="flex items-center gap-4">
-                                <div className="flex -space-x-4">
-                                  <Avatar className="h-12 w-12 border-4 border-card shadow-lg">
-                                    <AvatarFallback className="bg-primary/10 text-primary font-bold">{fromUser?.name?.[0] || "?"}</AvatarFallback>
-                                  </Avatar>
-                                  <Avatar className="h-12 w-12 border-4 border-card shadow-lg">
-                                    <AvatarFallback className="bg-accent/10 text-accent font-bold">{toUser?.name?.[0] || "?"}</AvatarFallback>
-                                  </Avatar>
-                                </div>
-                                <div className="space-y-1">
-                                  <p className="text-sm font-medium text-muted-foreground">
-                                    <span className={cn("font-bold text-foreground", isFromMe && "text-primary")}>{isFromMe ? "You" : (fromUser?.name || "Member")}</span>
-                                    <span className="mx-2">owes</span>
-                                    <span className={cn("font-bold text-foreground", isToMe && "text-accent")}>{isToMe ? "you" : (toUser?.name || "Member")}</span>
-                                  </p>
-                                  <div className="text-2xl font-black tracking-tight text-foreground">
-                                    {symbol}{debt.amount.toFixed(2)}
-                                  </div>
-                                </div>
-                              </div>
-                              <Button 
-                                className="rounded-xl font-bold h-11 px-6 shadow-lg shadow-primary/10 group-hover:scale-105 transition-all"
-                                onClick={() => openSettleDialog(debt)}
-                              >
-                                <Zap className="h-4 w-4 mr-2" />
-                                Settle Now
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )
+                      <h3 className="text-xl font-bold font-headline">You are all settled!</h3>
+                      <p className="text-muted-foreground mt-1">
+                        {isGreedyActive 
+                          ? "No smart transfers currently involve your account." 
+                          : "You don't have any outstanding raw debts with other members."}
+                      </p>
+                    </div>
                   ) : (
-                    /* RAW BALANCES VIEW */
-                    (() => {
-                      const otherStandings = Object.entries(settlementInfo.stats)
-                        .filter(([uid, s]) => uid !== user?.uid && Math.abs(s.net) > 0.01)
-                        .sort((a, b) => b[1].net - a[1].net);
+                    activeDebtsToShow.map((debt, idx) => {
+                      const fromUser = memberProfiles?.find(m => m.uid === debt.from);
+                      const toUser = memberProfiles?.find(m => m.uid === debt.to);
+                      const isFromMe = debt.from === user?.uid;
+                      const isToMe = debt.to === user?.uid;
 
-                      if (otherStandings.length === 0) {
-                        return (
-                          <div className="p-16 text-center">
-                            <div className="h-16 w-16 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                              <Check className="h-8 w-8" />
-                            </div>
-                            <h3 className="text-xl font-bold font-headline">No other active balances</h3>
-                            <p className="text-muted-foreground mt-1">Everyone else in the group is settled up.</p>
-                          </div>
-                        );
-                      }
-
-                      return otherStandings.map(([uid, stats]) => {
-                        const mUser = memberProfiles?.find(m => m.uid === uid);
-                        const isOwed = stats.net > 0.01;
-                        const suggestedDebt = settlementInfo.debts.find(d => d.from === uid || d.to === uid);
-
-                        return (
-                          <div key={uid} className={cn(
-                            "p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:bg-muted/5 transition-colors group",
-                            isOwed ? "bg-green-500/[0.02]" : "bg-destructive/[0.02]"
-                          )}>
+                      return (
+                        <div key={idx} className="p-6 hover:bg-muted/5 transition-colors group">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                             <div className="flex items-center gap-4">
-                              <div className="relative">
-                                <Avatar className={cn(
-                                  "h-14 w-14 border-4 border-card shadow-lg ring-2",
-                                  isOwed ? "ring-green-500/20" : "ring-destructive/20"
-                                )}>
-                                  <AvatarFallback className={cn(
-                                    "font-bold text-lg", 
-                                    isOwed ? "bg-green-500/10 text-green-500" : "bg-destructive/10 text-destructive"
-                                  )}>
-                                    {mUser?.name?.[0] || "?"}
-                                  </AvatarFallback>
+                              <div className="flex -space-x-4">
+                                <Avatar className="h-12 w-12 border-4 border-card shadow-lg">
+                                  <AvatarFallback className="bg-primary/10 text-primary font-bold">{fromUser?.name?.[0] || "?"}</AvatarFallback>
                                 </Avatar>
-                                <div className={cn(
-                                  "absolute -bottom-1 -right-1 h-6 w-6 rounded-full flex items-center justify-center border-2 border-card shadow-sm",
-                                  isOwed ? "bg-green-500 text-white" : "bg-destructive text-white"
-                                )}>
-                                  {isOwed ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownLeft className="h-3.5 w-3.5" />}
-                                </div>
+                                <Avatar className="h-12 w-12 border-4 border-card shadow-lg">
+                                  <AvatarFallback className="bg-accent/10 text-accent font-bold">{toUser?.name?.[0] || "?"}</AvatarFallback>
+                                </Avatar>
                               </div>
-                              <div className="space-y-0.5">
-                                <p className="font-bold text-lg text-foreground">{mUser?.name || "Member"}</p>
-                                <p className={cn(
-                                  "text-[10px] font-black uppercase tracking-[0.1em]", 
-                                  isOwed ? "text-green-500" : "text-destructive"
-                                )}>
-                                  {isOwed ? "Is Owed Money" : "Currently Owes"}
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">
+                                  <span className={cn("font-bold text-foreground", isFromMe && "text-primary")}>{isFromMe ? "You" : (fromUser?.name || "Member")}</span>
+                                  <span className="mx-2">owes</span>
+                                  <span className={cn("font-bold text-foreground", isToMe && "text-accent")}>{isToMe ? "you" : (toUser?.name || "Member")}</span>
                                 </p>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center justify-between sm:justify-end gap-8">
-                              <div className="text-right">
-                                <div className={cn(
-                                  "text-2xl font-black tabular-nums tracking-tighter", 
-                                  isOwed ? "text-green-500" : "text-destructive"
-                                )}>
-                                  {isOwed ? "+" : "-"}{symbol}{Math.abs(stats.net).toFixed(2)}
+                                <div className="text-2xl font-black tracking-tight text-foreground">
+                                  {symbol}{debt.amount.toFixed(2)}
                                 </div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">Net Standing</p>
                               </div>
-                              
-                              {suggestedDebt && (
-                                <Button 
-                                  className={cn(
-                                    "rounded-xl font-bold h-11 px-6 shadow-lg transition-all active:scale-95",
-                                    isOwed 
-                                      ? "bg-green-500 hover:bg-green-600 shadow-green-500/10" 
-                                      : "bg-primary hover:bg-primary/90 shadow-primary/10"
-                                  )}
-                                  onClick={() => openSettleDialog(suggestedDebt)}
-                                >
-                                  <Zap className="h-4 w-4 mr-2" />
-                                  Settle
-                                </Button>
-                              )}
                             </div>
+                            <Button 
+                              className="rounded-xl font-bold h-11 px-6 shadow-lg shadow-primary/10 group-hover:scale-105 transition-all"
+                              onClick={() => openSettleDialog(debt)}
+                            >
+                              <Zap className="h-4 w-4 mr-2" />
+                              Settle Now
+                            </Button>
                           </div>
-                        );
-                      });
-                    })()
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </CardContent>
