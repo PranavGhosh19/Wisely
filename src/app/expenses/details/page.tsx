@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
@@ -183,7 +184,7 @@ function ExpenseDetailContent() {
               {expense.notes && (
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">Notes</p>
-                  <p className="text-sm font-medium italic">{expense.notes}</p>
+                  <p className="text-sm font-medium">{expense.notes}</p>
                 </div>
               )}
             </CardContent>

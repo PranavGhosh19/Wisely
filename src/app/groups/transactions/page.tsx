@@ -194,7 +194,7 @@ function GroupTransactionsContent() {
                                   "Not involved"
                                 )}
                               </p>
-                              {expense.notes && <p className="text-[11px] text-muted-foreground italic truncate max-w-[150px]">{expense.notes}</p>}
+                              {expense.notes && <p className="text-[11px] text-muted-foreground truncate max-w-[150px]">{expense.notes}</p>}
                             </div>
                           </Link>
                           <div className="pr-6 shrink-0">

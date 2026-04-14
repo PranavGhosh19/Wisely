@@ -1,0 +1,9 @@
+{
+	"appId": "io.wisely.app",
+	"appName": "Wisely",
+	"webDir": "out",
+	"server": {
+		"androidScheme": "https"
+	},
+	"packageClassList": []
+}

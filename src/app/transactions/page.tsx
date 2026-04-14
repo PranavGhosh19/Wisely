@@ -194,7 +194,7 @@ export default function AllTransactionsPage() {
                               <p className="font-bold text-lg text-foreground">
                                 -{symbol}{tx.amount.toFixed(2)}
                               </p>
-                              {tx.notes && <p className="text-[11px] text-muted-foreground italic truncate max-w-[120px] sm:max-w-[180px]">{tx.notes}</p>}
+                              {tx.notes && <p className="text-[11px] text-muted-foreground truncate max-w-[120px] sm:max-w-[180px]">{tx.notes}</p>}
                             </div>
                             <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
                           </div>
