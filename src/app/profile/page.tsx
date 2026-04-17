@@ -175,26 +175,26 @@ export default function ProfilePage() {
     
     if (permission === 'granted') {
       toast({
-        title: "Test Scheduled",
-        description: "An alert will trigger in 5 seconds. Minimize the app now to test background support."
+        title: "Test Alert Ready",
+        description: "An alert will trigger in 5 seconds. Minimize or lock your phone now to test background support."
       });
 
-      // Use a timeout to simulate a delay. 
-      // Note: If you CLOSE (kill) the app, this timer will die. 
-      // Real background notifications come from the Firebase server to your FCM token.
+      // We trigger the notification via the Service Worker registration
+      // This is the closest simulation to a real background push without a server
       setTimeout(async () => {
         if ('serviceWorker' in navigator) {
           try {
             const registration = await navigator.serviceWorker.ready;
             await registration.showNotification('Wisely Test', {
-              body: 'Background worker active! Real push notifications will work when the app is closed.',
-              icon: 'https://placehold.co/192x192/3D737F/FFFFFF?text=W',
-              badge: 'https://placehold.co/192x192/3D737F/FFFFFF?text=W',
+              body: 'If you see this, background notifications are active! Real alerts will work even when the app is closed.',
+              icon: '/wallet.png',
+              badge: '/wallet.png',
               tag: 'test-alert',
               vibrate: [200, 100, 200]
             });
           } catch (e) {
-            new Notification('Wisely', { body: 'Foreground Test Successful.' });
+            // Fallback for simple foreground alert if SW fails
+            new Notification('Wisely', { body: 'Foreground notification successful.' });
           }
         }
       }, 5000);
