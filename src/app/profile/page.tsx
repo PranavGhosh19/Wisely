@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -101,7 +100,6 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file || !user || !db) return;
 
-    // Support uploads up to 20MB
     if (file.size > 20 * 1024 * 1024) {
       toast({ 
         variant: "destructive", 
@@ -158,7 +156,7 @@ export default function ProfilePage() {
   };
 
   const handleReferFriend = () => {
-    const text = `Hey! I'm using Wisely to track my expenses and split bills with friends. It's really helpful, check it out: https://wisely-pi.vercel.app`;
+    const text = `Hey! I'm using Wisely to track my expenses and split bills with friends. Check it out!`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.location.href = whatsappUrl;
   };
@@ -177,30 +175,29 @@ export default function ProfilePage() {
     
     if (permission === 'granted') {
       toast({
-        title: "Notification Scheduled",
-        description: "A test notification will trigger in 60 seconds. You can background the app now."
+        title: "Test Scheduled",
+        description: "An alert will trigger in 5 seconds. Minimize the app now to test background support."
       });
 
-      // Use a timeout to simulate a delay
+      // Use a timeout to simulate a delay. 
+      // Note: If you CLOSE (kill) the app, this timer will die. 
+      // Real background notifications come from the Firebase server to your FCM token.
       setTimeout(async () => {
-        // We use the service worker to show the notification so it works in the background
         if ('serviceWorker' in navigator) {
           try {
             const registration = await navigator.serviceWorker.ready;
-            registration.showNotification('Wisely', {
-              body: 'Testing: This is your scheduled notification alert!',
-              icon: 'https://placehold.co/512x512/3D737F/FFFFFF?text=W',
-              badge: 'https://placehold.co/512x512/3D737F/FFFFFF?text=W',
-              tag: 'test-notification',
+            await registration.showNotification('Wisely Test', {
+              body: 'Background worker active! Real push notifications will work when the app is closed.',
+              icon: 'https://placehold.co/192x192/3D737F/FFFFFF?text=W',
+              badge: 'https://placehold.co/192x192/3D737F/FFFFFF?text=W',
+              tag: 'test-alert',
               vibrate: [200, 100, 200]
             });
           } catch (e) {
-            new Notification('Wisely', { body: 'Testing: Local fallback notification.' });
+            new Notification('Wisely', { body: 'Foreground Test Successful.' });
           }
-        } else {
-          new Notification('Wisely', { body: 'Testing: Browser fallback notification.' });
         }
-      }, 60000);
+      }, 5000);
     } else {
       toast({
         variant: "destructive",
@@ -409,8 +406,8 @@ export default function ProfilePage() {
                     <Bell className="h-4 w-4" />
                   </div>
                   <div className="flex flex-col items-start">
-                    <span className="text-sm font-medium">Notifications</span>
-                    <span className="text-[10px] text-muted-foreground font-bold uppercase">Send test in 1 min</span>
+                    <span className="text-sm font-medium">Test Push Notification</span>
+                    <span className="text-[10px] text-muted-foreground font-bold uppercase">Background Worker Setup</span>
                   </div>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -495,7 +492,7 @@ export default function ProfilePage() {
           </Button>
           
           <p className="text-center text-[10px] text-muted-foreground uppercase font-medium tracking-[0.2em] py-4">
-            Wisely Version 1.0.0
+            Wisely Version 1.1.0 (with Background Push)
           </p>
         </div>
       </main>

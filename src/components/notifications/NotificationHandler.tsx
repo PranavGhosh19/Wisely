@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -34,7 +33,10 @@ export function NotificationHandler() {
           const messaging = getMessaging();
           
           // Register service worker explicitly for background messaging
-          const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+          // The file /firebase-messaging-sw.js must exist in the public directory
+          const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+            scope: '/'
+          });
 
           // Request device token
           const token = await getToken(messaging, {
@@ -44,19 +46,24 @@ export function NotificationHandler() {
 
           if (token && auth.currentUser) {
             // Save the device token to user profile for server-side targeting
+            // This is how the server knows where to send push notifications for this user
             const userRef = doc(db, 'users', auth.currentUser.uid);
             await updateDoc(userRef, {
               fcmTokens: arrayUnion(token)
             });
+            console.log('FCM Token generated and saved:', token);
           }
 
           // Handle incoming messages when the app is in the foreground
           onMessage(messaging, (payload) => {
+            console.log('Foreground message received:', payload);
             toast({
-              title: payload.notification?.title || 'Activity Alert',
+              title: payload.notification?.title || 'Wisely Alert',
               description: payload.notification?.body || 'New activity recorded.',
             });
           });
+        } else {
+          console.warn('Notification permission denied by user.');
         }
       } catch (error) {
         console.error('NotificationHandler: Setup failed', error);
