@@ -175,25 +175,28 @@ export default function ProfilePage() {
     
     if (permission === 'granted') {
       toast({
-        title: "Test Alert Ready",
-        description: "An alert will trigger in 5 seconds. Minimize or lock your phone now to test background support."
+        title: "Test Alert Primed",
+        description: "Deep link test starting in 5 seconds. Lock your phone now to test background support."
       });
 
-      // We trigger the notification via the Service Worker registration
-      // This is the closest simulation to a real background push without a server
       setTimeout(async () => {
         if ('serviceWorker' in navigator) {
           try {
             const registration = await navigator.serviceWorker.ready;
-            await registration.showNotification('Wisely Test', {
-              body: 'If you see this, background notifications are active! Real alerts will work even when the app is closed.',
+            // 🚀 SMART TEST: Simulate a deep link notification
+            await registration.showNotification('Wisely: New Activity', {
+              body: '💸 Someone added a new expense. Tap to view your transaction history!',
               icon: '/wallet.png',
               badge: '/wallet.png',
-              tag: 'test-alert',
+              tag: 'test-group-1', // Groups with previous notifications
+              renotify: true,
+              data: {
+                targetUrl: '/transactions', // This triggers deep linking logic
+                groupId: 'test-demo'
+              },
               vibrate: [200, 100, 200]
             });
           } catch (e) {
-            // Fallback for simple foreground alert if SW fails
             new Notification('Wisely', { body: 'Foreground notification successful.' });
           }
         }
@@ -406,8 +409,8 @@ export default function ProfilePage() {
                     <Bell className="h-4 w-4" />
                   </div>
                   <div className="flex flex-col items-start">
-                    <span className="text-sm font-medium">Test Push Notification</span>
-                    <span className="text-[10px] text-muted-foreground font-bold uppercase">Background Worker Setup</span>
+                    <span className="text-sm font-medium">Test Smart Deep Linking</span>
+                    <span className="text-[10px] text-muted-foreground font-bold uppercase">Open History via Alert</span>
                   </div>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -492,7 +495,7 @@ export default function ProfilePage() {
           </Button>
           
           <p className="text-center text-[10px] text-muted-foreground uppercase font-medium tracking-[0.2em] py-4">
-            Wisely Version 1.1.0 (with Background Push)
+            Wisely Version 1.2.0 (with Deep Linking)
           </p>
         </div>
       </main>
