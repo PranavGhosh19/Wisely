@@ -24,8 +24,12 @@ export default function NotificationSettingsPage() {
   const [mounted, setMounted] = useState(false);
   const [updating, setUpdating] = useState(false);
 
-  // Initialize state from user profile, default to enabled
-  const [masterEnabled, setMasterEnabled] = useState(user?.notificationSettings?.masterEnabled ?? true);
+  // Initialize state from user profile
+  const [settings, setSettings] = useState({
+    masterEnabled: user?.notificationSettings?.masterEnabled ?? true,
+    expenseAdded: user?.notificationSettings?.expenseAdded ?? true,
+    settlementReminders: user?.notificationSettings?.settlementReminders ?? true,
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -34,41 +38,43 @@ export default function NotificationSettingsPage() {
 
   useEffect(() => {
     if (user?.notificationSettings) {
-      setMasterEnabled(user.notificationSettings.masterEnabled);
+      setSettings({
+        masterEnabled: user.notificationSettings.masterEnabled,
+        expenseAdded: user.notificationSettings.expenseAdded ?? true,
+        settlementReminders: user.notificationSettings.settlementReminders ?? true,
+      });
     }
   }, [user?.notificationSettings]);
 
   if (!mounted || !user) return null;
 
-  const handleToggleMaster = async (checked: boolean) => {
+  const handleToggle = async (key: string, value: boolean) => {
     if (!db || !user) return;
     
-    setMasterEnabled(checked);
+    const nextSettings = { ...settings, [key]: value };
+    setSettings(nextSettings);
     setUpdating(true);
 
     try {
       const userRef = doc(db, "users", user.uid);
-      
       const updateData: any = {
-        "notificationSettings.masterEnabled": checked
+        [`notificationSettings.${key}`]: value
       };
 
-      // If turning OFF, we should clear fcmTokens from Firestore to stop server pushes
-      if (!checked) {
+      // If turning master OFF, we should clear tokens to stop server pushes
+      if (key === 'masterEnabled' && !value) {
         updateData.fcmTokens = [];
       }
 
       await updateDoc(userRef, updateData);
       
       toast({
-        title: checked ? "Notifications Enabled" : "Notifications Silenced",
-        description: checked 
-          ? "You will now receive alerts for account activity." 
-          : "All background and foreground alerts have been disabled."
+        title: "Preference Saved",
+        description: `Notification setting updated successfully.`
       });
     } catch (error: any) {
       // Revert local state on error
-      setMasterEnabled(!checked);
+      setSettings(settings);
       toast({
         variant: "destructive",
         title: "Update Failed",
@@ -103,15 +109,15 @@ export default function NotificationSettingsPage() {
           <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-card">
             <CardHeader className={cn(
               "transition-colors duration-500",
-              masterEnabled ? "bg-primary/5" : "bg-muted/30"
+              settings.masterEnabled ? "bg-primary/5" : "bg-muted/30"
             )}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "h-12 w-12 rounded-2xl flex items-center justify-center transition-all",
-                    masterEnabled ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-muted text-muted-foreground"
+                    settings.masterEnabled ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-muted text-muted-foreground"
                   )}>
-                    {masterEnabled ? <Bell className="h-6 w-6" /> : <BellOff className="h-6 w-6" />}
+                    {settings.masterEnabled ? <Bell className="h-6 w-6" /> : <BellOff className="h-6 w-6" />}
                   </div>
                   <div>
                     <CardTitle className="text-lg font-headline">Master Switch</CardTitle>
@@ -121,8 +127,8 @@ export default function NotificationSettingsPage() {
                 <div className="flex items-center gap-3">
                   {updating && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
                   <Switch 
-                    checked={masterEnabled} 
-                    onCheckedChange={handleToggleMaster}
+                    checked={settings.masterEnabled} 
+                    onCheckedChange={(val) => handleToggle('masterEnabled', val)}
                     disabled={updating}
                     className="data-[state=checked]:bg-primary"
                   />
@@ -130,44 +136,60 @@ export default function NotificationSettingsPage() {
               </div>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/20 border border-border/50">
-                  {masterEnabled ? (
+                  {settings.masterEnabled ? (
                     <ShieldCheck className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
                   ) : (
                     <Shield className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                   )}
                   <div className="space-y-1">
-                    <p className="text-sm font-bold">Privacy & Battery</p>
+                    <p className="text-sm font-bold">Smart Listening</p>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      {masterEnabled 
-                        ? "Wisely is currently listening for activity. This uses minimal battery and keeps your financial records synchronized across devices." 
-                        : "Notifications are completely silenced. Wisely will not check for updates in the background, which may save a tiny amount of power."}
+                      {settings.masterEnabled 
+                        ? "Wisely is listening for activity. You will receive push notifications when relevant events occur in your groups." 
+                        : "All background and foreground alerts have been disabled. Your device tokens have been cleared for privacy."}
                     </p>
                   </div>
                 </div>
 
-                {!masterEnabled && (
-                  <div className="p-4 rounded-xl border-2 border-dashed border-muted text-center">
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Enable the master switch to see more granular options.
-                    </p>
+                {settings.masterEnabled && (
+                  <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-500">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-1">Detailed Preferences</p>
+                    
+                    <div className="grid gap-3">
+                      <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/10">
+                        <div className="space-y-0.5">
+                          <p className="text-sm font-bold">New Expense Added</p>
+                          <p className="text-[10px] text-muted-foreground">Get notified when someone adds a bill to a group.</p>
+                        </div>
+                        <Switch 
+                          checked={settings.expenseAdded} 
+                          onCheckedChange={(val) => handleToggle('expenseAdded', val)}
+                          disabled={updating}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/10">
+                        <div className="space-y-0.5">
+                          <p className="text-sm font-bold">Settlement Reminders</p>
+                          <p className="text-[10px] text-muted-foreground">Alerts when debts are settled or reminders are sent.</p>
+                        </div>
+                        <Switch 
+                          checked={settings.settlementReminders} 
+                          onCheckedChange={(val) => handleToggle('settlementReminders', val)}
+                          disabled={updating}
+                        />
+                      </div>
+                    </div>
                   </div>
                 )}
 
-                {masterEnabled && (
-                  <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-500">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-1">Detailed Preferences (Coming Soon)</p>
-                    <div className="grid gap-3 opacity-50 cursor-not-allowed">
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
-                        <span className="text-sm font-medium">New Expense Added</span>
-                        <Switch checked={true} disabled />
-                      </div>
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
-                        <span className="text-sm font-medium">Settlement Reminders</span>
-                        <Switch checked={true} disabled />
-                      </div>
-                    </div>
+                {!settings.masterEnabled && (
+                  <div className="p-8 rounded-2xl border-2 border-dashed border-muted text-center">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Enable the master switch to configure individual alert types.
+                    </p>
                   </div>
                 )}
               </div>
@@ -176,15 +198,15 @@ export default function NotificationSettingsPage() {
 
           <Card className="border-none shadow-sm rounded-2xl bg-primary text-primary-foreground">
             <CardHeader>
-              <CardTitle className="text-lg font-headline">Device Information</CardTitle>
+              <CardTitle className="text-lg font-headline">Sync Status</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm opacity-80 leading-relaxed">
-                Your current device is registered with Wisely. Notifications are delivered using Firebase Cloud Messaging (FCM) for maximum reliability.
+                Your account is currently synced with Firebase Cloud Messaging. This allows real-time updates across all your logged-in devices.
               </p>
               <div className="p-3 bg-white/10 rounded-lg flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-widest">Active Tokens</span>
-                <span className="text-xs font-mono font-bold">{(user.fcmTokens?.length || 0)} registered</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">Active Device Registrations</span>
+                <span className="text-xs font-mono font-bold">{(user.fcmTokens?.length || 0)}</span>
               </div>
             </CardContent>
           </Card>

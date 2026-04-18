@@ -21,7 +21,8 @@ import {
   User as UserIcon,
   BarChart3,
   Coins,
-  Zap
+  Zap,
+  BellRing
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -218,6 +219,37 @@ function GroupDetailContent() {
     }
   };
 
+  // 🔔 Simulation: Notify Members
+  const simulateGroupNotification = async () => {
+    if (!("Notification" in window)) {
+      toast({ title: "Not Supported", description: "Your browser doesn't support push notifications." });
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted' && 'serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.ready;
+      
+      toast({ 
+        title: "Simulation Started", 
+        description: "Notification will appear in 3 seconds. Lock your phone or leave the app to see the background behavior." 
+      });
+
+      setTimeout(async () => {
+        await registration.showNotification(`New Bill in ${group.name}`, {
+          body: `💸 ${user?.name} just added a ${getCurrencySymbol(user?.currency)}50.00 expense for Dinner.`,
+          icon: '/wallet.png',
+          badge: '/wallet.png',
+          tag: `expense-${groupId}`,
+          data: {
+            targetUrl: `/groups/details?groupId=${groupId}`,
+            groupId: groupId
+          }
+        });
+      }, 3000);
+    }
+  };
+
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/join?groupId=${groupId}` : `wisely.app/join?groupId=${groupId}`;
 
   const copyToClipboard = () => {
@@ -232,35 +264,12 @@ function GroupDetailContent() {
   const handleShareToWhatsApp = () => {
     const text = `Join my group "${group?.name || 'Shared Expenses'}" on Wisely to track and split expenses together! ${shareUrl}`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-
     window.location.href = whatsappUrl;
   };
 
-  if (!groupId) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold">Group ID is missing</h2>
-          <Button variant="link" onClick={() => router.push("/groups")}>Back to Groups</Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (groupLoading) {
-    return <div className="flex h-screen items-center justify-center animate-pulse text-primary font-bold">Loading group details...</div>;
-  }
-
-  if (!group) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold">Group not found</h2>
-          <Button variant="link" onClick={() => router.push("/groups")}>Back to Groups</Button>
-        </div>
-      </div>
-    );
-  }
+  if (!groupId) return <div className="p-8 text-center">Missing Group ID</div>;
+  if (groupLoading) return <div className="flex h-screen items-center justify-center animate-pulse text-primary font-bold">Loading group...</div>;
+  if (!group) return <div className="p-8 text-center">Group not found</div>;
 
   const symbol = getCurrencySymbol(user?.currency);
   const myNet = settlementInfo.stats[user?.uid || ""]?.net || 0;
@@ -281,14 +290,25 @@ function GroupDetailContent() {
             <div className="flex flex-col gap-2 sm:gap-1">
               <div className="flex items-center gap-3 w-full sm:w-auto">
                 <h2 className="text-2xl md:text-3xl font-bold font-headline text-primary truncate max-w-[240px] sm:max-w-none">{group.name}</h2>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm shrink-0"
-                  onClick={() => setIsQrOpen(true)}
-                >
-                  <QrCode className="h-4 w-4 sm:h-5 w-5" />
-                </Button>
+                <div className="flex gap-1">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="h-8 w-8 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm shrink-0"
+                    onClick={() => setIsQrOpen(true)}
+                  >
+                    <QrCode className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="h-8 w-8 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm shrink-0"
+                    onClick={simulateGroupNotification}
+                    title="Simulate Member Notification"
+                  >
+                    <BellRing className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <button 
                 className="flex items-center gap-2 mt-0.5 text-sm text-muted-foreground hover:text-primary transition-colors group w-fit"
