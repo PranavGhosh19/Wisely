@@ -18,7 +18,15 @@
         "monthlyBudget": { "type": "number", "description": "User's monthly spending goal (total)." },
         "categoryBudgets": { "type": "object", "description": "Map of category names to budget amounts." },
         "isSmartSettleEnabled": { "type": "boolean", "description": "User preference for optimized settlement view." },
-        "lastBudgetPromptMonth": { "type": "string", "description": "The last month (YYYY-MM) the user was prompted to rollover budgets." }
+        "lastBudgetPromptMonth": { "type": "string", "description": "The last month (YYYY-MM) the user was prompted to rollover budgets." },
+        "notificationSettings": {
+          "type": "object",
+          "properties": {
+            "masterEnabled": { "type": "boolean" },
+            "expenseAdded": { "type": "boolean" },
+            "settlementReminders": { "type": "boolean" }
+          }
+        }
       },
       "required": ["uid", "name", "email"]
     },

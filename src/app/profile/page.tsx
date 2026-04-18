@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -389,6 +390,27 @@ export default function ProfilePage() {
 
               <button 
                 className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
+                onClick={() => router.push("/profile/notifications")}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                    <Bell className="h-4 w-4" />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-medium">Notifications</span>
+                    <span className={cn(
+                      "text-[10px] font-bold uppercase",
+                      user.notificationSettings?.masterEnabled ? "text-emerald-500" : "text-muted-foreground"
+                    )}>
+                      {user.notificationSettings?.masterEnabled ? "Enabled" : "Silenced"}
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+
+              <button 
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
                 onClick={handleReferFriend}
               >
                 <div className="flex items-center gap-3">
@@ -396,22 +418,6 @@ export default function ProfilePage() {
                     <Share2 className="h-4 w-4" />
                   </div>
                   <span className="text-sm font-medium">Refer a Friend</span>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
-
-              <button 
-                className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
-                onClick={handleTestNotification}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-yellow-500/10 flex items-center justify-center text-yellow-500">
-                    <Bell className="h-4 w-4" />
-                  </div>
-                  <div className="flex flex-col items-start">
-                    <span className="text-sm font-medium">Test Smart Deep Linking</span>
-                    <span className="text-[10px] text-muted-foreground font-bold uppercase">Open History via Alert</span>
-                  </div>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>

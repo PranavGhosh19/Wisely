@@ -2,6 +2,12 @@
 export type ExpenseType = 'PERSONAL' | 'GROUP';
 export type SplitType = 'EQUAL' | 'UNEQUAL' | 'PERCENTAGE' | 'WEIGHT';
 
+export interface NotificationSettings {
+  masterEnabled: boolean;
+  expenseAdded?: boolean;
+  settlementReminders?: boolean;
+}
+
 export interface User {
   uid: string;
   name: string;
@@ -14,6 +20,8 @@ export interface User {
   categoryBudgets?: Record<string, number>;
   isSmartSettleEnabled?: boolean;
   lastBudgetPromptMonth?: string;
+  fcmTokens?: string[];
+  notificationSettings?: NotificationSettings;
 }
 
 export interface SimplifiedDebt {

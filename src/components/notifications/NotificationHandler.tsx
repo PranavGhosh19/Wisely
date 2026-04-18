@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -5,6 +6,7 @@ import { useAuth, useFirestore } from '@/firebase';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import { useToast } from '@/hooks/use-toast';
+import { useStore } from '@/lib/store';
 
 /**
  * NotificationHandler manages the lifecycle of FCM push notifications.
@@ -15,9 +17,19 @@ export function NotificationHandler() {
   const auth = useAuth();
   const db = useFirestore();
   const { toast } = useToast();
+  const { user } = useStore();
 
   useEffect(() => {
     if (!auth || !db) return;
+
+    // Check if the user has disabled notifications via settings
+    // Default to true if the property doesn't exist yet
+    const isMasterEnabled = user?.notificationSettings?.masterEnabled ?? true;
+
+    if (!isMasterEnabled) {
+      console.log('NotificationHandler: Master switch is OFF. Skipping setup.');
+      return;
+    }
 
     const setupMessaging = async () => {
       // Messaging is not supported in all browsers
@@ -33,6 +45,7 @@ export function NotificationHandler() {
           const messaging = getMessaging();
           
           // 1. Register the background service worker explicitly
+          // Make sure this file exists in /public/firebase-messaging-sw.js
           const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
             scope: '/'
           });
@@ -41,6 +54,7 @@ export function NotificationHandler() {
           await navigator.serviceWorker.ready;
 
           // 3. Request device token using the VAPID key
+          // This token is unique to this device/browser
           const token = await getToken(messaging, {
             vapidKey: 'BPgA6C3oY9eopfHttCljTrm9EgVz6acNkhLBjNWquraG-aDSoPbbEjVu6vnBPGa6e8hNlnOGgoNQMSqrmwPX28U',
             serviceWorkerRegistration: registration
@@ -69,14 +83,14 @@ export function NotificationHandler() {
       }
     };
 
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
+    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+      if (firebaseUser) {
         setupMessaging();
       }
     });
 
     return () => unsubscribe();
-  }, [auth, db, toast]);
+  }, [auth, db, toast, user?.notificationSettings?.masterEnabled]);
 
   return null;
 }
