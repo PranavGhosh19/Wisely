@@ -1,4 +1,1 @@
-module.exports = {
-  siteUrl: 'https://thewiselyapp.com',
-  generateRobotsTxt: true,
-};
+// Redundant - Switched to native src/app/sitemap.ts

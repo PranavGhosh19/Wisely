@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://thewiselyapp.com
+
+# Sitemaps
+Sitemap: https://thewiselyapp.com/sitemap.xml
