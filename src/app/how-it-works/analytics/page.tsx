@@ -12,6 +12,34 @@ import {
   Layers,
   Calendar
 } from "lucide-react";
+import { 
+  LineChart, 
+  Line, 
+  ResponsiveContainer, 
+  Tooltip, 
+  PieChart as RePieChart, 
+  Pie, 
+  Cell 
+} from "recharts";
+
+const DUMMY_VELOCITY = [
+  { name: 'Mon', amount: 40 },
+  { name: 'Tue', amount: 30 },
+  { name: 'Wed', amount: 60 },
+  { name: 'Thu', amount: 45 },
+  { name: 'Fri', amount: 90 },
+  { name: 'Sat', amount: 120 },
+  { name: 'Sun', amount: 80 },
+];
+
+const DUMMY_CATEGORIES = [
+  { name: 'Dining', value: 400 },
+  { name: 'Travel', value: 300 },
+  { name: 'Groceries', value: 200 },
+  { name: 'Housing', value: 500 },
+];
+
+const COLORS = ['#3D737F', '#3380FF', '#facc15', '#CEC7BF'];
 
 export default function AnalyticsShowcasePage() {
   return (
@@ -67,9 +95,51 @@ export default function AnalyticsShowcasePage() {
                 </div>
               </div>
               <div className="relative">
-                <div className="bg-card rounded-[3rem] p-1 shadow-2xl border border-border overflow-hidden">
-                  <div className="bg-muted h-[400px] w-full flex items-center justify-center text-muted-foreground font-headline text-sm italic p-12 text-center">
-                    [ Interactive Analytics Preview: Real-time charts showing spending velocity and category heatmaps ]
+                <div className="bg-card rounded-[3rem] p-8 shadow-2xl border border-border overflow-hidden min-h-[450px] flex flex-col justify-center gap-8">
+                  <div className="space-y-2">
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-2">Real-time Velocity</h4>
+                    <div className="h-[140px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={DUMMY_VELOCITY}>
+                          <Line 
+                            type="monotone" 
+                            dataKey="amount" 
+                            stroke="hsl(var(--primary))" 
+                            strokeWidth={4} 
+                            dot={{ r: 4, fill: 'hsl(var(--primary))', strokeWidth: 0 }} 
+                            activeDot={{ r: 6, strokeWidth: 0 }}
+                          />
+                          <Tooltip 
+                            contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
+                            labelStyle={{ display: 'none' }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-2">Impact Heatmap</h4>
+                    <div className="h-[140px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RePieChart>
+                          <Pie
+                            data={DUMMY_CATEGORIES}
+                            innerRadius={45}
+                            outerRadius={60}
+                            paddingAngle={8}
+                            dataKey="value"
+                          >
+                            {DUMMY_CATEGORIES.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
+                          />
+                        </RePieChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
                 </div>
                 <div className="absolute -bottom-6 -right-6 bg-accent text-primary p-6 rounded-3xl shadow-xl font-black text-xl">
