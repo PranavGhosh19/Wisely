@@ -15,7 +15,8 @@ import {
   CheckCircle2,
   Calculator,
   TrendingUp,
-  BarChart3
+  BarChart3,
+  Zap
 } from "lucide-react";
 import { LoadingScreen } from "@/components/layout/loading-screen";
 
