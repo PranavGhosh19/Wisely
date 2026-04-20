@@ -110,7 +110,13 @@ export default function AnalyticsShowcasePage() {
                             activeDot={{ r: 6, strokeWidth: 0 }}
                           />
                           <Tooltip 
-                            contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
+                            contentStyle={{ 
+                              backgroundColor: '#07161B', 
+                              borderRadius: '12px', 
+                              border: 'none', 
+                              boxShadow: '0 10px 30px rgba(0,0,0,0.3)' 
+                            }}
+                            itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
                             labelStyle={{ display: 'none' }}
                           />
                         </LineChart>
@@ -135,7 +141,14 @@ export default function AnalyticsShowcasePage() {
                             ))}
                           </Pie>
                           <Tooltip 
-                            contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
+                            contentStyle={{ 
+                              backgroundColor: '#07161B', 
+                              borderRadius: '12px', 
+                              border: 'none', 
+                              boxShadow: '0 10px 30px rgba(0,0,0,0.3)' 
+                            }}
+                            itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
+                            labelStyle={{ color: '#fff', fontWeight: 'bold' }}
                           />
                         </RePieChart>
                       </ResponsiveContainer>
