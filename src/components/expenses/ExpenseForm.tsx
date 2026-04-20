@@ -141,7 +141,6 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         createdById: isEditing ? (initialData?.createdById || user.uid) : user.uid,
         paidBy: formData.paidBy || user.uid,
         splitType: formData.splitType,
-        splitBetween: formData.splitBetween,
         receiptName: formData.receiptName || "",
         receiptUrl: formData.receiptUrl || "",
         isDeleted: false,
@@ -162,12 +161,42 @@ export function ExpenseForm({ initialData, initialType, initialGroupId }: Expens
         expenseData.groupId = formData.groupId;
         expenseData.groupMemberIds = selectedGroup.members;
 
-        if (expenseData.splitBetween.length === 0) {
-          const splitAmount = amount / (selectedGroup.members?.length || 1);
-          expenseData.splitBetween = (selectedGroup.members || []).map(uid => ({
+        // BUG FIX: Recalculate splits based on current amount and split type
+        const members = selectedGroup.members;
+
+        if (formData.splitBetween.length === 0) {
+          // Default behavior: Equal split across all members
+          const splitAmount = amount / (members.length || 1);
+          expenseData.splitBetween = members.map(uid => ({
             userId: uid,
             amount: parseFloat(splitAmount.toFixed(2))
           }));
+          expenseData.splitType = 'EQUAL';
+        } else if (formData.splitType === 'EQUAL') {
+          // Recalculate for EQUAL to ensure edited amounts are spread correctly
+          // We identify previously selected users by checking if their amount was > 0
+          const selectedUsers = formData.splitBetween.filter(s => s.amount > 0).map(s => s.userId);
+          const usersToInclude = selectedUsers.length > 0 ? selectedUsers : members;
+          const splitAmount = amount / usersToInclude.length;
+          
+          expenseData.splitBetween = members.map(uid => ({
+            userId: uid,
+            amount: usersToInclude.includes(uid) ? parseFloat(splitAmount.toFixed(2)) : 0
+          }));
+        } else if (formData.splitType === 'PERCENTAGE') {
+          expenseData.splitBetween = formData.splitBetween.map(s => ({
+            ...s,
+            amount: parseFloat(((s.percentage || 0) / 100 * amount).toFixed(2))
+          }));
+        } else if (formData.splitType === 'WEIGHT') {
+          const totalWeight = formData.splitBetween.reduce((acc, s) => acc + (s.weight || 0), 0);
+          expenseData.splitBetween = formData.splitBetween.map(s => ({
+            ...s,
+            amount: totalWeight > 0 ? parseFloat(((s.weight || 0) / totalWeight * amount).toFixed(2)) : 0
+          }));
+        } else {
+          // UNEQUAL split: Manual override, we respect existing splitBetween values
+          expenseData.splitBetween = formData.splitBetween;
         }
 
         const newRef = doc(db, "groups", formData.groupId, "expenses", expenseId);

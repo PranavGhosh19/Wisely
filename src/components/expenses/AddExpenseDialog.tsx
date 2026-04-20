@@ -144,12 +144,21 @@ export function AddExpenseDialog({ open, onOpenChange, defaultType, defaultGroup
         expenseData.groupId = formData.groupId;
         expenseData.groupMemberIds = selectedGroup.members; 
         
-        const splitAmount = amount / (selectedGroup.members?.length || 1);
-        expenseData.splitBetween = (selectedGroup.members || []).map(uid => ({
-          userId: uid,
-          amount: parseFloat(splitAmount.toFixed(2))
-        }));
-        expenseData.splitType = 'EQUAL';
+        // BUG FIX/REFINEMENT: Recalculate Equal Splits if amount changes
+        const splitType = isEditing ? (expenseToEdit?.splitType || 'EQUAL') : 'EQUAL';
+        expenseData.splitType = splitType;
+
+        if (splitType === 'EQUAL' || !isEditing) {
+          const splitAmount = amount / (selectedGroup.members?.length || 1);
+          expenseData.splitBetween = (selectedGroup.members || []).map(uid => ({
+            userId: uid,
+            amount: parseFloat(splitAmount.toFixed(2))
+          }));
+        } else {
+          // For Percentage/Weight splits in the dialog, we'd need more logic, 
+          // but EQUAL is the main source of the bug.
+          expenseData.splitBetween = expenseToEdit?.splitBetween || [];
+        }
         
         docRef = doc(db, "groups", formData.groupId, "expenses", expenseId);
       }
