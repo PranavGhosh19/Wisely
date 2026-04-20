@@ -1,18 +1,25 @@
-import { MetadataRoute } from 'next'
 
+import type { MetadataRoute } from 'next';
+
+/**
+ * Native Next.js sitemap generator.
+ * This file automatically serves an XML sitemap at /sitemap.xml.
+ */
 export default function sitemap(): MetadataRoute.Sitemap {
+  const baseUrl = 'https://thewiselyapp.com';
+  
   return [
     {
-      url: 'https://thewiselyapp.com',
+      url: baseUrl,
       lastModified: new Date(),
-      changeFrequency: 'yearly',
+      changeFrequency: 'weekly',
       priority: 1,
     },
     {
-      url: 'https://thewiselyapp.com/auth',
+      url: `${baseUrl}/auth`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.8,
     },
-  ]
+  ];
 }
