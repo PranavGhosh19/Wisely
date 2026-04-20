@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect } from "react";
@@ -56,9 +55,12 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <h1 className="text-5xl md:text-7xl font-bold font-headline text-primary tracking-tight leading-tight">
-              Master Your Money, <br />
+              Wisely – Expense Splitting & Budgeting App <br />
               <span className="text-accent">Personal or Shared.</span>
             </h1>
+            <p className="sr-only">
+              Wisely is an expense splitting and budgeting app that helps individuals and groups track spending, split bills, and manage finances easily.
+            </p>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Tracking expenses shouldn't be a chore. Whether you're budgeting for yourself or splitting rent with friends, Wisely makes it seamless.
             </p>
@@ -70,7 +72,7 @@ export default function LandingPage() {
                 </Link>
               </Button>
               <Button variant="outline" size="lg" className="h-14 px-10 rounded-2xl font-bold text-lg border-2">
-                <Link href="#features">See How it Works</Link>
+                <Link href="#features">Learn How Wisely Works</Link>
               </Button>
             </div>
           </div>
@@ -89,7 +91,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid gap-16 md:grid-cols-2">
-            <div className="space-y-6 bg-card/30 p-8 rounded-3xl border border-white/5">
+            <div id="budgeting" className="space-y-6 bg-card/30 p-8 rounded-3xl border border-white/5">
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                 <Wallet className="h-6 w-6" />
               </div>
@@ -107,7 +109,7 @@ export default function LandingPage() {
               </ul>
             </div>
 
-            <div className="space-y-6 bg-card/30 p-8 rounded-3xl border border-white/5">
+            <div id="group-expenses" className="space-y-6 bg-card/30 p-8 rounded-3xl border border-white/5">
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
                 <Users className="h-6 w-6" />
               </div>
@@ -129,7 +131,7 @@ export default function LandingPage() {
       </section>
 
       {/* Analytics CTA */}
-      <section className="py-24 bg-primary text-primary-foreground overflow-hidden relative">
+      <section id="how-it-works" className="py-24 bg-primary text-primary-foreground overflow-hidden relative">
         <div className="container mx-auto px-4 relative z-10 text-center">
           <div className="max-w-3xl mx-auto space-y-8">
             <PieChart className="h-16 w-16 mx-auto opacity-50" />
@@ -143,6 +145,18 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle,rgba(255,255,255,0.1)_0%,transparent_70%)]" />
+      </section>
+
+      {/* Value Proposition Section */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4 max-w-3xl text-center">
+          <h2 className="text-3xl font-bold text-primary font-headline">
+            Why choose Wisely for expense splitting?
+          </h2>
+          <p className="mt-4 text-muted-foreground leading-relaxed">
+            Wisely is designed for modern users who want a simple way to split expenses with friends, track personal spending, and manage group finances without confusion. Our automated "Analyst" and smart settlement engine take the stress out of money management.
+          </p>
+        </div>
       </section>
 
       {/* Trust Section */}

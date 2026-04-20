@@ -12,8 +12,8 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 const appIcon = PlaceHolderImages.find(img => img.id === "app-icon")?.imageUrl || '/wallet.png';
 
 export const metadata: Metadata = {
-  title: 'Wisely',
-  description: 'Manage personal and group expenses with ease.',
+  title: 'Wisely – Expense Splitting & Budgeting App',
+  description: 'Wisely is an expense splitting and budgeting app for individuals and groups. Track expenses, split bills, and manage money easily.',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -40,6 +40,20 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
         <meta name="theme-color" content="#07161B" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              "name": "Wisely",
+              "applicationCategory": "FinanceApplication",
+              "operatingSystem": "Web",
+              "url": "https://thewiselyapp.com",
+              "description": "Expense splitting and budgeting app for individuals and groups.",
+            }),
+          }}
+        />
       </head>
       <body className="font-body antialiased bg-background text-foreground transition-colors duration-300">
         <ThemeProvider
