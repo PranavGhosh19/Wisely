@@ -34,14 +34,16 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="sticky top-0 z-50 w-full border-b border-white/5 bg-background/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-9 w-9 bg-primary rounded-xl flex items-center justify-center text-white font-bold shadow-md">W</div>
-            <span className="font-headline text-xl font-bold text-primary">Wisely</span>
-          </div>
-          <div className="hidden md:flex items-center gap-8 px-8">
-            <Link href="/features" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">Features</Link>
-            <Link href="/compare" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">Why Wisely?</Link>
-            <Link href="/how-it-works/split-logic" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">Split Logic</Link>
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-2">
+              <div className="h-9 w-9 bg-primary rounded-xl flex items-center justify-center text-white font-bold shadow-md">W</div>
+              <span className="font-headline text-xl font-bold text-primary">Wisely</span>
+            </div>
+            <div className="hidden md:flex items-center gap-6">
+              <Link href="/features" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">Features</Link>
+              <Link href="/compare" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">Why Wisely?</Link>
+              <Link href="/how-it-works/split-logic" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">Split Logic</Link>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <Button variant="ghost" asChild className="hidden sm:flex rounded-xl font-bold">
@@ -55,7 +57,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative py-20 md:py-32 overflow-hidden bg-background">
+      <section className="relative py-12 sm:py-20 lg:py-32 overflow-hidden bg-background">
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <h1 className="text-5xl md:text-8xl font-black font-headline text-primary tracking-tighter leading-[0.9]">
@@ -223,7 +225,7 @@ export default function LandingPage() {
                   <li><Link href="/auth" className="hover:text-primary transition-colors">Switching Guide</Link></li>
                 </ul>
               </div>
-              <div className="hidden md:block space-y-4">
+              <div className="hidden md:block space-y-4 text-center md:text-left">
                 <h4 className="font-black text-xs uppercase tracking-widest text-primary">Support</h4>
                 <ul className="space-y-2 text-sm font-bold text-muted-foreground">
                   <li><Link href="/help-center" className="hover:text-primary transition-colors">Help Center</Link></li>
@@ -236,7 +238,7 @@ export default function LandingPage() {
           <div className="mt-16 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">
             <p>© 2026 The Wisely App.</p>
             <div className="flex gap-8">
-              <Link href="/help-center">LinkedIn</Link>
+              <Link href="/help-center" className="hover:text-primary">LinkedIn</Link>
             </div>
           </div>
         </div>

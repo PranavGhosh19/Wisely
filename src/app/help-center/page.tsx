@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Mail, MessageCircle, ShieldQuestion } from "lucide-react";
+import { ArrowLeft, Mail, ShieldQuestion } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 
