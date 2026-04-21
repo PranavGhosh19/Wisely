@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,7 @@ import {
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useAuth, useFirestore } from "@/firebase";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 function AuthContent() {
   const router = useRouter();
@@ -36,6 +38,7 @@ function AuthContent() {
   const [loading, setLoading] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   
   const redirectUrl = searchParams.get("redirect") || "/dashboard";
 
@@ -68,6 +71,12 @@ function AuthContent() {
     e.preventDefault();
     if (!auth || !db) return;
     
+    // Only enforce agreement for Sign Up
+    if (isRegistering && !agreed) {
+      toast({ variant: "destructive", title: "Action Required", description: "Please agree to the Terms and Privacy Policy." });
+      return;
+    }
+
     setLoading(true);
     try {
       if (isRegistering) {
@@ -119,6 +128,11 @@ function AuthContent() {
 
   const handleGoogleSignIn = async () => {
     if (!auth || !db) return;
+    if (!agreed) {
+      toast({ variant: "destructive", title: "Action Required", description: "Please agree to the Terms and Privacy Policy." });
+      return;
+    }
+
     setLoading(true);
     const provider = new GoogleAuthProvider();
     try {
@@ -246,7 +260,28 @@ function AuthContent() {
                 <Input id="password" type="password" placeholder="••••••••" className="pl-10 h-11 rounded-xl" value={password} onChange={(e) => setPassword(e.target.value)} required />
               </div>
             </div>
-            <Button className="w-full bg-primary h-11 rounded-xl font-bold" disabled={loading}>
+
+            <div className="flex items-center space-x-2 py-2">
+              <Checkbox 
+                id="terms" 
+                checked={agreed} 
+                onCheckedChange={(checked) => setAgreed(checked as boolean)} 
+              />
+              <label
+                htmlFor="terms"
+                className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-muted-foreground"
+              >
+                I agree to the{" "}
+                <Link href="/terms-of-service" className="text-primary hover:underline font-bold">Terms of Service</Link>
+                {" "}and{" "}
+                <Link href="/privacy-policy" className="text-primary hover:underline font-bold">Privacy Policy</Link>.
+              </label>
+            </div>
+
+            <Button 
+              className="w-full bg-primary h-11 rounded-xl font-bold" 
+              disabled={loading || (isRegistering && !agreed)}
+            >
               {loading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : (isRegistering ? "Sign Up" : "Sign In")}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -257,7 +292,12 @@ function AuthContent() {
             <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">Or</span></div>
           </div>
 
-          <Button variant="outline" className="w-full h-11 rounded-xl font-bold border-2" onClick={handleGoogleSignIn} disabled={loading}>
+          <Button 
+            variant="outline" 
+            className="w-full h-11 rounded-xl font-bold border-2" 
+            onClick={handleGoogleSignIn} 
+            disabled={loading || !agreed}
+          >
             Continue with Google
           </Button>
 
