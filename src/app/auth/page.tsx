@@ -3,23 +3,16 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, ArrowRight, User as UserIcon, Loader2, CheckCircle2, RefreshCcw } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  updateProfile,
   signInWithPopup,
   GoogleAuthProvider,
-  sendEmailVerification
 } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useAuth, useFirestore } from "@/firebase";
-import { cn } from "@/lib/utils";
 
 function AuthContent() {
   const router = useRouter();
@@ -29,121 +22,16 @@ function AuthContent() {
   const auth = useAuth();
   const db = useFirestore();
   
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [isRegistering, setIsRegistering] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [verificationSent, setVerificationSent] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
-  
   const redirectUrl = searchParams.get("redirect") || "/dashboard";
 
-  // Standard background check for already logged-in users
   useEffect(() => {
-    if (user && !loading && !verificationSent) {
+    if (user && !loading) {
       if (user.currency && user.name) {
         router.replace(redirectUrl);
       }
     }
-  }, [user, router, redirectUrl, loading, verificationSent]);
-
-  // Polling for email verification status
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (verificationSent && auth?.currentUser && !isVerified) {
-      interval = setInterval(async () => {
-        try {
-          await auth.currentUser?.reload();
-          if (auth.currentUser?.emailVerified) {
-            setIsVerified(true);
-            toast({
-              title: "Email Verified",
-              description: "Thank you! You can now proceed with your account setup.",
-            });
-            clearInterval(interval);
-          }
-        } catch (error) {
-          console.error("Error reloading user status:", error);
-        }
-      }, 3000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [verificationSent, auth, isVerified, toast]);
-
-  const handleEmailAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!auth || !db) return;
-    
-    if (!email || !password || (isRegistering && !name)) {
-      toast({ 
-        variant: "destructive", 
-        title: "Missing Fields", 
-        description: "Please fill in all details." 
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      if (isRegistering) {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const firebaseUser = userCredential.user;
-
-        // 📧 Send Email Verification Link with Redirect URL to prevent 404
-        await sendEmailVerification(firebaseUser, {
-          url: `${window.location.origin}/auth`,
-          handleCodeInApp: false,
-        });
-
-        await updateProfile(firebaseUser, { displayName: name });
-
-        const userProfile = {
-          uid: firebaseUser.uid,
-          name: name,
-          email: email,
-          groupIds: [],
-          currency: "", 
-          notificationSettings: {
-            masterEnabled: true,
-            expenseAdded: true,
-            settlementReminders: true
-          }
-        };
-
-        await setDoc(doc(db, "users", firebaseUser.uid), userProfile);
-        
-        setVerificationSent(true);
-        toast({ 
-          title: "Verification Sent", 
-          description: "Please check your inbox to verify your email address." 
-        });
-      } else {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        
-        // Optional: Check if email is verified on login
-        if (!userCredential.user.emailVerified) {
-          toast({
-            variant: "default",
-            title: "Check your email",
-            description: "Your email isn't verified yet, but you can still explore the app."
-          });
-        }
-
-        toast({ title: "Welcome Back", description: "Successfully signed in." });
-        router.replace(redirectUrl);
-      }
-    } catch (error: any) {
-      toast({ 
-        variant: "destructive", 
-        title: "Authentication Failed", 
-        description: error.message || "An error occurred during sign in." 
-      });
-      setLoading(false);
-    }
-  };
+  }, [user, router, redirectUrl, loading]);
 
   const handleGoogleSignIn = async () => {
     if (!auth || !db) return;
@@ -191,82 +79,8 @@ function AuthContent() {
     }
   };
 
-  const handleManualCheck = async () => {
-    if (!auth?.currentUser) return;
-    setLoading(true);
-    try {
-      await auth.currentUser.reload();
-      if (auth.currentUser.emailVerified) {
-        setIsVerified(true);
-        toast({ title: "Verified", description: "Email successfully verified." });
-      } else {
-        toast({ variant: "destructive", title: "Not verified yet", description: "Please check your email and click the link." });
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (verificationSent) {
-    return (
-      <div className="w-full max-w-md space-y-8 animate-in fade-in duration-500">
-        <Card className="border-none shadow-xl rounded-3xl p-8 text-center bg-card">
-          <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-6">
-            {isVerified ? (
-              <CheckCircle2 className="h-10 w-10 text-green-500" />
-            ) : (
-              <Mail className="h-10 w-10 animate-pulse" />
-            )}
-          </div>
-          <CardTitle className="font-headline text-2xl mb-2">
-            {isVerified ? "Verification Complete" : "Verify your email"}
-          </CardTitle>
-          <CardDescription className="text-base mb-8">
-            {isVerified ? (
-              "Your email has been confirmed. You're all set to finish your profile!"
-            ) : (
-              <>We've sent a verification link to <span className="font-bold text-foreground">{email}</span>. Click the link in your email to enable the button below.</>
-            )}
-          </CardDescription>
-          <div className="space-y-4">
-            <Button 
-              className={cn(
-                "w-full h-14 rounded-2xl font-bold transition-all duration-500 shadow-lg",
-                isVerified 
-                  ? "bg-green-600 hover:bg-green-700 shadow-green-500/20 text-white" 
-                  : "bg-muted text-muted-foreground opacity-50 cursor-not-allowed"
-              )}
-              disabled={!isVerified}
-              onClick={() => router.push("/profile/currency?setup=true")}
-            >
-              {isVerified ? "Continue to Setup" : "Waiting for Verification..."}
-              {isVerified && <ArrowRight className="ml-2 h-5 w-5" />}
-            </Button>
-            
-            {!isVerified && (
-              <button 
-                onClick={handleManualCheck}
-                disabled={loading}
-                className="text-xs text-primary font-bold uppercase tracking-widest flex items-center justify-center gap-2 mx-auto hover:opacity-80 disabled:opacity-50"
-              >
-                <RefreshCcw className={cn("h-3 w-3", loading && "animate-spin")} />
-                Check Status Manually
-              </button>
-            )}
-
-            <p className="text-xs text-muted-foreground">
-              Check your spam folder if you don't see it in a few minutes.
-            </p>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="w-full max-w-md space-y-8">
+    <div className="w-full max-w-md space-y-8 animate-in fade-in duration-500">
       <div className="text-center">
         <h1 
           className="font-headline text-4xl font-bold text-primary mb-2 cursor-pointer transition-colors hover:text-primary/80" 
@@ -277,120 +91,39 @@ function AuthContent() {
         <p className="text-muted-foreground">Master your money, personal or shared.</p>
       </div>
 
-      <Card className="border-none shadow-lg rounded-2xl">
-        <CardHeader>
-          <CardTitle className="font-headline text-2xl">
-            {isRegistering ? "Create Account" : "Sign In"}
-          </CardTitle>
-          <CardDescription>
-            {isRegistering 
-              ? "Join Wisely to start tracking your expenses." 
-              : "Enter your credentials to access your dashboard."}
+      <Card className="border-none shadow-lg rounded-2xl overflow-hidden">
+        <CardHeader className="bg-primary/5 border-b border-primary/10 py-8">
+          <CardTitle className="font-headline text-2xl text-center">Sign In</CardTitle>
+          <CardDescription className="text-center">
+            Access your dashboard securely with your Google account.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <form onSubmit={handleEmailAuth} className="space-y-4">
-            {isRegistering && (
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <div className="relative">
-                  <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    id="name" 
-                    placeholder="John Doe" 
-                    className="pl-10 h-11 rounded-xl"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    disabled={loading}
-                    required
-                  />
-                </div>
-              </div>
+        <CardContent className="space-y-6 p-8">
+          <Button 
+            className="w-full bg-primary hover:bg-primary/90 h-14 rounded-2xl font-bold text-lg shadow-xl shadow-primary/20 transition-all active:scale-95" 
+            onClick={handleGoogleSignIn} 
+            disabled={loading}
+          >
+            {loading ? (
+              <Loader2 className="h-6 w-6 animate-spin mr-3" />
+            ) : (
+              <svg className="mr-3 h-6 w-6" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+                <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
+              </svg>
             )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  id="email" 
-                  type="email"
-                  placeholder="name@example.com" 
-                  className="pl-10 h-11 rounded-xl"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading}
-                  required
-                />
-              </div>
-            </div>
+            Continue with Google
+          </Button>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  id="password" 
-                  type="password"
-                  placeholder="••••••••" 
-                  className="pl-10 h-11 rounded-xl"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                  required
-                />
-              </div>
-            </div>
-
-            <Button className="w-full bg-primary h-11 rounded-xl font-bold" disabled={loading}>
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                isRegistering ? "Sign Up" : "Sign In"
-              )}
-              {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
-            </Button>
-          </form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <Button 
-              variant="outline" 
-              className="w-full h-11 rounded-xl font-bold border-2" 
-              onClick={handleGoogleSignIn} 
-              disabled={loading}
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
-                  <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
-                </svg>
-              )}
-              Continue with Google
-            </Button>
-          </div>
-
-          <div className="text-center mt-4">
-            <button 
-              type="button"
-              className="text-sm text-primary hover:underline font-medium"
-              onClick={() => setIsRegistering(!isRegistering)}
-              disabled={loading}
-            >
-              {isRegistering ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
-            </button>
+          <div className="flex items-center justify-center gap-2">
+            <div className="h-1 w-1 bg-muted-foreground rounded-full opacity-30" />
+            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
+              Safe & Secure
+            </p>
+            <div className="h-1 w-1 bg-muted-foreground rounded-full opacity-30" />
           </div>
         </CardContent>
       </Card>
+      
       <p className="text-center text-xs text-muted-foreground">
         Securely powered by Firebase.
       </p>

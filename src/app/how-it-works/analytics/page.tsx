@@ -62,9 +62,6 @@ export default function AnalyticsShowcasePage() {
       <main className="flex-1 py-20">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center max-w-3xl mx-auto mb-24 space-y-6">
-            <div className="h-16 w-16 bg-primary/10 rounded-3xl flex items-center justify-center text-primary mx-auto mb-6">
-              <Sparkles className="h-8 w-8" />
-            </div>
             <h1 className="text-4xl md:text-7xl font-black font-headline text-primary leading-tight">Insight, not just info.</h1>
             <p className="text-xl text-muted-foreground">
               Numbers are useless without context. Wisely's automated analyst does the heavy lifting, surfacing trends you might miss.

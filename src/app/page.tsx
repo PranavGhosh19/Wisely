@@ -238,7 +238,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="mt-16 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">
-            <p>© 2024 Wisely Finance Inc. Built with NextJS & Firebase.</p>
+            <p>© 2026 The Wisely App.</p>
             <div className="flex gap-8">
               <Link href="/auth">Twitter</Link>
               <Link href="/auth">LinkedIn</Link>
