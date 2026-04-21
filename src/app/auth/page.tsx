@@ -128,7 +128,7 @@ function AuthContent() {
 
   const handleGoogleSignIn = async () => {
     if (!auth || !db) return;
-    if (!agreed) {
+    if (isRegistering && !agreed) {
       toast({ variant: "destructive", title: "Action Required", description: "Please agree to the Terms and Privacy Policy." });
       return;
     }
@@ -261,22 +261,24 @@ function AuthContent() {
               </div>
             </div>
 
-            <div className="flex items-center space-x-2 py-2">
-              <Checkbox 
-                id="terms" 
-                checked={agreed} 
-                onCheckedChange={(checked) => setAgreed(checked as boolean)} 
-              />
-              <label
-                htmlFor="terms"
-                className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-muted-foreground"
-              >
-                I agree to the{" "}
-                <Link href="/terms-of-service" className="text-primary hover:underline font-bold">Terms of Service</Link>
-                {" "}and{" "}
-                <Link href="/privacy-policy" className="text-primary hover:underline font-bold">Privacy Policy</Link>.
-              </label>
-            </div>
+            {isRegistering && (
+              <div className="flex items-center space-x-2 py-2">
+                <Checkbox 
+                  id="terms" 
+                  checked={agreed} 
+                  onCheckedChange={(checked) => setAgreed(checked as boolean)} 
+                />
+                <label
+                  htmlFor="terms"
+                  className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-muted-foreground"
+                >
+                  I agree to the{" "}
+                  <Link href="/terms-of-service" className="text-primary hover:underline font-bold">Terms of Service</Link>
+                  {" "}and{" "}
+                  <Link href="/privacy-policy" className="text-primary hover:underline font-bold">Privacy Policy</Link>.
+                </label>
+              </div>
+            )}
 
             <Button 
               className="w-full bg-primary h-11 rounded-xl font-bold" 
@@ -296,13 +298,16 @@ function AuthContent() {
             variant="outline" 
             className="w-full h-11 rounded-xl font-bold border-2" 
             onClick={handleGoogleSignIn} 
-            disabled={loading || !agreed}
+            disabled={loading || (isRegistering && !agreed)}
           >
             Continue with Google
           </Button>
 
           <div className="text-center mt-4">
-            <button type="button" className="text-sm text-primary hover:underline font-medium" onClick={() => setIsRegistering(!isRegistering)}>
+            <button type="button" className="text-sm text-primary hover:underline font-medium" onClick={() => {
+              setIsRegistering(!isRegistering);
+              setAgreed(false);
+            }}>
               {isRegistering ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
             </button>
           </div>
