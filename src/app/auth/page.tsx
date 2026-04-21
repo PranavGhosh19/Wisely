@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
@@ -95,7 +94,10 @@ function AuthContent() {
         const firebaseUser = userCredential.user;
 
         // 📧 Send Email Verification Link
-        await sendEmailVerification(firebaseUser);
+        await sendEmailVerification(firebaseUser, {
+          url: `${window.location.origin}/auth`,
+          handleCodeInApp: false,
+        });
 
         await updateProfile(firebaseUser, { displayName: name });
 
@@ -122,12 +124,12 @@ function AuthContent() {
       } else {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         
-        // Check if email is verified on login
+        // Optional: Check if email is verified on login
         if (!userCredential.user.emailVerified) {
           toast({
             variant: "default",
             title: "Check your email",
-            description: "Your email isn't verified yet. Please check your inbox."
+            description: "Your email isn't verified yet, but you can still explore the app."
           });
         }
 
@@ -190,13 +192,6 @@ function AuthContent() {
     }
   };
 
-  const handleAppleSignIn = () => {
-    toast({
-      title: "Notice",
-      description: "Apple sign-in is currently under maintenance. Please use Google or Email.",
-    });
-  };
-
   const handleManualCheck = async () => {
     if (!auth?.currentUser) return;
     setLoading(true);
@@ -217,11 +212,11 @@ function AuthContent() {
 
   if (verificationSent) {
     return (
-      <div className="w-full max-w-md space-y-8 animate-in fade-in duration-500 px-4">
-        <Card className="border-none shadow-2xl rounded-3xl p-8 text-center bg-card">
-          <div className="h-20 w-20 bg-primary/10 rounded-[2rem] flex items-center justify-center text-primary mx-auto mb-6">
+      <div className="w-full max-w-md space-y-8 animate-in fade-in duration-500">
+        <Card className="border-none shadow-xl rounded-3xl p-8 text-center bg-card">
+          <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-6">
             {isVerified ? (
-              <CheckCircle2 className="h-10 w-10 text-green-500 animate-in zoom-in duration-500" />
+              <CheckCircle2 className="h-10 w-10 text-green-500" />
             ) : (
               <Mail className="h-10 w-10 animate-pulse" />
             )}
@@ -262,7 +257,7 @@ function AuthContent() {
               </button>
             )}
 
-            <p className="text-xs text-muted-foreground pt-4">
+            <p className="text-xs text-muted-foreground">
               Check your spam folder if you don't see it in a few minutes.
             </p>
           </div>
@@ -272,7 +267,7 @@ function AuthContent() {
   }
 
   return (
-    <div className="w-full max-w-md space-y-8 px-4">
+    <div className="w-full max-w-md space-y-8">
       <div className="text-center">
         <div 
           className="inline-flex h-14 w-14 relative rounded-2xl overflow-hidden shadow-lg shadow-primary/20 bg-[#3D747F] mb-4 cursor-pointer transition-transform hover:scale-95"
@@ -289,8 +284,8 @@ function AuthContent() {
         <p className="text-muted-foreground">Master your money, personal or shared.</p>
       </div>
 
-      <Card className="border-none shadow-lg rounded-2xl overflow-hidden">
-        <CardHeader className="pb-4">
+      <Card className="border-none shadow-lg rounded-2xl">
+        <CardHeader>
           <CardTitle className="font-headline text-2xl">
             {isRegistering ? "Create Account" : "Sign In"}
           </CardTitle>
@@ -310,7 +305,7 @@ function AuthContent() {
                   <Input 
                     id="name" 
                     placeholder="John Doe" 
-                    className="pl-10 h-11 rounded-xl bg-muted/20 border-none"
+                    className="pl-10 h-11 rounded-xl"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     disabled={loading}
@@ -328,7 +323,7 @@ function AuthContent() {
                   id="email" 
                   type="email"
                   placeholder="name@example.com" 
-                  className="pl-10 h-11 rounded-xl bg-muted/20 border-none"
+                  className="pl-10 h-11 rounded-xl"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
@@ -345,7 +340,7 @@ function AuthContent() {
                   id="password" 
                   type="password"
                   placeholder="••••••••" 
-                  className="pl-10 h-11 rounded-xl bg-muted/20 border-none"
+                  className="pl-10 h-11 rounded-xl"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
@@ -354,7 +349,7 @@ function AuthContent() {
               </div>
             </div>
 
-            <Button className="w-full bg-primary h-12 rounded-xl font-bold text-lg" disabled={loading}>
+            <Button className="w-full bg-primary h-11 rounded-xl font-bold" disabled={loading}>
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : (
@@ -364,19 +359,19 @@ function AuthContent() {
             </Button>
           </form>
 
-          <div className="relative py-2">
+          <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t" />
             </div>
-            <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest">
-              <span className="bg-card px-2 text-muted-foreground/60">Or continue with</span>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-3">
             <Button 
               variant="outline" 
-              className="w-full h-11 rounded-xl font-bold border-2 bg-transparent" 
+              className="w-full h-11 rounded-xl font-bold border-2" 
               onClick={handleGoogleSignIn} 
               disabled={loading}
             >
@@ -387,26 +382,14 @@ function AuthContent() {
                   <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
                 </svg>
               )}
-              Google
-            </Button>
-
-            <Button 
-              variant="outline" 
-              className="w-full h-11 rounded-xl font-bold border-2 bg-transparent" 
-              onClick={handleAppleSignIn} 
-              disabled={loading}
-            >
-              <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 384 512">
-                <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
-              </svg>
-              Apple
+              Continue with Google
             </Button>
           </div>
 
-          <div className="text-center mt-4 pb-2">
+          <div className="text-center mt-4">
             <button 
               type="button"
-              className="text-sm text-primary hover:underline font-bold"
+              className="text-sm text-primary hover:underline font-medium"
               onClick={() => setIsRegistering(!isRegistering)}
               disabled={loading}
             >
@@ -415,7 +398,7 @@ function AuthContent() {
           </div>
         </CardContent>
       </Card>
-      <p className="text-center text-[10px] uppercase font-black tracking-widest text-muted-foreground/60">
+      <p className="text-center text-xs text-muted-foreground">
         Securely powered by Firebase.
       </p>
     </div>
@@ -424,7 +407,7 @@ function AuthContent() {
 
 export default function AuthPage() {
   return (
-    <div className="flex h-screen items-center justify-center bg-background">
+    <div className="flex h-screen items-center justify-center bg-background px-4">
       <Suspense fallback={<div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />}>
         <AuthContent />
       </Suspense>
