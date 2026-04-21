@@ -9,13 +9,8 @@ import {
   ArrowRight, 
   Wallet, 
   Users, 
-  PieChart, 
   ShieldCheck, 
-  Smartphone,
-  CheckCircle2,
-  Calculator,
-  TrendingUp,
-  BarChart3,
+  BarChart3, 
   Zap
 } from "lucide-react";
 import { LoadingScreen } from "@/components/layout/loading-screen";
@@ -233,6 +228,7 @@ export default function LandingPage() {
                 <ul className="space-y-2 text-sm font-bold text-muted-foreground">
                   <li><Link href="/auth" className="hover:text-primary transition-colors">Help Center</Link></li>
                   <li><Link href="/auth" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
+                  <li><Link href="/terms-of-service" className="hover:text-primary transition-colors">Terms of Service</Link></li>
                 </ul>
               </div>
             </div>
