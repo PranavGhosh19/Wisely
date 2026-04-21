@@ -20,7 +20,6 @@ import {
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useAuth, useFirestore } from "@/firebase";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 
 function AuthContent() {
   const router = useRouter();
@@ -93,7 +92,7 @@ function AuthContent() {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const firebaseUser = userCredential.user;
 
-        // 📧 Send Email Verification Link
+        // 📧 Send Email Verification Link with Redirect URL to prevent 404
         await sendEmailVerification(firebaseUser, {
           url: `${window.location.origin}/auth`,
           handleCodeInApp: false,
@@ -269,12 +268,6 @@ function AuthContent() {
   return (
     <div className="w-full max-w-md space-y-8">
       <div className="text-center">
-        <div 
-          className="inline-flex h-14 w-14 relative rounded-2xl overflow-hidden shadow-lg shadow-primary/20 bg-[#3D747F] mb-4 cursor-pointer transition-transform hover:scale-95"
-          onClick={() => router.push("/")}
-        >
-          <Image src="/Logo.png" alt="Wisely Logo" fill className="object-cover" />
-        </div>
         <h1 
           className="font-headline text-4xl font-bold text-primary mb-2 cursor-pointer transition-colors hover:text-primary/80" 
           onClick={() => router.push("/")}
