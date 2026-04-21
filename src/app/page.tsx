@@ -226,7 +226,7 @@ export default function LandingPage() {
               <div className="hidden md:block space-y-4">
                 <h4 className="font-black text-xs uppercase tracking-widest text-primary">Support</h4>
                 <ul className="space-y-2 text-sm font-bold text-muted-foreground">
-                  <li><Link href="/auth" className="hover:text-primary transition-colors">Help Center</Link></li>
+                  <li><Link href="/help-center" className="hover:text-primary transition-colors">Help Center</Link></li>
                   <li><Link href="/privacy-policy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
                   <li><Link href="/terms-of-service" className="hover:text-primary transition-colors">Terms of Service</Link></li>
                 </ul>
