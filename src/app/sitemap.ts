@@ -3,93 +3,122 @@ import type { MetadataRoute } from 'next';
 
 /**
  * Native Next.js sitemap generator.
- * Optimized for SEO: Removed auth pages and added Search Intent entry points.
+ * Optimized for Dominant SEO: Clustered paths, fixed timestamps, and competitor alternatives.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://thewiselyapp.com';
+  const lastMod = new Date('2026-04-01');
   
   return [
     {
       url: baseUrl,
-      lastModified: new Date(),
+      lastModified: lastMod,
       changeFrequency: 'weekly',
       priority: 1,
     },
+    // CALCULATOR CLUSTER
     {
-      url: `${baseUrl}/split-expense-calculator`,
-      lastModified: new Date(),
+      url: `${baseUrl}/calculators/split-expense`,
+      lastModified: lastMod,
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/group-expense-calculator`,
-      lastModified: new Date(),
+      url: `${baseUrl}/calculators/group-expense`,
+      lastModified: lastMod,
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/trip-expense-splitter`,
-      lastModified: new Date(),
+      url: `${baseUrl}/calculators/rent-split`,
+      lastModified: lastMod,
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/rent-split-calculator`,
-      lastModified: new Date(),
+      url: `${baseUrl}/calculators/dinner-bill-split`,
+      lastModified: lastMod,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    // TRACKER CLUSTER
+    {
+      url: `${baseUrl}/trackers/trip-expense`,
+      lastModified: lastMod,
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/roommate-expense-tracker`,
-      lastModified: new Date(),
+      url: `${baseUrl}/trackers/roommate-expense`,
+      lastModified: lastMod,
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/expense-split-between-friends`,
-      lastModified: new Date(),
+      url: `${baseUrl}/trackers/household-expense`,
+      lastModified: lastMod,
       changeFrequency: 'weekly',
       priority: 0.9,
     },
+    {
+      url: `${baseUrl}/trackers/shared-manager`,
+      lastModified: lastMod,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    // ALTERNATIVES CLUSTER (Competitor Conquesting)
+    {
+      url: `${baseUrl}/alternatives/splitwise`,
+      lastModified: lastMod,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/alternatives/splitwise-vs-wisely`,
+      lastModified: lastMod,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    // CORE PRODUCT
     {
       url: `${baseUrl}/features`,
-      lastModified: new Date(),
+      lastModified: lastMod,
       changeFrequency: 'weekly',
       priority: 0.8,
     },
     {
       url: `${baseUrl}/compare`,
-      lastModified: new Date(),
+      lastModified: lastMod,
       changeFrequency: 'weekly',
       priority: 0.7,
     },
     {
       url: `${baseUrl}/how-it-works/split-logic`,
-      lastModified: new Date(),
+      lastModified: lastMod,
       changeFrequency: 'monthly',
       priority: 0.6,
     },
     {
       url: `${baseUrl}/how-it-works/analytics`,
-      lastModified: new Date(),
+      lastModified: lastMod,
       changeFrequency: 'monthly',
       priority: 0.6,
     },
     {
       url: `${baseUrl}/help-center`,
-      lastModified: new Date(),
+      lastModified: lastMod,
       changeFrequency: 'monthly',
       priority: 0.5,
     },
     {
       url: `${baseUrl}/terms-of-service`,
-      lastModified: new Date(),
+      lastModified: lastMod,
       changeFrequency: 'monthly',
       priority: 0.4,
     },
     {
       url: `${baseUrl}/privacy-policy`,
-      lastModified: new Date(),
+      lastModified: lastMod,
       changeFrequency: 'monthly',
       priority: 0.4,
     },

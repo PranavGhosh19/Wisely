@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from "react";
@@ -211,18 +212,20 @@ export default function LandingPage() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-12">
               <div className="space-y-4 text-center md:text-left">
-                <h4 className="font-black text-xs uppercase tracking-widest text-primary">Product</h4>
+                <h4 className="font-black text-xs uppercase tracking-widest text-primary">Calculators</h4>
                 <ul className="space-y-2 text-sm font-bold text-muted-foreground">
-                  <li><Link href="/features" className="hover:text-primary transition-colors">Features</Link></li>
-                  <li><Link href="/how-it-works/split-logic" className="hover:text-primary transition-colors">Split Logic</Link></li>
-                  <li><Link href="/how-it-works/analytics" className="hover:text-primary transition-colors">Analytics</Link></li>
+                  <li><Link href="/calculators/split-expense" className="hover:text-primary transition-colors">Split Expense</Link></li>
+                  <li><Link href="/calculators/group-expense" className="hover:text-primary transition-colors">Group Expense</Link></li>
+                  <li><Link href="/calculators/rent-split" className="hover:text-primary transition-colors">Rent Split</Link></li>
+                  <li><Link href="/calculators/dinner-bill-split" className="hover:text-primary transition-colors">Dinner Bill</Link></li>
                 </ul>
               </div>
               <div className="space-y-4 text-center md:text-left">
-                <h4 className="font-black text-xs uppercase tracking-widest text-primary">Compare</h4>
+                <h4 className="font-black text-xs uppercase tracking-widest text-primary">Trackers</h4>
                 <ul className="space-y-2 text-sm font-bold text-muted-foreground">
-                  <li><Link href="/compare" className="hover:text-primary transition-colors">Why Wisely?</Link></li>
-                  <li><Link href="/auth" className="hover:text-primary transition-colors">Switching Guide</Link></li>
+                  <li><Link href="/trackers/trip-expense" className="hover:text-primary transition-colors">Trip Splitter</Link></li>
+                  <li><Link href="/trackers/roommate-expense" className="hover:text-primary transition-colors">Roommate Tracker</Link></li>
+                  <li><Link href="/alternatives/splitwise" className="hover:text-primary transition-colors">Splitwise Alternative</Link></li>
                 </ul>
               </div>
               <div className="hidden md:block space-y-4 text-center md:text-left">
