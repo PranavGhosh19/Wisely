@@ -1,12 +1,12 @@
-const CACHE_NAME = 'wisely-v1';
+// Wisely Service Worker
+const CACHE_NAME = 'wisely-app-shell-v1';
+const OFFLINE_URL = '/';
+
+// Core assets to cache for offline start
 const ASSETS_TO_CACHE = [
   '/',
-  '/dashboard',
-  '/transactions',
-  '/groups',
-  '/profile',
-  '/globals.css',
-  '/wallet.png'
+  '/manifest.webmanifest',
+  '/wallet.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -15,50 +15,42 @@ self.addEventListener('install', (event) => {
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
+        cacheNames.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name))
       );
     })
   );
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
+  // We only handle GET requests for navigation and assets
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      return fetch(event.request).then((response) => {
-        // Cache new static assets
-        if (response.status === 200 && (
-          event.request.url.includes('.js') || 
-          event.request.url.includes('.css') ||
-          event.request.url.includes('/fonts/')
-        )) {
-          const responseToCache = response.clone();
+      // Stale-While-Revalidate strategy
+      const fetchedResponse = fetch(event.request).then((networkResponse) => {
+        // If it's a valid response, update the cache
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache);
           });
         }
-        return response;
+        return networkResponse;
       }).catch(() => {
-        // If fetch fails (offline) and not in cache, fallback to main page for navigation
-        if (event.request.mode === 'navigate') {
-          return caches.match('/');
-        }
+        // Network failed, return cached response if available
+        return cachedResponse;
       });
+
+      return cachedResponse || fetchedResponse;
     })
   );
 });
