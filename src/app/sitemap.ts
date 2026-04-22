@@ -16,68 +16,87 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'weekly',
       priority: 1,
     },
-    // CALCULATOR CLUSTER
+    // CLUSTER INDEX PAGES
     {
-      url: `${baseUrl}/calculators/split-expense`,
+      url: `${baseUrl}/calculators`,
       lastModified: lastMod,
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/calculators/group-expense`,
+      url: `${baseUrl}/trackers`,
       lastModified: lastMod,
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/calculators/rent-split`,
-      lastModified: lastMod,
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/calculators/dinner-bill-split`,
-      lastModified: lastMod,
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    // TRACKER CLUSTER
-    {
-      url: `${baseUrl}/trackers/trip-expense`,
-      lastModified: lastMod,
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/trackers/roommate-expense`,
-      lastModified: lastMod,
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/trackers/household-expense`,
-      lastModified: lastMod,
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/trackers/shared-manager`,
-      lastModified: lastMod,
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    // ALTERNATIVES CLUSTER (Competitor Conquesting)
-    {
-      url: `${baseUrl}/alternatives/splitwise`,
+      url: `${baseUrl}/alternatives`,
       lastModified: lastMod,
       changeFrequency: 'weekly',
       priority: 0.8,
+    },
+    // CALCULATOR CLUSTER
+    {
+      url: `${baseUrl}/calculators/split-expense-calculator`,
+      lastModified: lastMod,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/calculators/group-expense-calculator`,
+      lastModified: lastMod,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/calculators/rent-split-calculator`,
+      lastModified: lastMod,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/calculators/dinner-bill-split-calculator`,
+      lastModified: lastMod,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    // TRACKER CLUSTER
+    {
+      url: `${baseUrl}/trackers/trip-expense-tracker`,
+      lastModified: lastMod,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/trackers/roommate-expense-tracker`,
+      lastModified: lastMod,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/trackers/household-expense-tracker`,
+      lastModified: lastMod,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/trackers/shared-expense-manager`,
+      lastModified: lastMod,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    // ALTERNATIVES CLUSTER
+    {
+      url: `${baseUrl}/alternatives/splitwise-alternative`,
+      lastModified: lastMod,
+      changeFrequency: 'weekly',
+      priority: 0.7,
     },
     {
       url: `${baseUrl}/alternatives/splitwise-vs-wisely`,
       lastModified: lastMod,
       changeFrequency: 'weekly',
-      priority: 0.8,
+      priority: 0.7,
     },
     // CORE PRODUCT
     {

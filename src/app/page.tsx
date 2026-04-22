@@ -206,30 +206,31 @@ export default function LandingPage() {
                 <div className="h-9 w-9 bg-primary rounded-xl flex items-center justify-center text-white font-bold">W</div>
                 <span className="font-headline font-bold text-2xl text-primary">Wisely</span>
               </div>
-              <p className="text-sm text-muted-foreground max-w-xs text-center md:text-left">
+              <p className="text-sm text-muted-foreground max-w-xs text-center md:text-left leading-relaxed">
                 The unified financial ledger for your personal and social life.
               </p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-12">
               <div className="space-y-4 text-center md:text-left">
-                <h4 className="font-black text-xs uppercase tracking-widest text-primary">Calculators</h4>
+                <h4 className="font-black text-xs uppercase tracking-widest text-primary"><Link href="/calculators">Calculators</Link></h4>
                 <ul className="space-y-2 text-sm font-bold text-muted-foreground">
-                  <li><Link href="/calculators/split-expense" className="hover:text-primary transition-colors">Split Expense</Link></li>
-                  <li><Link href="/calculators/group-expense" className="hover:text-primary transition-colors">Group Expense</Link></li>
-                  <li><Link href="/calculators/rent-split" className="hover:text-primary transition-colors">Rent Split</Link></li>
-                  <li><Link href="/calculators/dinner-bill-split" className="hover:text-primary transition-colors">Dinner Bill</Link></li>
+                  <li><Link href="/calculators/split-expense-calculator" className="hover:text-primary transition-colors">Split Expense</Link></li>
+                  <li><Link href="/calculators/group-expense-calculator" className="hover:text-primary transition-colors">Group Expense</Link></li>
+                  <li><Link href="/calculators/rent-split-calculator" className="hover:text-primary transition-colors">Rent Split</Link></li>
+                  <li><Link href="/calculators/dinner-bill-split-calculator" className="hover:text-primary transition-colors">Dinner Bill</Link></li>
                 </ul>
               </div>
               <div className="space-y-4 text-center md:text-left">
-                <h4 className="font-black text-xs uppercase tracking-widest text-primary">Trackers</h4>
+                <h4 className="font-black text-xs uppercase tracking-widest text-primary"><Link href="/trackers">Trackers</Link></h4>
                 <ul className="space-y-2 text-sm font-bold text-muted-foreground">
-                  <li><Link href="/trackers/trip-expense" className="hover:text-primary transition-colors">Trip Splitter</Link></li>
-                  <li><Link href="/trackers/roommate-expense" className="hover:text-primary transition-colors">Roommate Tracker</Link></li>
-                  <li><Link href="/alternatives/splitwise" className="hover:text-primary transition-colors">Splitwise Alternative</Link></li>
+                  <li><Link href="/trackers/trip-expense-tracker" className="hover:text-primary transition-colors">Trip Splitter</Link></li>
+                  <li><Link href="/trackers/roommate-expense-tracker" className="hover:text-primary transition-colors">Roommate Tracker</Link></li>
+                  <li><Link href="/trackers/household-expense-tracker" className="hover:text-primary transition-colors">Household Ledger</Link></li>
+                  <li><Link href="/alternatives/splitwise-alternative" className="hover:text-primary transition-colors">Splitwise Alternative</Link></li>
                 </ul>
               </div>
               <div className="hidden md:block space-y-4 text-center md:text-left">
-                <h4 className="font-black text-xs uppercase tracking-widest text-primary">Support</h4>
+                <h4 className="font-black text-xs uppercase tracking-widest text-primary"><Link href="/alternatives">Support</Link></h4>
                 <ul className="space-y-2 text-sm font-bold text-muted-foreground">
                   <li><Link href="/help-center" className="hover:text-primary transition-colors">Help Center</Link></li>
                   <li><Link href="/privacy-policy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
