@@ -60,7 +60,7 @@ export default function LandingPage() {
       <section className="relative py-12 sm:py-20 lg:py-32 overflow-hidden bg-background">
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-8">
-            <h1 className="text-5xl md:text-8xl font-black font-headline text-primary tracking-tighter leading-[0.9]">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black font-headline text-primary tracking-tighter leading-[0.95]">
               Wisely – Expense Splitting & Budgeting App <br />
               <span className="text-accent">Personal or Shared.</span>
             </h1>

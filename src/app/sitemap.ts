@@ -1,8 +1,9 @@
+
 import type { MetadataRoute } from 'next';
 
 /**
  * Native Next.js sitemap generator.
- * This file automatically serves an XML sitemap at /sitemap.xml.
+ * Optimized for SEO: Removed auth pages and added Search Intent entry points.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://thewiselyapp.com';
@@ -15,34 +16,70 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
-      url: `${baseUrl}/features`,
+      url: `${baseUrl}/split-expense-calculator`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/compare`,
+      url: `${baseUrl}/group-expense-calculator`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/trip-expense-splitter`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/rent-split-calculator`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/roommate-expense-tracker`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/expense-split-between-friends`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/features`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,
     },
     {
+      url: `${baseUrl}/compare`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    },
+    {
       url: `${baseUrl}/how-it-works/split-logic`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
-      priority: 0.7,
+      priority: 0.6,
     },
     {
       url: `${baseUrl}/how-it-works/analytics`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
-      priority: 0.7,
+      priority: 0.6,
     },
     {
       url: `${baseUrl}/help-center`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
-      priority: 0.6,
+      priority: 0.5,
     },
     {
       url: `${baseUrl}/terms-of-service`,
@@ -55,12 +92,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.4,
-    },
-    {
-      url: `${baseUrl}/auth`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.5,
     },
   ];
 }

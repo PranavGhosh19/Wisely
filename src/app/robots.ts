@@ -3,7 +3,7 @@ import type { MetadataRoute } from 'next';
 
 /**
  * Native Next.js robots.txt generator.
- * This file automatically serves a robots.txt at /robots.txt.
+ * Configured to block auth indexing while allowing all SEO landing pages.
  */
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -11,6 +11,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
       disallow: [
+        '/auth',
         '/dashboard', 
         '/transactions', 
         '/groups', 
