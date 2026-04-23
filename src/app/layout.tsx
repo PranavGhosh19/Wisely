@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -9,7 +10,7 @@ import { PwaHandler } from "@/components/pwa-handler";
 import { NotificationHandler } from "@/components/notifications/NotificationHandler";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 
-const appIcon = PlaceHolderImages.find(img => img.id === "app-icon")?.imageUrl || '/wallet.png';
+const appIcon = PlaceHolderImages.find(img => img.id === "app-icon")?.imageUrl || 'https://placehold.co/512x512/3D737F/FFFFFF?text=W';
 
 export const metadata: Metadata = {
   title: 'Wisely – Expense Splitting & Budgeting App',
@@ -24,6 +25,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: appIcon,
+    shortcut: appIcon,
     apple: appIcon,
   }
 };
