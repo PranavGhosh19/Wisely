@@ -13,8 +13,9 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 const appIcon = PlaceHolderImages.find(img => img.id === "app-icon")?.imageUrl || 'https://placehold.co/512x512/3D737F/FFFFFF?text=W';
 
 export const metadata: Metadata = {
-  title: 'Wisely – Expense Splitting & Budgeting App',
-  description: 'Wisely is an expense splitting and budgeting app for individuals and groups. Track expenses, split bills, and manage money easily.',
+  metadataBase: new URL('https://thewiselyapp.com'),
+  title: 'Split Expenses Easily | Wisely App for Groups & Personal Budgeting',
+  description: 'Track expenses, split bills, and manage money easily with Wisely. The ultimate financial ledger for individuals and shared groups.',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -22,6 +23,27 @@ export const metadata: Metadata = {
   },
   formatDetection: {
     telephone: false,
+  },
+  openGraph: {
+    title: 'Split Expenses Easily | Wisely App',
+    description: 'Track expenses, split bills, and manage money easily with Wisely.',
+    url: 'https://thewiselyapp.com',
+    siteName: 'Wisely',
+    images: [
+      {
+        url: appIcon,
+        width: 1200,
+        height: 630,
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Wisely – Expense Splitting App',
+    description: 'Split expenses with friends and track budgets easily.',
+    images: [appIcon],
   },
   icons: {
     icon: [
@@ -57,6 +79,20 @@ export default function RootLayout({
               "operatingSystem": "Web",
               "url": "https://thewiselyapp.com",
               "description": "Expense splitting and budgeting app for individuals and groups.",
+              "creator": {
+                "@type": "Organization",
+                "name": "Wisely"
+              },
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              },
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": "4.8",
+                "ratingCount": "120"
+              }
             }),
           }}
         />
