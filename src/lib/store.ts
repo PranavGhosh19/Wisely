@@ -47,7 +47,11 @@ export const useStore = create<WiselyState>((set) => ({
   installPrompt: null,
   fontSize: '14px',
   isSidebarCollapsed: false,
-  setUser: (user) => set({ user, isLoading: false }),
+  setUser: (user) => set((state) => ({ 
+    user, 
+    isLoading: false,
+    categories: user?.categories !== undefined ? user.categories : state.categories
+  })),
   setExpenses: (expenses) => set({ expenses }),
   setGroups: (groups) => set({ groups }),
   setCategories: (categories) => set({ categories }),

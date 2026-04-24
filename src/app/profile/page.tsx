@@ -34,9 +34,9 @@ import {
   MessageSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth, useFirestore } from "@/firebase";
+import { useAuth, useFirestore, updateDocumentNonBlocking } from "@/firebase";
 import { signOut } from "firebase/auth";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc } from "firebase/firestore";
 import Image from "next/image";
 
 export default function ProfilePage() {
@@ -78,9 +78,10 @@ export default function ProfilePage() {
 
   const handleAddCategory = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCategory.trim()) return;
+    const catName = newCategory.trim();
+    if (!catName || !user || !db) return;
     
-    if (categories.includes(newCategory.trim())) {
+    if (categories.includes(catName)) {
       toast({
         variant: "destructive",
         title: "Already exists",
@@ -89,15 +90,33 @@ export default function ProfilePage() {
       return;
     }
 
-    addCategory(newCategory.trim());
+    const updatedCategories = [...categories, catName];
+    const userRef = doc(db, "users", user.uid);
+    updateDocumentNonBlocking(userRef, { categories: updatedCategories });
+
+    addCategory(catName);
     setNewCategory("");
     toast({
       title: "Category added",
-      description: `"${newCategory.trim()}" is now available for your expenses.`
+      description: `"${catName}" is now available for your expenses.`
     });
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRemoveCategory = (cat: string) => {
+    if (!user || !db) return;
+    
+    const updatedCategories = categories.filter(c => c !== cat);
+    const userRef = doc(db, "users", user.uid);
+    updateDocumentNonBlocking(userRef, { categories: updatedCategories });
+
+    removeCategory(cat);
+    toast({
+      title: "Category removed",
+      description: `"${cat}" has been removed from your list.`
+    });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user || !db) return;
 
@@ -112,12 +131,11 @@ export default function ProfilePage() {
 
     setUploading(true);
     const reader = new FileReader();
-    reader.onloadend = async () => {
+    reader.onloadend = () => {
       try {
         const base64String = reader.result as string;
-        await updateDoc(doc(db, "users", user.uid), {
-          photoURL: base64String
-        });
+        const userRef = doc(db, "users", user.uid);
+        updateDocumentNonBlocking(userRef, { photoURL: base64String });
         toast({ title: "Profile updated", description: "Your photo has been saved." });
       } catch (error: any) {
         toast({ variant: "destructive", title: "Upload failed", description: error.message });
@@ -184,15 +202,14 @@ export default function ProfilePage() {
         if ('serviceWorker' in navigator) {
           try {
             const registration = await navigator.serviceWorker.ready;
-            // 🚀 SMART TEST: Simulate a deep link notification
             await registration.showNotification('Wisely: New Activity', {
               body: '💸 Someone added a new expense. Tap to view your transaction history!',
               icon: '/wallet.png',
               badge: '/wallet.png',
-              tag: 'test-group-1', // Groups with previous notifications
+              tag: 'test-group-1',
               renotify: true,
               data: {
-                targetUrl: '/transactions', // This triggers deep linking logic
+                targetUrl: '/transactions',
                 groupId: 'test-demo'
               },
               vibrate: [200, 100, 200]
@@ -325,7 +342,7 @@ export default function ProfilePage() {
                   >
                     <span className="text-sm font-medium">{cat}</span>
                     <button 
-                      onClick={() => removeCategory(cat)}
+                      onClick={() => handleRemoveCategory(cat)}
                       className="text-muted-foreground hover:text-destructive transition-colors"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
