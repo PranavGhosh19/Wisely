@@ -2,8 +2,8 @@
 import type { MetadataRoute } from 'next';
 
 /**
- * Native Next.js robots.txt generator.
- * Configured to be fully permissive as per user request to ensure maximum search visibility.
+ * robots.txt generator.
+ * Configured to be fully permissive to ensure maximum search visibility.
  */
 export default function robots(): MetadataRoute.Robots {
   return {

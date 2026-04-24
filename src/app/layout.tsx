@@ -24,7 +24,11 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    icon: appIcon,
+    icon: [
+      { url: appIcon },
+      { url: appIcon, sizes: '32x32', type: 'image/png' },
+      { url: appIcon, sizes: '16x16', type: 'image/png' },
+    ],
     shortcut: appIcon,
     apple: appIcon,
   }
