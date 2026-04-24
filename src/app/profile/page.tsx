@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -92,8 +91,11 @@ export default function ProfilePage() {
 
     const updatedCategories = [...categories, catName];
     const userRef = doc(db, "users", user.uid);
+    
+    // Save to Firestore (Non-blocking)
     updateDocumentNonBlocking(userRef, { categories: updatedCategories });
 
+    // Update local state for immediate feedback
     addCategory(catName);
     setNewCategory("");
     toast({
@@ -107,8 +109,11 @@ export default function ProfilePage() {
     
     const updatedCategories = categories.filter(c => c !== cat);
     const userRef = doc(db, "users", user.uid);
+    
+    // Save to Firestore (Non-blocking)
     updateDocumentNonBlocking(userRef, { categories: updatedCategories });
 
+    // Update local state
     removeCategory(cat);
     toast({
       title: "Category removed",
@@ -178,54 +183,6 @@ export default function ProfilePage() {
     const text = `Hey! I'm using Wisely to track my expenses and split bills with friends. Check it out!`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.location.href = whatsappUrl;
-  };
-
-  const handleTestNotification = async () => {
-    if (!("Notification" in window)) {
-      toast({
-        variant: "destructive",
-        title: "Not supported",
-        description: "Your browser does not support notifications."
-      });
-      return;
-    }
-
-    const permission = await Notification.requestPermission();
-    
-    if (permission === 'granted') {
-      toast({
-        title: "Test Alert Primed",
-        description: "Deep link test starting in 5 seconds. Lock your phone now to test background support."
-      });
-
-      setTimeout(async () => {
-        if ('serviceWorker' in navigator) {
-          try {
-            const registration = await navigator.serviceWorker.ready;
-            await registration.showNotification('Wisely: New Activity', {
-              body: '💸 Someone added a new expense. Tap to view your transaction history!',
-              icon: '/wallet.png',
-              badge: '/wallet.png',
-              tag: 'test-group-1',
-              renotify: true,
-              data: {
-                targetUrl: '/transactions',
-                groupId: 'test-demo'
-              },
-              vibrate: [200, 100, 200]
-            });
-          } catch (e) {
-            new Notification('Wisely', { body: 'Foreground notification successful.' });
-          }
-        }
-      }, 5000);
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Permission Denied",
-        description: "Please enable notifications in your browser settings to test this feature."
-      });
-    }
   };
 
   const appearanceOptions = [
@@ -466,32 +423,6 @@ export default function ProfilePage() {
                   })}
                 </div>
               </div>
-
-              <button 
-                className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
-                onClick={handleAddToHomeScreen}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500">
-                    <Smartphone className="h-4 w-4" />
-                  </div>
-                  <span className="text-sm font-medium">Add to Android Home Screen</span>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
-
-              <button 
-                className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
-                onClick={handleIosInstall}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500">
-                    <Share2 className="h-4 w-4" />
-                  </div>
-                  <span className="text-sm font-medium">Add to iOS Home Screen</span>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
 
               <button 
                 className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
