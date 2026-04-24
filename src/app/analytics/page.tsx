@@ -13,19 +13,25 @@ import { useStore } from "@/lib/store";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, collectionGroup, query, where } from "firebase/firestore";
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
-import { PieChart, Layers, User, Users, Calendar as CalendarIcon, X, BarChart3 } from "lucide-react";
+import { PieChart, Layers, User, Users, Calendar as CalendarIcon, X, BarChart3, Download, Mail, FileSpreadsheet, Loader2, ChevronDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getCurrencySymbol, cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
+import { generateMonthlySpreadsheet, downloadWorkbook } from "@/lib/export-utils";
+import { sendMonthlyReportAction } from "@/app/actions/send-report";
+import { useToast } from "@/hooks/use-toast";
 
 // Exact palette: Sort order implies Yellow for top, then teals and greys
 const COLORS = ['#facc15', '#3D737F', '#5A9BA8', '#8FBABF', '#CEC7BF', '#A89E92'];
 
-/**
- * Custom label renderer for the Pie chart to show labels outside with connecting lines.
- * Optimized for the Donut design.
- */
 const renderCustomizedLabel = (props: any, symbol: string) => {
   const { cx, cy, midAngle, outerRadius, index, name, value } = props;
   const RADIAN = Math.PI / 180;
@@ -70,10 +76,12 @@ const renderCustomizedLabel = (props: any, symbol: string) => {
 export default function AnalyticsPage() {
   const { user, categories: storeCategories } = useStore();
   const db = useFirestore();
+  const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
   const [scope, setScope] = useState<"ALL" | "PERSONAL" | "GROUP">("ALL");
   const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -133,6 +141,42 @@ export default function AnalyticsPage() {
 
     return base;
   }, [personalExpenses, groupExpenses, scope, selectedGroupId, selectedDate]);
+
+  const handleEmailReport = async () => {
+    if (!user || filteredExpenses.length === 0) return;
+    
+    setExporting(true);
+    try {
+      const result = await sendMonthlyReportAction(user.email, format(new Date(), "MMMM yyyy"));
+      if (result.success) {
+        toast({
+          title: "Report Sent",
+          description: `An Excel breakdown for ${format(new Date(), "MMMM")} has been sent to ${user.email}.`
+        });
+      }
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "Export Failed",
+        description: "Could not send the email report. Please try again."
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDownloadExcel = () => {
+    if (!user || filteredExpenses.length === 0) return;
+    
+    const wb = generateMonthlySpreadsheet(filteredExpenses, user.email, symbol);
+    const fileName = `Wisely_Report_${format(new Date(), "yyyy_MM")}.xlsx`;
+    downloadWorkbook(wb, fileName);
+    
+    toast({
+      title: "Download Started",
+      description: "Your monthly Excel report is being prepared."
+    });
+  };
 
   const pieData = useMemo(() => {
     const categories: Record<string, number> = {};
@@ -265,7 +309,36 @@ export default function AnalyticsPage() {
       <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-7xl mx-auto w-full">
         <header className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-3xl font-bold font-headline text-primary">Overall Analytics</h2>
+            <div className="flex items-center gap-3 mb-1">
+              <h2 className="text-3xl font-bold font-headline text-primary">Overall Analytics</h2>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 rounded-xl font-bold gap-2 text-xs" disabled={exporting}>
+                    {exporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
+                    Export
+                    <ChevronDown className="h-3 w-3 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="rounded-xl border-none shadow-2xl p-2 w-56">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground px-2 py-2">Monthly Insights</p>
+                  <DropdownMenuItem onClick={handleEmailReport} className="rounded-lg py-3 cursor-pointer">
+                    <Mail className="h-4 w-4 mr-3 text-primary" />
+                    <div className="flex flex-col">
+                      <span className="font-bold text-sm">Email Report</span>
+                      <span className="text-[10px] text-muted-foreground">Send Excel to your inbox</span>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleDownloadExcel} className="rounded-lg py-3 cursor-pointer">
+                    <Download className="h-4 w-4 mr-3 text-emerald-500" />
+                    <div className="flex flex-col">
+                      <span className="font-bold text-sm">Download Excel</span>
+                      <span className="text-[10px] text-muted-foreground">Save directly to device</span>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
             <p className="text-muted-foreground">Detailed insights into your spending patterns.</p>
           </div>
 
