@@ -318,6 +318,14 @@ function GroupDetailContent() {
                 <span className="font-medium underline-offset-4 group-hover:underline">{group.members?.length || 0} Members</span>
               </button>
             </div>
+
+            <Button 
+              className="bg-primary hover:bg-primary/90 gap-2 h-11 rounded-xl font-bold shadow-lg shadow-primary/20 w-full sm:w-auto"
+              onClick={() => setIsQrOpen(true)}
+            >
+              <UserPlus className="h-4 w-4" />
+              Add Members
+            </Button>
           </div>
         </header>
 
