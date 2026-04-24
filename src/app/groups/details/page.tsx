@@ -33,6 +33,12 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -219,7 +225,13 @@ function GroupDetailContent() {
     }
   };
 
-  // 🔔 Simulation: Notify Members
+  /**
+   * 🔔 Simulation: Notify Members
+   * This function tests the Progressive Web App (PWA) notification capability.
+   * It checks for browser support, requests permissions, and schedules a 
+   * background notification using the registered Service Worker.
+   * Useful for demonstrating real-time bill alerts to new users.
+   */
   const simulateGroupNotification = async () => {
     if (!("Notification" in window)) {
       toast({ title: "Not Supported", description: "Your browser doesn't support push notifications." });
@@ -299,15 +311,24 @@ function GroupDetailContent() {
                   >
                     <QrCode className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="h-8 w-8 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm shrink-0"
-                    onClick={simulateGroupNotification}
-                    title="Simulate Member Notification"
-                  >
-                    <BellRing className="h-4 w-4" />
-                  </Button>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-8 w-8 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm shrink-0"
+                          onClick={simulateGroupNotification}
+                        >
+                          <BellRing className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="bg-primary text-white border-none rounded-lg font-bold shadow-xl">
+                        <p>Simulate Push Notification: Test real-time alerts for members.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </div>
               <button 
@@ -587,7 +608,7 @@ function GroupDetailContent() {
               />
             </div>
             <div className="w-full space-y-3">
-              <div className="flex items-center gap-2 p-2.5 bg-muted/30 rounded-lg border border-border/40 overflow-hidden w-full">
+              <div className="flex items-center gap-2.5 p-2.5 bg-muted/30 rounded-lg border border-border/40 overflow-hidden w-full">
                 <span className="flex-1 text-[10px] sm:text-xs truncate text-muted-foreground font-mono block overflow-hidden">{shareUrl}</span>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-primary shrink-0 rounded-md" onClick={copyToClipboard}>{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</Button>
               </div>
