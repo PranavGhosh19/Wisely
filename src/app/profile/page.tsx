@@ -172,13 +172,6 @@ export default function ProfilePage() {
     }
   };
 
-  const handleIosInstall = () => {
-    toast({
-      title: "Install on iOS",
-      description: "Tap the 'Share' icon in Safari (the square with an up arrow) and then select 'Add to Home Screen'.",
-    });
-  };
-
   const handleReferFriend = () => {
     const text = `Hey! I'm using Wisely to track my expenses and split bills with friends. Check it out!`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;

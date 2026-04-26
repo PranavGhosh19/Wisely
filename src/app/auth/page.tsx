@@ -27,7 +27,6 @@ function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { user } = useStore();
   const auth = useAuth();
   const db = useFirestore();
   
@@ -43,12 +42,10 @@ function AuthContent() {
   
   const redirectUrl = searchParams.get("redirect") || "/dashboard";
 
-  // Prevent Hydration Mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Polling for email verification status
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (verificationSent && auth?.currentUser && !isVerified) {

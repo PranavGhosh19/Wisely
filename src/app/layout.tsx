@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -8,9 +7,6 @@ import { AuthSync } from "@/components/auth-sync";
 import { FontSizeSync } from "@/components/font-size-sync";
 import { PwaHandler } from "@/components/pwa-handler";
 import { NotificationHandler } from "@/components/notifications/NotificationHandler";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
-
-const appIcon = PlaceHolderImages.find(img => img.id === "app-icon")?.imageUrl || 'https://placehold.co/512x512/3D737F/FFFFFF?text=W';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://thewiselyapp.com'),
@@ -31,9 +27,9 @@ export const metadata: Metadata = {
     siteName: 'Wisely',
     images: [
       {
-        url: appIcon,
-        width: 1200,
-        height: 630,
+        url: '/icon.png',
+        width: 512,
+        height: 512,
       },
     ],
     locale: 'en_US',
@@ -43,16 +39,12 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Wisely – Expense Splitting App',
     description: 'Split expenses with friends and track budgets easily.',
-    images: [appIcon],
+    images: ['/icon.png'],
   },
   icons: {
-    icon: [
-      { url: appIcon },
-      { url: appIcon, sizes: '32x32', type: 'image/png' },
-      { url: appIcon, sizes: '16x16', type: 'image/png' },
-    ],
-    shortcut: appIcon,
-    apple: appIcon,
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/apple-icon.png',
   }
 };
 
