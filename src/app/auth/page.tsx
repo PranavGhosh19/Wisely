@@ -16,7 +16,8 @@ import {
   updateProfile,
   signInWithPopup,
   GoogleAuthProvider,
-  sendEmailVerification
+  sendEmailVerification,
+  applyActionCode
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useAuth, useFirestore } from "@/firebase";
@@ -41,11 +42,40 @@ function AuthContent() {
   const [agreed, setAgreed] = useState(false);
   
   const redirectUrl = searchParams.get("redirect") || "/dashboard";
+  const mode = searchParams.get("mode");
+  const oobCode = searchParams.get("oobCode");
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Handle Firebase Email Verification (oobCode) from redirects
+  useEffect(() => {
+    if (mode === "verifyEmail" && oobCode && auth && mounted) {
+      setLoading(true);
+      applyActionCode(auth, oobCode)
+        .then(() => {
+          setIsVerified(true);
+          setVerificationSent(true);
+          toast({
+            title: "Email Verified",
+            description: "Your account has been confirmed! You can now finish your setup.",
+          });
+        })
+        .catch((error: any) => {
+          toast({
+            variant: "destructive",
+            title: "Verification Failed",
+            description: error.message || "The verification link may have expired.",
+          });
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [mode, oobCode, auth, mounted, toast]);
+
+  // Regular verification check interval
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (verificationSent && auth?.currentUser && !isVerified) {

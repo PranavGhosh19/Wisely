@@ -123,52 +123,24 @@ export default function ProfilePage() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user || !db) return;
-
-    if (file.size > 20 * 1024 * 1024) {
-      toast({ 
-        variant: "destructive", 
-        title: "Image too large", 
-        description: "Please pick an image smaller than 20MB." 
-      });
-      return;
-    }
-
-    setUploading(true);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      try {
-        const base64String = reader.result as string;
-        const userRef = doc(db, "users", user.uid);
-        updateDocumentNonBlocking(userRef, { photoURL: base64String });
-        toast({ title: "Profile updated", description: "Your photo has been saved." });
-      } catch (error: any) {
-        toast({ variant: "destructive", title: "Upload failed", description: error.message });
-      } finally {
-        setUploading(false);
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ variant: "destructive", title: "File too large", description: "Please pick an image smaller than 5MB." });
+        return;
       }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleAddToHomeScreen = async () => {
-    if (!installPrompt) {
-      toast({
-        title: "App Installation",
-        description: "To install Wisely on your device, use your browser's 'Add to Home Screen' option in the menu.",
-      });
-      return;
-    }
-
-    installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      setInstallPrompt(null);
-      toast({
-        title: "Welcome Home!",
-        description: "Wisely has been added to your home screen.",
-      });
+      
+      setUploading(true);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (user && db) {
+          const base64String = reader.result as string;
+          const userRef = doc(db, "users", user.uid);
+          updateDocumentNonBlocking(userRef, { photoURL: base64String });
+          toast({ title: "Photo Updated", description: "Your profile picture has been saved." });
+        }
+        setUploading(false);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
