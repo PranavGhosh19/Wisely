@@ -8,7 +8,7 @@ import { useStore } from "@/lib/store";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Wallet, Users, CreditCard, PieChart as PieChartIcon, ArrowRight, Target, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Plus, Wallet, Users, CreditCard, PieChart as PieChartIcon, ArrowRight, Target, CheckCircle2, AlertTriangle, Crown } from "lucide-react";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, orderBy, where, collectionGroup } from "firebase/firestore";
 import { getCurrencySymbol, cn } from "@/lib/utils";
@@ -21,7 +21,12 @@ export default function Dashboard() {
   const db = useFirestore();
   const [mounted, setMounted] = useState(false);
 
-  // Hidden interaction state
+  // Gesture handling for "The Wisely Club" slide
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const minSwipeDistance = 70;
+
+  // Hidden interaction state for budgets
   const [clickCount, setClickCount] = useState(0);
   const [lastClickTime, setLastClickTime] = useState(0);
 
@@ -32,7 +37,25 @@ export default function Dashboard() {
     }
   }, [user, router, storeLoading]);
 
-  // Handle hidden triple click to navigate to budgets
+  // Touch Handlers
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => setTouchEnd(e.targetTouches[0].clientX);
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    // If user slides from left to right
+    if (isRightSwipe) {
+      router.push('/wisely-club');
+    }
+  };
+
   const handleTotalExpensesClick = () => {
     const now = Date.now();
     if (now - lastClickTime < 500) {
@@ -143,7 +166,12 @@ export default function Dashboard() {
   const symbol = getCurrencySymbol(user.currency);
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row bg-background">
+    <div 
+      className="flex min-h-screen flex-col md:flex-row bg-background overflow-hidden"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       <Navbar />
       <BudgetRolloverPrompt />
       
@@ -153,15 +181,27 @@ export default function Dashboard() {
             <h2 className="text-2xl md:text-3xl font-bold font-headline text-primary">Overview</h2>
             <p className="text-sm text-muted-foreground">Welcome back, {user?.name.split(" ")[0]}</p>
           </div>
-          <Button 
-            asChild
-            className="hidden md:flex bg-primary hover:bg-primary/90 gap-2 h-10 text-sm font-semibold rounded-xl transition-all active:scale-95"
-          >
-            <Link href="/expenses/add">
-              <Plus className="h-5 w-5" />
-              Add Expense
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              asChild
+              variant="outline"
+              className="h-10 text-xs font-bold rounded-xl border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/5"
+            >
+              <Link href="/wisely-club">
+                <Crown className="h-4 w-4 mr-2" />
+                The Club
+              </Link>
+            </Button>
+            <Button 
+              asChild
+              className="hidden md:flex bg-primary hover:bg-primary/90 gap-2 h-10 text-sm font-semibold rounded-xl transition-all active:scale-95"
+            >
+              <Link href="/expenses/add">
+                <Plus className="h-5 w-5" />
+                Add Expense
+              </Link>
+            </Button>
+          </div>
         </header>
 
         {/* Top Summary Cards */}
