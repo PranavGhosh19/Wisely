@@ -29,7 +29,6 @@ import { generateMonthlySpreadsheet, downloadWorkbook } from "@/lib/export-utils
 import { sendMonthlyReportAction } from "@/app/actions/send-report";
 import { useToast } from "@/hooks/use-toast";
 
-// Exact palette: Sort order implies Yellow for top, then teals and greys
 const COLORS = ['#facc15', '#3D737F', '#5A9BA8', '#8FBABF', '#CEC7BF', '#A89E92'];
 
 const renderCustomizedLabel = (props: any, symbol: string) => {
@@ -114,6 +113,7 @@ export default function AnalyticsPage() {
   }, [db, user]);
   const { data: userGroups } = useCollection(groupsQuery);
 
+  // New logic: Only show current month by default
   const filteredExpenses = useMemo(() => {
     let base: any[] = [];
     const personal = (personalExpenses || []).filter(e => e.category !== 'Settlement');
@@ -130,12 +130,22 @@ export default function AnalyticsPage() {
       }
     }
 
+    // Apply strict month filtering if no specific day is selected
     if (selectedDate) {
       const start = startOfDay(selectedDate);
       const end = endOfDay(selectedDate);
       base = base.filter(exp => {
         const expDate = new Date(exp.date);
         return isWithinInterval(expDate, { start, end });
+      });
+    } else {
+      // DEFAULT: Only current month data
+      const now = new Date();
+      const monthStart = startOfMonth(now);
+      const monthEnd = endOfMonth(now);
+      base = base.filter(exp => {
+        const expDate = new Date(exp.date);
+        return isWithinInterval(expDate, { start: monthStart, end: monthEnd });
       });
     }
 
@@ -238,11 +248,11 @@ export default function AnalyticsPage() {
   }, [personalExpenses, groupExpenses, scope, selectedGroupId]);
 
   const splitData = useMemo(() => {
-    const dateStart = selectedDate ? startOfDay(selectedDate) : null;
-    const dateEnd = selectedDate ? endOfDay(selectedDate) : null;
+    const now = new Date();
+    const dateStart = selectedDate ? startOfDay(selectedDate) : startOfMonth(now);
+    const dateEnd = selectedDate ? endOfDay(selectedDate) : endOfMonth(now);
 
     const filterByDate = (exp: any) => {
-      if (!dateStart || !dateEnd) return true;
       const expDate = new Date(exp.date);
       return isWithinInterval(expDate, { start: dateStart, end: dateEnd });
     };
@@ -310,7 +320,7 @@ export default function AnalyticsPage() {
         <header className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <h2 className="text-3xl font-bold font-headline text-primary">Overall Analytics</h2>
+              <h2 className="text-3xl font-bold font-headline text-primary">Monthly Analytics</h2>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="h-8 rounded-xl font-bold gap-2 text-xs" disabled={exporting}>
@@ -339,7 +349,7 @@ export default function AnalyticsPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <p className="text-muted-foreground">Detailed insights into your spending patterns.</p>
+            <p className="text-muted-foreground">Analyzing spending for {format(new Date(), "MMMM yyyy")}.</p>
           </div>
 
           <div className="grid grid-cols-2 sm:flex sm:flex-row gap-3 sm:gap-4 items-end">
@@ -436,23 +446,22 @@ export default function AnalyticsPage() {
               <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto">
                 <PieChart className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-bold font-headline">No data to visualize yet</h3>
-              <p className="text-sm text-muted-foreground">Try adjusting your filters or date selection to see distribution and trends.</p>
+              <h3 className="text-xl font-bold font-headline">No data for this period</h3>
+              <p className="text-sm text-muted-foreground">Adjust your filters or record new expenses to see distribution and trends.</p>
               {selectedDate && (
                 <Button variant="outline" onClick={() => setSelectedDate(undefined)} className="rounded-xl mt-4">
-                  Clear Date Filter
+                  Back to Current Month
                 </Button>
               )}
             </div>
           </Card>
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
-            {/* Category Pie Chart - Applied Specific Donut Design */}
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="font-headline text-lg">Category Distribution</CardTitle>
                 <CardDescription>
-                  {scope === "ALL" ? "Combined" : scope === "PERSONAL" ? "Personal" : "Group"} spending by category
+                  Spending distribution for {selectedDate ? format(selectedDate, "MMM dd") : "this month"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="h-[450px]">
@@ -487,7 +496,7 @@ export default function AnalyticsPage() {
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="font-headline text-lg">Spending Trend</CardTitle>
-                <CardDescription>Monthly movement across selected scope</CardDescription>
+                <CardDescription>Movement over time (All-time context)</CardDescription>
               </CardHeader>
               <CardContent className="h-[450px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -533,7 +542,7 @@ export default function AnalyticsPage() {
                     <BarChart3 className="h-5 w-5 text-primary" />
                     Budget Distribution
                   </CardTitle>
-                  <CardDescription>Spend vs. Target (Monthly)</CardDescription>
+                  <CardDescription>Spend vs. Target (This Month)</CardDescription>
                 </CardHeader>
                 <CardContent className="h-[400px] sm:h-[500px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -632,7 +641,7 @@ export default function AnalyticsPage() {
             <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden md:col-span-2">
               <CardHeader>
                 <CardTitle className="font-headline text-lg">Personal vs Group Expenses</CardTitle>
-                <CardDescription>Comparison of your private spending and shared group costs</CardDescription>
+                <CardDescription>Current month comparison of private and shared costs</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">

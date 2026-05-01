@@ -14,6 +14,7 @@ import { collection, query, orderBy, where, collectionGroup } from "firebase/fir
 import { getCurrencySymbol, cn } from "@/lib/utils";
 import { LoadingScreen } from "@/components/layout/loading-screen";
 import { BudgetRolloverPrompt } from "@/components/budgets/BudgetRolloverPrompt";
+import { startOfMonth, endOfMonth } from "date-fns";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -36,6 +37,11 @@ export default function Dashboard() {
       router.push("/auth");
     }
   }, [user, router, storeLoading]);
+
+  // Current month boundaries for summary cards
+  const now = new Date();
+  const currentMonthStart = startOfMonth(now).getTime();
+  const currentMonthEnd = endOfMonth(now).getTime();
 
   // Touch Handlers
   const onTouchStart = (e: React.TouchEvent) => {
@@ -96,21 +102,32 @@ export default function Dashboard() {
 
   const { data: groupExpenses } = useCollection(groupExpensesQuery);
 
-  // Calculate Category Data for Insights (Excluding Settlements)
+  // Filter expenses by current month for overview stats
+  const monthlyPersonalExpenses = useMemo(() => {
+    return (personalExpenses || []).filter(exp => 
+      exp.date >= currentMonthStart && exp.date <= currentMonthEnd
+    );
+  }, [personalExpenses, currentMonthStart, currentMonthEnd]);
+
+  const monthlyGroupExpenses = useMemo(() => {
+    return (groupExpenses || []).filter(exp => 
+      exp.date >= currentMonthStart && exp.date <= currentMonthEnd
+    );
+  }, [groupExpenses, currentMonthStart, currentMonthEnd]);
+
+  // Calculate Category Data for Insights (Excluding Settlements, Monthly only)
   const categorySpending = useMemo(() => {
-    if (!personalExpenses && !groupExpenses) return {};
-    
     const categories: Record<string, number> = {};
     
-    // Process Personal
-    (personalExpenses || [])
+    // Process Monthly Personal
+    monthlyPersonalExpenses
       .filter(exp => exp.category !== 'Settlement')
       .forEach(exp => {
         categories[exp.category] = (categories[exp.category] || 0) + exp.amount;
       });
     
-    // Process Group Share
-    (groupExpenses || [])
+    // Process Monthly Group Share
+    monthlyGroupExpenses
       .filter(exp => exp.category !== 'Settlement')
       .forEach(exp => {
         const mySplit = exp.splitBetween?.find((s: any) => s.userId === user?.uid);
@@ -120,7 +137,7 @@ export default function Dashboard() {
       });
 
     return categories;
-  }, [personalExpenses, groupExpenses, user?.uid]);
+  }, [monthlyPersonalExpenses, monthlyGroupExpenses, user?.uid]);
 
   const categoryData = useMemo(() => {
     return Object.entries(categorySpending)
@@ -128,18 +145,19 @@ export default function Dashboard() {
       .sort((a, b) => b.value - a.value);
   }, [categorySpending]);
 
-  // Aggregate stats excluding Settlements
-  const activePersonalExpenses = (personalExpenses || []).filter(exp => exp.category !== 'Settlement');
-  const totalPersonalSpent = activePersonalExpenses.reduce((acc, curr) => acc + curr.amount, 0);
+  // Aggregate stats excluding Settlements (Monthly only)
+  const activePersonalSpent = monthlyPersonalExpenses
+    .filter(exp => exp.category !== 'Settlement')
+    .reduce((acc, curr) => acc + curr.amount, 0);
   
-  const totalUserGroupShare = (groupExpenses || [])
+  const activeUserGroupShare = monthlyGroupExpenses
     .filter(exp => !exp.isSettled && exp.category !== 'Settlement')
     .reduce((acc, curr) => {
       const mySplit = curr.splitBetween?.find((s: any) => s.userId === user?.uid);
       return acc + (mySplit?.amount || 0);
     }, 0);
 
-  const totalOverallSpent = totalPersonalSpent + totalUserGroupShare;
+  const totalOverallMonthlySpent = activePersonalSpent + activeUserGroupShare;
 
   // Determine budget status for dynamic coloring based on total budget
   const totalBudget = useMemo(() => {
@@ -149,11 +167,11 @@ export default function Dashboard() {
 
   const budgetPercentage = useMemo(() => {
     if (totalBudget <= 0) return null;
-    return (totalOverallSpent / totalBudget) * 100;
-  }, [totalBudget, totalOverallSpent]);
+    return (totalOverallMonthlySpent / totalBudget) * 100;
+  }, [totalBudget, totalOverallMonthlySpent]);
 
   const budgetTheme = useMemo(() => {
-    if (budgetPercentage === null) return { color: "bg-primary", icon: CreditCard, label: "Total Expenses" };
+    if (budgetPercentage === null) return { color: "bg-primary", icon: CreditCard, label: "Total Spent (Month)" };
     if (budgetPercentage < 60) return { color: "bg-emerald-600", icon: CheckCircle2, label: "Budget Safe" };
     if (budgetPercentage < 90) return { color: "bg-orange-500", icon: AlertTriangle, label: "Budget Alert" };
     return { color: "bg-destructive", icon: Target, label: "Budget Reached" };
@@ -176,12 +194,18 @@ export default function Dashboard() {
       <BudgetRolloverPrompt />
       
       <main className="flex-1 p-4 md:p-8 pb-28 md:pb-8 max-w-7xl mx-auto w-full">
-        <header className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold font-headline text-primary">Overview</h2>
-            <p className="text-sm text-muted-foreground">Welcome back, {user?.name.split(" ")[0]}</p>
-          </div>
-          <div className="flex items-center gap-2">
+        <header className="mb-6 flex flex-col gap-3">
+          {/* Top row (mobile + desktop) */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold font-headline text-primary">
+                Overview
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Showing data for {now.toLocaleString('default', { month: 'long' })} {now.getFullYear()}
+              </p>
+            </div>
+
             <Button 
               asChild
               variant="outline"
@@ -192,9 +216,13 @@ export default function Dashboard() {
                 The Club
               </Link>
             </Button>
+          </div>
+
+          {/* Desktop-only Add Expense */}
+          <div className="hidden md:flex justify-end">
             <Button 
               asChild
-              className="hidden md:flex bg-primary hover:bg-primary/90 gap-2 h-10 text-sm font-semibold rounded-xl transition-all active:scale-95"
+              className="bg-primary hover:bg-primary/90 gap-2 h-10 text-sm font-semibold rounded-xl transition-all active:scale-95"
             >
               <Link href="/expenses/add">
                 <Plus className="h-5 w-5" />
@@ -204,16 +232,16 @@ export default function Dashboard() {
           </div>
         </header>
 
-        {/* Top Summary Cards */}
+        {/* Top Summary Cards - Now Monthly Only */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-8">
           <Card className="border-none shadow-sm bg-card rounded-2xl p-4 flex items-center justify-between h-20 overflow-hidden relative group">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
                 <Wallet className="h-5 w-5" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-tight">Personal Spent</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-tight">Monthly Personal</span>
             </div>
-            <div className="text-xl font-bold text-primary shrink-0">{symbol}{totalPersonalSpent.toFixed(2)}</div>
+            <div className="text-xl font-bold text-primary shrink-0">{symbol}{activePersonalSpent.toFixed(2)}</div>
           </Card>
 
           <Card className="border-none shadow-sm bg-card rounded-2xl p-4 flex items-center justify-between h-20 overflow-hidden relative group">
@@ -221,9 +249,9 @@ export default function Dashboard() {
               <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent shrink-0">
                 <Users className="h-5 w-5" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-tight">Active Group Share</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-tight">Monthly Group Share</span>
             </div>
-            <div className="text-xl font-bold text-foreground shrink-0">{symbol}{totalUserGroupShare.toFixed(2)}</div>
+            <div className="text-xl font-bold text-foreground shrink-0">{symbol}{activeUserGroupShare.toFixed(2)}</div>
           </Card>
 
           <Card 
@@ -248,7 +276,7 @@ export default function Dashboard() {
                 )}
               </div>
             </div>
-            <div className="text-xl font-bold relative z-10 shrink-0">{symbol}{totalOverallSpent.toFixed(2)}</div>
+            <div className="text-xl font-bold relative z-10 shrink-0">{symbol}{totalOverallMonthlySpent.toFixed(2)}</div>
           </Card>
         </div>
 
@@ -260,9 +288,9 @@ export default function Dashboard() {
                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                   <PieChartIcon className="h-4 w-4" />
                 </div>
-                Analyst
+                Monthly Analyst
               </CardTitle>
-              <CardDescription>Automated insights into your spending habits.</CardDescription>
+              <CardDescription>Automated insights into your spending this month.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
@@ -270,27 +298,27 @@ export default function Dashboard() {
                   <p>
                     {categoryData.length > 0 ? (
                       <>
-                        Your biggest expense category is <span className="text-[#facc15] font-bold">"{categoryData[0]?.name}"</span>, 
-                        accounting for {((categoryData[0]?.value / (totalOverallSpent || 1)) * 100).toFixed(1)}% of your total outgoings. 
+                        Your biggest expense category this month is <span className="text-[#facc15] font-bold">"{categoryData[0]?.name}"</span>, 
+                        accounting for {((categoryData[0]?.value / (totalOverallMonthlySpent || 1)) * 100).toFixed(1)}% of your monthly outgoings. 
                       </>
                     ) : (
-                      "No data available yet. Start tracking your expenses to see detailed automated analysis."
+                      "No data available for this month. Start tracking your expenses to see detailed automated analysis."
                     )}
                   </p>
                   
                   {totalBudget > 0 && (
                     <div className="pt-2 border-t border-border/50">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] uppercase font-bold text-muted-foreground">Overall Budget Progress</span>
-                        <span className="text-[10px] font-bold">{Math.min(100, (totalOverallSpent / totalBudget) * 100).toFixed(0)}%</span>
+                        <span className="text-[10px] uppercase font-bold text-muted-foreground">Budget Progress ({now.toLocaleString('default', { month: 'short' })})</span>
+                        <span className="text-[10px] font-bold">{Math.min(100, (totalOverallMonthlySpent / totalBudget) * 100).toFixed(0)}%</span>
                       </div>
                       <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
                         <div 
                           className={cn(
                             "h-full transition-all duration-500",
-                            totalOverallSpent > totalBudget ? 'bg-destructive' : 'bg-primary'
+                            totalOverallMonthlySpent > totalBudget ? 'bg-destructive' : 'bg-primary'
                           )}
-                          style={{ width: `${Math.min(100, (totalOverallSpent / totalBudget) * 100)}%` }}
+                          style={{ width: `${Math.min(100, (totalOverallMonthlySpent / totalBudget) * 100)}%` }}
                         />
                       </div>
                       
