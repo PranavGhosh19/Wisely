@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -165,24 +164,26 @@ function NavbarContent() {
         className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md h-20 glass-card rounded-[2.5rem] md:hidden px-4 safe-area-bottom shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
       >
         <div className="relative flex h-full items-center justify-between">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "flex flex-col items-center gap-1 flex-1 transition-all py-2 relative",
-                  isActive ? "text-primary" : "text-muted-foreground"
-                )}
-              >
-                <Icon className={cn("h-5 w-5 transition-transform", isActive && "scale-110")} />
-                <span className="text-[9px] font-black uppercase tracking-widest">{item.name}</span>
-                {isActive && <motion.div layoutId="mob-nav" className="absolute -bottom-1 h-1 w-4 bg-primary rounded-full" />}
-              </Link>
-            );
-          })}
+          {navItems
+            .filter(item => item.name !== "Insights") // Remove Insights from mobile bar
+            .map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "flex flex-col items-center gap-1 flex-1 transition-all py-2 relative",
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  )}
+                >
+                  <Icon className={cn("h-5 w-5 transition-transform", isActive && "scale-110")} />
+                  <span className="text-[9px] font-black uppercase tracking-widest">{item.name}</span>
+                  {isActive && <motion.div layoutId="mob-nav" className="absolute -bottom-1 h-1 w-4 bg-primary rounded-full" />}
+                </Link>
+              );
+            })}
 
           <div className="px-2">
             <Button
