@@ -8,13 +8,14 @@ import { useStore } from "@/lib/store";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Wallet, Users, CreditCard, PieChart as PieChartIcon, ArrowRight, Target, CheckCircle2, AlertTriangle, Crown } from "lucide-react";
+import { Plus, Wallet, Users, CreditCard, PieChart as PieChartIcon, ArrowRight, Target, CheckCircle2, AlertTriangle, Crown, Zap } from "lucide-react";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, orderBy, where, collectionGroup } from "firebase/firestore";
 import { getCurrencySymbol, cn } from "@/lib/utils";
 import { LoadingScreen } from "@/components/layout/loading-screen";
 import { BudgetRolloverPrompt } from "@/components/budgets/BudgetRolloverPrompt";
 import { startOfMonth, endOfMonth } from "date-fns";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -22,63 +23,26 @@ export default function Dashboard() {
   const db = useFirestore();
   const [mounted, setMounted] = useState(false);
 
-  // Gesture handling for "The Wisely Club" slide
+  // Gesture handling
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const minSwipeDistance = 70;
-
-  // Hidden interaction state for budgets
-  const [clickCount, setClickCount] = useState(0);
-  const [lastClickTime, setLastClickTime] = useState(0);
 
   useEffect(() => {
     setMounted(true);
-    if (!storeLoading && !user) {
-      router.push("/auth");
-    }
+    if (!storeLoading && !user) router.push("/auth");
   }, [user, router, storeLoading]);
 
-  // Current month boundaries for summary cards
   const now = new Date();
   const currentMonthStart = startOfMonth(now).getTime();
   const currentMonthEnd = endOfMonth(now).getTime();
 
-  // Touch Handlers
-  const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
+  const onTouchStart = (e: React.TouchEvent) => setTouchStart(e.targetTouches[0].clientX);
   const onTouchMove = (e: React.TouchEvent) => setTouchEnd(e.targetTouches[0].clientX);
-
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    const isRightSwipe = distance < -minSwipeDistance;
-    
-    // If user slides from left to right
-    if (isRightSwipe) {
-      router.push('/wisely-club');
-    }
+    if (touchStart - touchEnd < -70) router.push('/wisely-club');
   };
 
-  const handleTotalExpensesClick = () => {
-    const now = Date.now();
-    if (now - lastClickTime < 500) {
-      const nextCount = clickCount + 1;
-      if (nextCount === 3) {
-        router.push("/budgets");
-        setClickCount(0);
-      } else {
-        setClickCount(nextCount);
-      }
-    } else {
-      setClickCount(1);
-    }
-    setLastClickTime(now);
-  };
-
-  // Personal Expenses Query
   const personalExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -90,7 +54,6 @@ export default function Dashboard() {
 
   const { data: personalExpenses } = useCollection(personalExpensesQuery);
 
-  // Group Expenses Query
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -102,90 +65,56 @@ export default function Dashboard() {
 
   const { data: groupExpenses } = useCollection(groupExpensesQuery);
 
-  // Filter expenses by current month for overview stats
-  const monthlyPersonalExpenses = useMemo(() => {
-    return (personalExpenses || []).filter(exp => 
-      exp.date >= currentMonthStart && exp.date <= currentMonthEnd
-    );
-  }, [personalExpenses, currentMonthStart, currentMonthEnd]);
+  const monthlyPersonalExpenses = useMemo(() => (personalExpenses || []).filter(exp => exp.date >= currentMonthStart && exp.date <= currentMonthEnd), [personalExpenses, currentMonthStart, currentMonthEnd]);
+  const monthlyGroupExpenses = useMemo(() => (groupExpenses || []).filter(exp => exp.date >= currentMonthStart && exp.date <= currentMonthEnd), [groupExpenses, currentMonthStart, currentMonthEnd]);
 
-  const monthlyGroupExpenses = useMemo(() => {
-    return (groupExpenses || []).filter(exp => 
-      exp.date >= currentMonthStart && exp.date <= currentMonthEnd
-    );
-  }, [groupExpenses, currentMonthStart, currentMonthEnd]);
-
-  // Calculate Category Data for Insights (Excluding Settlements, Monthly only)
   const categorySpending = useMemo(() => {
     const categories: Record<string, number> = {};
-    
-    // Process Monthly Personal
-    monthlyPersonalExpenses
-      .filter(exp => exp.category !== 'Settlement')
-      .forEach(exp => {
-        categories[exp.category] = (categories[exp.category] || 0) + exp.amount;
-      });
-    
-    // Process Monthly Group Share
-    monthlyGroupExpenses
-      .filter(exp => exp.category !== 'Settlement')
-      .forEach(exp => {
-        const mySplit = exp.splitBetween?.find((s: any) => s.userId === user?.uid);
-        if (mySplit) {
-          categories[exp.category] = (categories[exp.category] || 0) + mySplit.amount;
-        }
-      });
-
+    monthlyPersonalExpenses.filter(e => e.category !== 'Settlement').forEach(e => categories[e.category] = (categories[e.category] || 0) + e.amount);
+    monthlyGroupExpenses.filter(e => e.category !== 'Settlement').forEach(e => {
+      const mySplit = e.splitBetween?.find((s: any) => s.userId === user?.uid);
+      if (mySplit) categories[e.category] = (categories[e.category] || 0) + mySplit.amount;
+    });
     return categories;
   }, [monthlyPersonalExpenses, monthlyGroupExpenses, user?.uid]);
 
-  const categoryData = useMemo(() => {
-    return Object.entries(categorySpending)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
-  }, [categorySpending]);
+  const categoryData = useMemo(() => Object.entries(categorySpending).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value), [categorySpending]);
 
-  // Aggregate stats excluding Settlements (Monthly only)
-  const activePersonalSpent = monthlyPersonalExpenses
-    .filter(exp => exp.category !== 'Settlement')
-    .reduce((acc, curr) => acc + curr.amount, 0);
-  
-  const activeUserGroupShare = monthlyGroupExpenses
-    .filter(exp => !exp.isSettled && exp.category !== 'Settlement')
-    .reduce((acc, curr) => {
-      const mySplit = curr.splitBetween?.find((s: any) => s.userId === user?.uid);
-      return acc + (mySplit?.amount || 0);
-    }, 0);
-
+  const activePersonalSpent = monthlyPersonalExpenses.filter(e => e.category !== 'Settlement').reduce((acc, curr) => acc + curr.amount, 0);
+  const activeUserGroupShare = monthlyGroupExpenses.filter(e => !e.isSettled && e.category !== 'Settlement').reduce((acc, curr) => acc + (curr.splitBetween?.find((s: any) => s.userId === user?.uid)?.amount || 0), 0);
   const totalOverallMonthlySpent = activePersonalSpent + activeUserGroupShare;
 
-  // Determine budget status for dynamic coloring based on total budget
   const totalBudget = useMemo(() => {
     if (!user?.categoryBudgets) return user?.monthlyBudget || 0;
     return Object.values(user.categoryBudgets).reduce((a, b) => a + b, 0);
   }, [user?.categoryBudgets, user?.monthlyBudget]);
 
-  const budgetPercentage = useMemo(() => {
-    if (totalBudget <= 0) return null;
-    return (totalOverallMonthlySpent / totalBudget) * 100;
-  }, [totalBudget, totalOverallMonthlySpent]);
+  const budgetPercentage = totalBudget <= 0 ? null : (totalOverallMonthlySpent / totalBudget) * 100;
 
   const budgetTheme = useMemo(() => {
-    if (budgetPercentage === null) return { color: "bg-primary", icon: CreditCard, label: "Total Spent (Month)" };
-    if (budgetPercentage < 60) return { color: "bg-emerald-600", icon: CheckCircle2, label: "Budget Safe" };
-    if (budgetPercentage < 90) return { color: "bg-orange-500", icon: AlertTriangle, label: "Budget Alert" };
-    return { color: "bg-destructive", icon: Target, label: "Budget Reached" };
+    if (budgetPercentage === null) return { color: "bg-primary", icon: CreditCard, label: "Monthly Output", glow: "glow-primary" };
+    if (budgetPercentage < 60) return { color: "bg-emerald-600", icon: CheckCircle2, label: "Secure Mode", glow: "shadow-[0_0_20px_rgba(16,185,129,0.3)]" };
+    if (budgetPercentage < 90) return { color: "bg-orange-500", icon: AlertTriangle, label: "Alert Threshold", glow: "glow-accent" };
+    return { color: "bg-destructive", icon: Target, label: "Critical Limit", glow: "shadow-[0_0_20px_rgba(239,68,68,0.3)]" };
   }, [budgetPercentage]);
 
-  if (storeLoading || !user) {
-    return <LoadingScreen />;
-  }
+  if (storeLoading || !user) return <LoadingScreen />;
 
   const symbol = getCurrencySymbol(user.currency);
 
+  const container = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  };
+
+  const item = {
+    hidden: { y: 20, opacity: 0 },
+    show: { y: 0, opacity: 1 }
+  };
+
   return (
     <div 
-      className="flex min-h-screen flex-col md:flex-row bg-background overflow-hidden"
+      className="flex min-h-screen flex-col md:flex-row bg-background no-scrollbar"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -193,23 +122,24 @@ export default function Dashboard() {
       <Navbar />
       <BudgetRolloverPrompt />
       
-      <main className="flex-1 p-4 md:p-8 pb-28 md:pb-8 max-w-7xl mx-auto w-full">
-        <header className="mb-6 flex flex-col gap-3">
-          {/* Top row (mobile + desktop) */}
+      <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-7xl mx-auto w-full">
+        <motion.header 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8 flex flex-col gap-4"
+        >
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold font-headline text-primary">
-                Overview
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Showing data for {now.toLocaleString('default', { month: 'long' })} {now.getFullYear()}
+            <div className="space-y-1">
+              <h2 className="text-3xl md:text-5xl font-black text-glow">COMMAND</h2>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">
+                Cycles / {now.toLocaleString('default', { month: 'long' })} {now.getFullYear()}
               </p>
             </div>
 
             <Button 
               asChild
               variant="outline"
-              className="h-10 text-xs font-bold rounded-xl border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/5"
+              className="h-12 px-6 text-xs font-black uppercase tracking-widest rounded-2xl border-accent/30 text-accent hover:bg-accent/5 glow-accent"
             >
               <Link href="/wisely-club">
                 <Crown className="h-4 w-4 mr-2" />
@@ -217,126 +147,141 @@ export default function Dashboard() {
               </Link>
             </Button>
           </div>
+        </motion.header>
 
-          {/* Desktop-only Add Expense */}
-          <div className="hidden md:flex justify-end">
-            <Button 
-              asChild
-              className="bg-primary hover:bg-primary/90 gap-2 h-10 text-sm font-semibold rounded-xl transition-all active:scale-95"
-            >
-              <Link href="/expenses/add">
-                <Plus className="h-5 w-5" />
-                Add Expense
-              </Link>
-            </Button>
-          </div>
-        </header>
-
-        {/* Top Summary Cards - Now Monthly Only */}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-8">
-          <Card className="border-none shadow-sm bg-card rounded-2xl p-4 flex items-center justify-between h-20 overflow-hidden relative group">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                <Wallet className="h-5 w-5" />
-              </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-tight">Monthly Personal</span>
-            </div>
-            <div className="text-xl font-bold text-primary shrink-0">{symbol}{activePersonalSpent.toFixed(2)}</div>
-          </Card>
-
-          <Card className="border-none shadow-sm bg-card rounded-2xl p-4 flex items-center justify-between h-20 overflow-hidden relative group">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent shrink-0">
-                <Users className="h-5 w-5" />
-              </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-tight">Monthly Group Share</span>
-            </div>
-            <div className="text-xl font-bold text-foreground shrink-0">{symbol}{activeUserGroupShare.toFixed(2)}</div>
-          </Card>
-
-          <Card 
-            onClick={handleTotalExpensesClick}
-            className={cn(
-              "border-none shadow-sm text-primary-foreground rounded-2xl p-4 flex items-center justify-between h-20 relative overflow-hidden group cursor-pointer active:scale-[0.98] transition-all duration-500",
-              budgetTheme.color
-            )}
-          >
-            <div className="flex items-center gap-3 relative z-10">
-              <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                <budgetTheme.icon className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] font-bold uppercase tracking-widest opacity-80 leading-tight">
-                  {budgetTheme.label}
-                </span>
-                {budgetPercentage !== null && (
-                  <span className="text-[8px] font-bold opacity-60 uppercase">
-                    {budgetPercentage.toFixed(0)}% of Goal
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="text-xl font-bold relative z-10 shrink-0">{symbol}{totalOverallMonthlySpent.toFixed(2)}</div>
-          </Card>
-        </div>
-
-        {/* Analyst & Stats Section */}
-        <div className="grid gap-6">
-          <Card className="border-none shadow-sm bg-card rounded-2xl">
-            <CardHeader>
-              <CardTitle className="text-lg font-headline flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                  <PieChartIcon className="h-4 w-4" />
+        <motion.div 
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-10"
+        >
+          <motion.div variants={item}>
+            <Card className="glass-card h-28 relative group cursor-default">
+              <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <CardContent className="h-full flex items-center justify-between p-6">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl glass flex items-center justify-center text-primary glow-primary">
+                    <Wallet className="h-6 w-6" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Personal</span>
+                    <span className="text-2xl font-black">{symbol}{activePersonalSpent.toFixed(2)}</span>
+                  </div>
                 </div>
-                Monthly Analyst
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div variants={item}>
+            <Card className="glass-card h-28 relative group cursor-default">
+              <div className="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <CardContent className="h-full flex items-center justify-between p-6">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl glass flex items-center justify-center text-accent glow-accent">
+                    <Users className="h-6 w-6" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Shared</span>
+                    <span className="text-2xl font-black">{symbol}{activeUserGroupShare.toFixed(2)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div variants={item}>
+            <Link href="/budgets">
+              <Card className={cn("h-28 relative overflow-hidden transition-all duration-500 active:scale-95 group", budgetTheme.color, budgetTheme.glow)}>
+                <div className="absolute top-0 right-0 h-32 w-32 bg-white/20 rounded-full blur-3xl -translate-y-16 translate-x-16" />
+                <CardContent className="h-full flex items-center justify-between p-6 relative z-10 text-white">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-2xl bg-white/20 flex items-center justify-center">
+                      <budgetTheme.icon className="h-6 w-6" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black uppercase tracking-widest opacity-80">{budgetTheme.label}</span>
+                      <span className="text-2xl font-black">{symbol}{totalOverallMonthlySpent.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  {budgetPercentage !== null && (
+                    <div className="text-right">
+                      <span className="text-[10px] font-black opacity-80">{budgetPercentage.toFixed(0)}%</span>
+                      <div className="w-12 h-1 bg-white/30 rounded-full mt-1 overflow-hidden">
+                        <div className="h-full bg-white transition-all" style={{ width: `${Math.min(100, budgetPercentage)}%` }} />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </Link>
+          </motion.div>
+        </motion.div>
+
+        <motion.div 
+          variants={item}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4 }}
+          className="grid gap-6"
+        >
+          <Card className="glass-card border-none overflow-hidden relative">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-black uppercase tracking-[0.3em] flex items-center gap-3">
+                <Zap className="h-4 w-4 text-primary fill-primary animate-pulse" />
+                Analyst HUD
               </CardTitle>
-              <CardDescription>Automated insights into your spending this month.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-                <div className="text-sm font-medium leading-relaxed space-y-3">
-                  <p>
+            <CardContent className="space-y-6 pt-4">
+              <div className="p-6 rounded-[2rem] bg-white/5 border border-white/5 space-y-6">
+                <div className="text-sm font-medium leading-relaxed space-y-4">
+                  <p className="text-lg font-bold">
                     {categoryData.length > 0 ? (
                       <>
-                        Your biggest expense category this month is <span className="text-[#facc15] font-bold">"{categoryData[0]?.name}"</span>, 
-                        accounting for {((categoryData[0]?.value / (totalOverallMonthlySpent || 1)) * 100).toFixed(1)}% of your monthly outgoings. 
+                        Highest activity detected in <span className="text-primary">"{categoryData[0]?.name}"</span>. 
+                        Impact level: {((categoryData[0]?.value / (totalOverallMonthlySpent || 1)) * 100).toFixed(1)}%.
                       </>
                     ) : (
-                      "No data available for this month. Start tracking your expenses to see detailed automated analysis."
+                      "Initializing data streams. Record a cycle to begin analysis."
                     )}
                   </p>
                   
                   {totalBudget > 0 && (
-                    <div className="pt-2 border-t border-border/50">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] uppercase font-bold text-muted-foreground">Budget Progress ({now.toLocaleString('default', { month: 'short' })})</span>
-                        <span className="text-[10px] font-bold">{Math.min(100, (totalOverallMonthlySpent / totalBudget) * 100).toFixed(0)}%</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className={cn(
-                            "h-full transition-all duration-500",
-                            totalOverallMonthlySpent > totalBudget ? 'bg-destructive' : 'bg-primary'
-                          )}
-                          style={{ width: `${Math.min(100, (totalOverallMonthlySpent / totalBudget) * 100)}%` }}
-                        />
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                          <span>Month Cycle Progress</span>
+                          <span>{Math.min(100, (totalOverallMonthlySpent / totalBudget) * 100).toFixed(0)}%</span>
+                        </div>
+                        <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden p-0.5">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.min(100, (totalOverallMonthlySpent / totalBudget) * 100)}%` }}
+                            className={cn(
+                              "h-full rounded-full transition-all duration-1000",
+                              totalOverallMonthlySpent > totalBudget ? 'bg-destructive glow-destructive' : 'bg-primary glow-primary'
+                            )}
+                          />
+                        </div>
                       </div>
                       
-                      <div className="mt-3 space-y-2">
+                      <div className="grid gap-2 sm:grid-cols-2">
                         {storeCategories.map(cat => {
                           const budget = user.categoryBudgets?.[cat] || 0;
                           const spent = categorySpending[cat] || 0;
-                          if (budget > 0 && spent > budget * 0.8) {
+                          if (budget > 0 && spent > budget * 0.7) {
                             return (
-                              <div key={cat} className="flex items-center justify-between text-[10px] bg-background/50 p-1.5 rounded-lg border border-border/30">
-                                <span className="font-bold uppercase opacity-70">{cat}</span>
-                                <span className={cn(
-                                  "font-black",
-                                  spent > budget ? "text-destructive" : "text-orange-500"
-                                )}>
-                                  {spent > budget ? "OVER BUDGET" : "NEAR LIMIT"}
+                              <motion.div 
+                                key={cat} 
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="flex items-center justify-between p-3 rounded-xl bg-black/20 border border-white/5"
+                              >
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-70">{cat}</span>
+                                <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full", spent > budget ? "bg-destructive/20 text-destructive border border-destructive/30" : "bg-orange-500/20 text-orange-500 border border-orange-500/30")}>
+                                  {spent > budget ? "OVER LIMIT" : "APPROACHING"}
                                 </span>
-                              </div>
+                              </motion.div>
                             );
                           }
                           return null;
@@ -346,15 +291,15 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
-              <Button variant="outline" asChild className="w-full rounded-xl gap-2 font-bold h-11">
+              <Button variant="outline" asChild className="w-full rounded-2xl gap-2 font-black uppercase tracking-widest h-14 border-white/10 hover:bg-white/5 group">
                 <Link href="/analytics">
-                  Full Reports
-                  <ArrowRight className="h-4 w-4" />
+                  Access Deep Metrics
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Button>
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
       </main>
     </div>
   );

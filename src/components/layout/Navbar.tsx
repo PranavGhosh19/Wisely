@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -10,7 +11,8 @@ import {
   Plus, 
   Settings,
   ReceiptText,
-  WifiOff
+  WifiOff,
+  User as UserIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
@@ -19,6 +21,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Tooltip,
   TooltipContent,
@@ -27,10 +30,10 @@ import {
 } from "@/components/ui/tooltip";
 
 const navItems = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Transactions", href: "/transactions", icon: ReceiptText },
+  { name: "Dash", href: "/dashboard", icon: LayoutDashboard },
+  { name: "History", href: "/transactions", icon: ReceiptText },
   { name: "Groups", href: "/groups", icon: Users },
-  { name: "Analytics", href: "/analytics", icon: PieChart },
+  { name: "Insights", href: "/analytics", icon: PieChart },
 ];
 
 function NavbarContent() {
@@ -38,39 +41,28 @@ function NavbarContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const auth = useAuth();
-  const { user, logout, setInstallPrompt, isSidebarCollapsed, setSidebarCollapsed } = useStore();
+  const { user, logout, setSidebarCollapsed, isSidebarCollapsed } = useStore();
   const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
     if (typeof window !== 'undefined') {
       setIsOnline(navigator.onLine);
-      window.addEventListener('online', handleOnline);
-      window.addEventListener('offline', handleOffline);
+      const hO = () => setIsOnline(true);
+      const hF = () => setIsOnline(false);
+      window.addEventListener('online', hO);
+      window.addEventListener('offline', hF);
+      return () => {
+        window.removeEventListener('online', hO);
+        window.removeEventListener('offline', hF);
+      };
     }
-
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setInstallPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, [setInstallPrompt]);
+  }, []);
 
   const isPublicPage = pathname === "/" || pathname === "/auth";
   if (isPublicPage || !user) return null;
 
   const handleSignOut = async () => {
-    if (auth) {
-      await signOut(auth);
-    }
+    if (auth) await signOut(auth);
     logout();
     router.push("/");
   };
@@ -82,193 +74,120 @@ function NavbarContent() {
 
   return (
     <TooltipProvider delayDuration={0}>
-      <nav 
+      {/* Desktop HUD Sidebar */}
+      <motion.nav 
+        initial={{ x: -100, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
         className={cn(
-          "hidden md:flex sticky top-0 h-screen flex-col justify-between border-r bg-card/50 backdrop-blur-xl p-6 shrink-0 transition-all duration-300 ease-in-out overflow-hidden",
-          isSidebarCollapsed ? "w-24 px-4" : "w-72"
+          "hidden md:flex sticky top-6 ml-6 h-[calc(100vh-3rem)] flex-col justify-between glass-card rounded-[2.5rem] p-4 transition-all duration-500 ease-in-out z-50",
+          isSidebarCollapsed ? "w-20" : "w-64"
         )}
       >
         <div className="flex flex-col gap-8">
-          <div className={cn("flex items-center px-2", isSidebarCollapsed ? "justify-center" : "justify-between")}>
-            <button 
-              onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
-              className="flex items-center gap-3 transition-all hover:opacity-80 active:scale-95"
-            >
-              <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-primary/20 shrink-0">
-                W
-              </div>
-              {!isSidebarCollapsed && (
-                <div className="flex flex-col">
-                  <h1 className="text-2xl font-bold font-headline text-primary tracking-tight leading-none">
-                    Wisely
-                  </h1>
-                  {!isOnline && (
-                    <span className="text-[8px] font-black text-orange-500 uppercase tracking-widest mt-1 flex items-center gap-1">
-                      <WifiOff className="h-2 w-2" /> Offline Mode
-                    </span>
-                  )}
-                </div>
-              )}
-            </button>
+          <div className="flex items-center justify-center pt-2">
+            <Link href="/dashboard" className="relative group">
+              <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full scale-150 group-hover:scale-175 transition-transform" />
+              <div className="h-12 w-12 bg-primary rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-2xl relative z-10">W</div>
+            </Link>
           </div>
           
           <div className="flex flex-col gap-2">
-            {!isSidebarCollapsed && (
-              <p className="px-4 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2 animate-in fade-in duration-300">
-                Main Menu
-              </p>
-            )}
-            
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
               
               return (
-                <Tooltip key={item.name}>
-                  <TooltipTrigger asChild>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-3 rounded-2xl transition-all group py-3",
-                        isSidebarCollapsed ? "justify-center px-0" : "px-4",
-                        isActive 
-                          ? "text-primary bg-primary/10 shadow-sm" 
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                      )}
-                    >
-                      <Icon className={cn("h-5 w-5 transition-transform group-hover:scale-110", isActive && "text-primary")} />
-                      {!isSidebarCollapsed && (
-                        <span className="text-sm font-semibold truncate animate-in fade-in slide-in-from-left-2 duration-300">
-                          {item.name}
-                        </span>
-                      )}
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className={cn("z-[100] font-bold", !isSidebarCollapsed && "hidden")}>
-                    {item.name}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-            
-            {!isSidebarCollapsed && (
-              <p className="px-4 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mt-6 mb-2 animate-in fade-in duration-300">
-                Account
-              </p>
-            )}
-            
-            <Tooltip key="settings">
-              <TooltipTrigger asChild>
                 <Link
-                  href="/profile"
+                  key={item.name}
+                  href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-2xl transition-all group py-3",
-                    isSidebarCollapsed ? "justify-center px-0" : "px-4",
-                    pathname === "/profile" 
-                      ? "text-primary bg-primary/10 shadow-sm" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    "flex items-center gap-3 rounded-2xl transition-all group py-3 px-3 relative overflow-hidden",
+                    isActive 
+                      ? "text-primary bg-primary/10" 
+                      : "text-muted-foreground hover:bg-white/5"
                   )}
                 >
-                  <Settings className={cn("h-5 w-5 transition-transform group-hover:rotate-45", pathname === "/profile" && "text-primary")} />
-                  {!isSidebarCollapsed && (
-                    <span className="text-sm font-semibold animate-in fade-in slide-in-from-left-2 duration-300">
-                      Settings
-                    </span>
-                  )}
+                  <Icon className={cn("h-5 w-5 z-10 transition-transform group-hover:scale-110", isActive && "text-primary")} />
+                  <AnimatePresence>
+                    {!isSidebarCollapsed && (
+                      <motion.span 
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        className="text-sm font-bold z-10 truncate"
+                      >
+                        {item.name}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                  {isActive && <motion.div layoutId="nav-pill" className="absolute left-0 w-1 h-6 bg-primary rounded-full" />}
                 </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right" className={cn("z-[100] font-bold", !isSidebarCollapsed && "hidden")}>
-                Settings
-              </TooltipContent>
-            </Tooltip>
+              );
+            })}
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <Tooltip key="profile-footer">
-            <TooltipTrigger asChild>
-              <Link 
-                href="/profile" 
-                className={cn(
-                  "flex items-center gap-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-all border border-transparent hover:border-border/50 p-4",
-                  isSidebarCollapsed && "justify-center px-0"
-                )}
-              >
-                <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold shadow-sm ring-2 ring-background shrink-0 overflow-hidden relative">
-                  {user.photoURL ? (
-                    <Image src={user.photoURL} alt={user.name} fill className="object-cover" />
-                  ) : (
-                    user.name?.[0] || "?"
-                  )}
-                </div>
-                {!isSidebarCollapsed && (
-                  <div className="flex flex-col truncate flex-1 animate-in fade-in slide-in-from-left-2 duration-300">
-                    <span className="text-sm font-bold truncate leading-none mb-1">{user.name}</span>
-                    <span className="text-[11px] text-muted-foreground truncate opacity-70">Personal Plan</span>
-                  </div>
-                )}
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right" className={cn("z-[100] font-bold", !isSidebarCollapsed && "hidden")}>
-              {user.name}
-            </TooltipContent>
-          </Tooltip>
+        <div className="flex flex-col gap-3">
+          <Link 
+            href="/profile" 
+            className={cn(
+              "flex items-center gap-3 rounded-2xl p-2 bg-white/5 hover:bg-white/10 transition-all border border-white/5",
+              isSidebarCollapsed && "justify-center"
+            )}
+          >
+            <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold shadow-inner relative shrink-0 overflow-hidden">
+              {user.photoURL ? <Image src={user.photoURL} alt={user.name} fill className="object-cover" /> : user.name?.[0]}
+            </div>
+            {!isSidebarCollapsed && (
+              <div className="flex flex-col truncate flex-1">
+                <span className="text-xs font-black truncate">{user.name}</span>
+                <span className="text-[10px] uppercase font-bold opacity-50">Profile</span>
+              </div>
+            )}
+          </Link>
 
-          <Tooltip key="sign-out">
-            <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={cn(
-                  "w-full text-destructive font-bold hover:text-destructive hover:bg-destructive/5 rounded-2xl transition-all h-12 gap-3",
-                  isSidebarCollapsed ? "justify-center px-0" : "justify-start px-4"
-                )}
-                onClick={handleSignOut}
-              >
-                <LogOut className="h-5 w-5" />
-                {!isSidebarCollapsed && (
-                  <span className="animate-in fade-in slide-in-from-left-2 duration-300">Sign Out</span>
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" className={cn("z-[100] font-bold text-destructive", !isSidebarCollapsed && "hidden")}>
-              Sign Out
-            </TooltipContent>
-          </Tooltip>
+          <Button 
+            variant="ghost" 
+            className={cn(
+              "w-full text-destructive/80 hover:text-destructive hover:bg-destructive/10 rounded-2xl h-12 gap-3",
+              isSidebarCollapsed ? "justify-center" : "justify-start px-4"
+            )}
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-5 w-5" />
+            {!isSidebarCollapsed && <span className="font-bold">Exit</span>}
+          </Button>
         </div>
-      </nav>
+      </motion.nav>
 
+      {/* Mobile Floating Tab Bar */}
       <nav 
-        className="fixed bottom-0 left-0 z-50 w-full border-t bg-background/95 backdrop-blur-md safe-area-bottom md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
-        style={{ height: '80px' }}
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md h-20 glass-card rounded-[2.5rem] md:hidden px-4 safe-area-bottom shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
       >
-        <div className="relative flex h-full items-center justify-around px-2">
-          <Link
-            href="/dashboard"
-            className={cn(
-              "flex flex-col items-center gap-1 flex-1 transition-all py-2",
-              pathname === "/dashboard" ? "text-primary scale-110" : "text-muted-foreground"
-            )}
-          >
-            <LayoutDashboard className="h-5 w-5" />
-            <span className="text-[9px] font-bold uppercase tracking-widest">Dash</span>
-          </Link>
+        <div className="relative flex h-full items-center justify-between">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                  "flex flex-col items-center gap-1 flex-1 transition-all py-2 relative",
+                  isActive ? "text-primary" : "text-muted-foreground"
+                )}
+              >
+                <Icon className={cn("h-5 w-5 transition-transform", isActive && "scale-110")} />
+                <span className="text-[9px] font-black uppercase tracking-widest">{item.name}</span>
+                {isActive && <motion.div layoutId="mob-nav" className="absolute -bottom-1 h-1 w-4 bg-primary rounded-full" />}
+              </Link>
+            );
+          })}
 
-          <Link
-            href="/transactions"
-            className={cn(
-              "flex flex-col items-center gap-1 flex-1 transition-all py-2",
-              pathname === "/transactions" ? "text-primary scale-110" : "text-muted-foreground"
-            )}
-          >
-            <ReceiptText className="h-5 w-5" />
-            <span className="text-[9px] font-bold uppercase tracking-widest">History</span>
-          </Link>
-
-          <div className="relative -top-6 px-2">
+          <div className="px-2">
             <Button
               asChild
-              className="h-14 w-14 rounded-full bg-primary shadow-xl shadow-primary/40 hover:scale-105 transition-transform active:scale-90 border-4 border-background"
+              className="h-14 w-14 rounded-full bg-primary shadow-[0_0_20px_rgba(var(--primary),0.5)] hover:scale-105 active:scale-90 border-4 border-background"
               size="icon"
             >
               <Link href={addExpenseUrl}>
@@ -278,39 +197,24 @@ function NavbarContent() {
           </div>
 
           <Link
-            href="/groups"
-            className={cn(
-              "flex flex-col items-center gap-1 flex-1 transition-all py-2",
-              pathname.startsWith("/groups") ? "text-primary scale-110" : "text-muted-foreground"
-            )}
-          >
-            <Users className="h-5 w-5" />
-            <span className="text-[9px] font-bold uppercase tracking-widest">Groups</span>
-          </Link>
-
-          <Link
             href="/profile"
             className={cn(
               "flex flex-col items-center gap-1 flex-1 transition-all py-2",
-              pathname === "/profile" ? "text-primary scale-110" : "text-muted-foreground"
+              pathname === "/profile" ? "text-primary" : "text-muted-foreground"
             )}
           >
             <div className={cn(
               "h-7 w-7 rounded-lg flex items-center justify-center border-2 transition-all overflow-hidden relative",
-              pathname === "/profile" ? "border-primary bg-primary/10" : "border-transparent bg-muted"
+              pathname === "/profile" ? "border-primary" : "border-transparent bg-white/10"
             )}>
-              {user.photoURL ? (
-                <Image src={user.photoURL} alt={user.name} fill className="object-cover" />
-              ) : (
-                <span className="text-[10px] font-bold">{user.name?.[0] || "W"}</span>
-              )}
+              {user.photoURL ? <Image src={user.photoURL} alt={user.name} fill className="object-cover" /> : <UserIcon className="h-4 w-4" />}
             </div>
-            <span className="text-[9px] font-bold uppercase tracking-widest">Me</span>
+            <span className="text-[9px] font-black uppercase tracking-widest">Me</span>
           </Link>
         </div>
         {!isOnline && (
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full bg-orange-500 text-white px-3 py-1 rounded-t-lg text-[8px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center gap-1.5">
-            <WifiOff className="h-2 w-2" /> Offline Mode
+          <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-orange-500 text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest shadow-lg flex items-center gap-1.5 border border-white/20">
+            <WifiOff className="h-2 w-2" /> OFFLINE
           </div>
         )}
       </nav>
