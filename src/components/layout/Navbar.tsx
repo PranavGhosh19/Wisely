@@ -57,8 +57,9 @@ function NavbarContent() {
     }
   }, []);
 
-  // Hide Navbar on landing, auth, and immersive club page
-  const isHiddenPage = pathname === "/" || pathname === "/auth" || pathname === "/wisely-club";
+  // Hide Navbar on immersive club page
+  const isClubPage = pathname === "/wisely-club";
+  const isHiddenPage = pathname === "/" || pathname === "/auth" || isClubPage;
   if (isHiddenPage || !user) return null;
 
   const handleSignOut = async () => {

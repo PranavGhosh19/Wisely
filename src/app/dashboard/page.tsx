@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -130,7 +129,7 @@ export default function Dashboard() {
         >
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <h2 className="text-3xl md:text-5xl font-black text-glow">COMMAND</h2>
+              <h2 className="text-3xl md:text-5xl font-black text-glow uppercase tracking-tighter">COMMAND</h2>
               <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">
                 Cycles / {now.toLocaleString('default', { month: 'long' })} {now.getFullYear()}
               </p>
