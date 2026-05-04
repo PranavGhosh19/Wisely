@@ -57,8 +57,9 @@ function NavbarContent() {
     }
   }, []);
 
-  const isPublicPage = pathname === "/" || pathname === "/auth";
-  if (isPublicPage || !user) return null;
+  // Hide Navbar on landing, auth, and immersive club page
+  const isHiddenPage = pathname === "/" || pathname === "/auth" || pathname === "/wisely-club";
+  if (isHiddenPage || !user) return null;
 
   const handleSignOut = async () => {
     if (auth) await signOut(auth);
@@ -165,7 +166,7 @@ function NavbarContent() {
       >
         <div className="relative flex h-full items-center justify-between">
           {navItems
-            .filter(item => item.name !== "Insights") // Remove Insights from mobile bar
+            .filter(item => item.name !== "Insights") 
             .map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));

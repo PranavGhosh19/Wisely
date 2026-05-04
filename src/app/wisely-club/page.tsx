@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -8,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Sparkles, ShieldCheck, Trophy, Crown, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export default function WiselyClubPage() {
   const router = useRouter();
