@@ -5,16 +5,27 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { Navbar } from "@/components/layout/Navbar";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Wallet, Users, CreditCard, PieChart as PieChartIcon, ArrowRight, Target, CheckCircle2, AlertTriangle, Crown, Zap } from "lucide-react";
+import { 
+  Wallet, 
+  Users, 
+  CreditCard, 
+  ArrowRight, 
+  Target, 
+  CheckCircle2, 
+  AlertTriangle, 
+  Crown, 
+  Zap,
+  LayoutDashboard
+} from "lucide-react";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, orderBy, where, collectionGroup } from "firebase/firestore";
 import { getCurrencySymbol, cn } from "@/lib/utils";
 import { LoadingScreen } from "@/components/layout/loading-screen";
 import { BudgetRolloverPrompt } from "@/components/budgets/BudgetRolloverPrompt";
 import { startOfMonth, endOfMonth } from "date-fns";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 export default function Dashboard() {
   const router = useRouter();

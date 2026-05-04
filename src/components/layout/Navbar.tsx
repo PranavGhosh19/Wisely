@@ -8,10 +8,9 @@ import {
   PieChart, 
   LogOut, 
   Plus, 
-  Settings,
   ReceiptText,
   WifiOff,
-  User as UserIcon
+  User as LucideUser
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
@@ -40,7 +39,7 @@ function NavbarContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const auth = useAuth();
-  const { user, logout, setSidebarCollapsed, isSidebarCollapsed } = useStore();
+  const { user, logout, isSidebarCollapsed } = useStore();
   const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
@@ -57,7 +56,6 @@ function NavbarContent() {
     }
   }, []);
 
-  // Hide Navbar on immersive club page
   const isClubPage = pathname === "/wisely-club";
   const isHiddenPage = pathname === "/" || pathname === "/auth" || isClubPage;
   if (isHiddenPage || !user) return null;
@@ -210,7 +208,7 @@ function NavbarContent() {
               "h-7 w-7 rounded-lg flex items-center justify-center border-2 transition-all overflow-hidden relative",
               pathname === "/profile" ? "border-primary" : "border-transparent bg-white/10"
             )}>
-              {user.photoURL ? <Image src={user.photoURL} alt={user.name} fill className="object-cover" /> : <UserIcon className="h-4 w-4" />}
+              {user.photoURL ? <Image src={user.photoURL} alt={user.name} fill className="object-cover" /> : <LucideUser className="h-4 w-4" />}
             </div>
             <span className="text-[9px] font-black uppercase tracking-widest">Me</span>
           </Link>
