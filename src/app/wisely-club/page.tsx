@@ -28,22 +28,24 @@ export default function WiselyClubPage() {
       <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-[#D4AF37]/5 blur-[120px] -z-10 rounded-full" />
       <div className="fixed bottom-0 left-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] -z-10 rounded-full" />
 
+      {/* Top Left Navigation - Positioned for accessibility in immersive mode */}
+      <div className="fixed top-6 left-6 z-[60]">
+        <Button 
+          variant="ghost" 
+          className="text-muted-foreground hover:text-primary gap-2 px-4 h-12 rounded-full glass border-white/10 shadow-xl"
+          onClick={() => router.push("/dashboard")}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Control Center
+        </Button>
+      </div>
+
       <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-5xl mx-auto w-full relative">
         <motion.header 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="mb-16 text-center space-y-6 pt-12"
         >
-          {/* Main Back Navigation */}
-          <Button 
-            variant="ghost" 
-            className="mb-8 text-muted-foreground hover:text-primary gap-2 px-6 h-12 rounded-full glass border-white/10"
-            onClick={() => router.push("/dashboard")}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Control Center
-          </Button>
-          
           <div className="relative inline-block group">
             <motion.div 
               animate={{ rotate: [0, 360] }}
