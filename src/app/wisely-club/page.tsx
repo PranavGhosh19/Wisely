@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Sparkles, ShieldCheck, Trophy, Crown, Zap } from "lucide-react";
@@ -9,6 +8,10 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+/**
+ * Wisely Club Page - A premium, immersive high-end performance interface.
+ * Removed Navbar for full-screen focus.
+ */
 export default function WiselyClubPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -20,22 +23,21 @@ export default function WiselyClubPage() {
   if (!mounted) return null;
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row bg-background overflow-x-hidden">
-      <Navbar />
-      
-      <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-5xl mx-auto w-full relative">
-        {/* Background Ambient Glow */}
-        <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-[#D4AF37]/5 blur-[120px] -z-10 rounded-full" />
-        <div className="fixed bottom-0 left-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] -z-10 rounded-full" />
+    <div className="flex min-h-screen flex-col bg-background overflow-x-hidden relative">
+      {/* Background Ambient Glow */}
+      <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-[#D4AF37]/5 blur-[120px] -z-10 rounded-full" />
+      <div className="fixed bottom-0 left-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] -z-10 rounded-full" />
 
+      <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-5xl mx-auto w-full relative">
         <motion.header 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="mb-16 text-center space-y-6 pt-12"
         >
+          {/* Main Back Navigation */}
           <Button 
             variant="ghost" 
-            className="mb-8 text-muted-foreground hover:text-primary gap-2 px-4 rounded-full glass"
+            className="mb-8 text-muted-foreground hover:text-primary gap-2 px-6 h-12 rounded-full glass border-white/10"
             onClick={() => router.push("/dashboard")}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -74,7 +76,7 @@ export default function WiselyClubPage() {
               <CardHeader className="pb-6 border-b border-white/5">
                 <Trophy className="h-8 w-8 text-[#D4AF37] mb-2 animate-bounce" />
                 <CardTitle className="text-2xl font-black uppercase tracking-widest">Founding Tier</CardTitle>
-                <CardDescription className="font-bold">STATUS: AUTHORIZED</CardDescription>
+                <CardDescription className="font-bold text-[#D4AF37]/70">STATUS: AUTHORIZED</CardDescription>
               </CardHeader>
               <CardContent className="p-8 space-y-6">
                 <div className="space-y-4">
