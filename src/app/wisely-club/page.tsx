@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -97,7 +98,7 @@ export default function WiselyClubPage() {
                     { icon: TrendingUp, text: "Predictive spend-pathing to maintain 1% net worth.", color: "#D4AF37" }
                   ].map((benefit, i) => (
                     <div key={i} className="flex items-start gap-4 group/item">
-                      <div className={cn("h-8 w-8 rounded-xl glass flex items-center justify-center shrink-0 mt-0.5 border-white/5", typeof benefit.color === 'string' && benefit.color.startsWith('text-') ? benefit.color : "")} style={!benefit.color.startsWith('text-') ? { color: benefit.color } : {}}>
+                      <div className={cn("h-8 w-8 rounded-xl glass flex items-center justify-center shrink-0 mt-0.5 border-white/5", typeof benefit.color === 'string' && benefit.color.startsWith('text-') ? benefit.color : "")} style={typeof benefit.color === 'string' && !benefit.color.startsWith('text-') ? { color: benefit.color } : {}}>
                         <benefit.icon className="h-4 w-4" />
                       </div>
                       <div className="space-y-1">

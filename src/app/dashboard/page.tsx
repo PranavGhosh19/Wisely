@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -16,8 +17,7 @@ import {
   CheckCircle2, 
   AlertTriangle, 
   Crown, 
-  Zap,
-  LayoutDashboard
+  Zap
 } from "lucide-react";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, orderBy, where, collectionGroup } from "firebase/firestore";
@@ -149,7 +149,7 @@ export default function Dashboard() {
             <Button 
               asChild
               variant="outline"
-              className="h-12 px-6 text-xs font-black uppercase tracking-widest rounded-2xl border-accent/30 text-accent hover:bg-accent/5 glow-accent"
+              className="h-12 px-6 text-xs font-black uppercase tracking-widest rounded-2xl border-accent/30 text-accent hover:bg-accent/5 hover:text-white glow-accent transition-colors"
             >
               <Link href="/wisely-club">
                 <Crown className="h-4 w-4 mr-2" />
