@@ -2,6 +2,8 @@
 import type { MetadataRoute } from 'next'
 import data from './lib/placeholder-images.json'
 
+export const dynamic = 'force-static';
+
 export default function manifest(): MetadataRoute.Manifest {
   // Use the branded 'W' icon from the source of truth
   const appIconUrl = data.placeholderImages.find(img => img.id === "app-icon")?.imageUrl || '/wallet.png';
