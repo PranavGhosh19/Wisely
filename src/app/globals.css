@@ -4,29 +4,6 @@
 
 @layer base {
   :root {
-    --background: 220 30% 98%;
-    --foreground: 220 40% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 220 40% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 40% 10%;
-    --primary: 190 60% 40%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 20% 90%;
-    --secondary-foreground: 220 40% 10%;
-    --muted: 220 20% 95%;
-    --muted-foreground: 220 10% 45%;
-    --accent: 34 80% 55%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 220 20% 90%;
-    --input: 220 20% 90%;
-    --ring: 190 60% 40%;
-    --radius: 1.5rem;
-  }
-
-  .dark {
     --background: 220 40% 4%;
     --foreground: 220 20% 98%;
     --card: 220 40% 6%;
@@ -46,6 +23,7 @@
     --border: 220 40% 12%;
     --input: 220 40% 12%;
     --ring: 190 80% 55%;
+    --radius: 1.5rem;
   }
 }
 
@@ -63,19 +41,19 @@
 
 @layer utilities {
   .glass {
-    @apply bg-white/60 dark:bg-black/40 backdrop-blur-xl border border-white/20 dark:border-white/5;
+    @apply bg-white/10 dark:bg-black/40 backdrop-blur-xl border border-white/20 dark:border-white/5;
   }
   
   .glass-card {
-    @apply bg-white/40 dark:bg-white/5 backdrop-blur-lg border border-white/20 dark:border-white/10 shadow-2xl;
+    @apply bg-white/5 dark:bg-white/5 backdrop-blur-lg border border-white/10 dark:border-white/10 shadow-2xl;
   }
 
   .glow-primary {
-    box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.5);
+    box-shadow: 0 0 25px -5px hsl(var(--primary) / 0.4);
   }
 
   .glow-accent {
-    box-shadow: 0 0 30px -10px hsl(var(--accent) / 0.6);
+    box-shadow: 0 0 30px -10px hsl(var(--accent) / 0.5);
   }
 
   .text-glow {

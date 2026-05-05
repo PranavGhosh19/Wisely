@@ -1,7 +1,11 @@
 import type {NextConfig} from 'next';
 
+const isCapacitorBuild = process.env.CAPACITOR_BUILD === 'true';
+
 const nextConfig: NextConfig = {
-  output: 'export',
+  ...(isCapacitorBuild && {
+    output: 'export',
+  }),
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -9,7 +13,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    unoptimized: true,
+    unoptimized: isCapacitorBuild,
     remotePatterns: [
       {
         protocol: 'https',
