@@ -15,7 +15,7 @@ import { collection, collectionGroup, query, where } from "firebase/firestore";
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
 import { PieChart, Layers, User, Users, Calendar as CalendarIcon, X, BarChart3, Download, Mail, FileSpreadsheet, Loader2, ChevronDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getCurrencySymbol, cn } from "@/lib/utils";
+import { getCurrencySymbol, cn, formatCompactNumber } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { 
@@ -66,7 +66,7 @@ const renderCustomizedLabel = (props: any, symbol: string) => {
         fill="#facc15" 
         style={{ fontSize: '9px', fontWeight: '900', fontFamily: 'var(--font-headline)' }}
       >
-        {`${symbol}${value.toLocaleString()}`}
+        {`${symbol}${formatCompactNumber(value)}`}
       </text>
     </g>
   );
@@ -113,7 +113,6 @@ export default function AnalyticsPage() {
   }, [db, user]);
   const { data: userGroups } = useCollection(groupsQuery);
 
-  // New logic: Only show current month by default
   const filteredExpenses = useMemo(() => {
     let base: any[] = [];
     const personal = (personalExpenses || []).filter(e => e.category !== 'Settlement');
@@ -130,7 +129,6 @@ export default function AnalyticsPage() {
       }
     }
 
-    // Apply strict month filtering if no specific day is selected
     if (selectedDate) {
       const start = startOfDay(selectedDate);
       const end = endOfDay(selectedDate);
@@ -139,7 +137,6 @@ export default function AnalyticsPage() {
         return isWithinInterval(expDate, { start, end });
       });
     } else {
-      // DEFAULT: Only current month data
       const now = new Date();
       const monthStart = startOfMonth(now);
       const monthEnd = endOfMonth(now);
@@ -512,7 +509,7 @@ export default function AnalyticsPage() {
                       axisLine={false} 
                       tickLine={false} 
                       tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                      tickFormatter={(value) => `${symbol}${value}`}
+                      tickFormatter={(value) => `${symbol}${formatCompactNumber(value)}`}
                     />
                     <Line 
                       type="monotone" 
@@ -527,7 +524,7 @@ export default function AnalyticsPage() {
                         fontSize: 10, 
                         fontWeight: 600,
                         offset: 12,
-                        formatter: (val: number) => `${symbol}${val.toFixed(0)}`
+                        formatter: (val: number) => `${symbol}${formatCompactNumber(val)}`
                       }}
                     />
                   </ReLineChart>
@@ -564,7 +561,7 @@ export default function AnalyticsPage() {
                         axisLine={false} 
                         tickLine={false} 
                         tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                        tickFormatter={(value) => `${symbol}${value}`}
+                        tickFormatter={(value) => `${symbol}${formatCompactNumber(value)}`}
                       />
                       <Tooltip 
                         cursor={{ fill: 'hsl(var(--muted))', opacity: 0.1 }}
@@ -610,7 +607,7 @@ export default function AnalyticsPage() {
                           fontSize: 9, 
                           fontWeight: 800,
                           offset: 8,
-                          formatter: (val: number) => val > 0 ? `${symbol}${val.toFixed(0)}` : ''
+                          formatter: (val: number) => val > 0 ? `${symbol}${formatCompactNumber(val)}` : ''
                         }}
                       />
                       <Bar 
@@ -629,7 +626,7 @@ export default function AnalyticsPage() {
                           fontSize: 9, 
                           fontWeight: 800,
                           offset: 8,
-                          formatter: (val: number) => val > 0 ? `${symbol}${val.toFixed(0)}` : ''
+                          formatter: (val: number) => val > 0 ? `${symbol}${formatCompactNumber(val)}` : ''
                         }}
                       />
                     </ReBarChart>
@@ -652,7 +649,7 @@ export default function AnalyticsPage() {
                       axisLine={false} 
                       tickLine={false} 
                       tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                      tickFormatter={(value) => `${symbol}${value}`}
+                      tickFormatter={(value) => `${symbol}${formatCompactNumber(value)}`}
                     />
                     <YAxis 
                       dataKey="name" 
@@ -672,7 +669,7 @@ export default function AnalyticsPage() {
                         fontSize: 10, 
                         fontWeight: 600,
                         offset: 8,
-                        formatter: (val: number) => `${symbol}${val.toFixed(0)}`
+                        formatter: (val: number) => `${symbol}${formatCompactNumber(val)}`
                       }}
                     />
                   </ReBarChart>

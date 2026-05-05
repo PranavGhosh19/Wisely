@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, orderBy, where, collectionGroup } from "firebase/firestore";
-import { getCurrencySymbol, cn } from "@/lib/utils";
+import { getCurrencySymbol, cn, formatCompactNumber } from "@/lib/utils";
 import { LoadingScreen } from "@/components/layout/loading-screen";
 import { BudgetRolloverPrompt } from "@/components/budgets/BudgetRolloverPrompt";
 import { startOfMonth, endOfMonth } from "date-fns";
@@ -50,6 +50,7 @@ export default function Dashboard() {
   const onTouchMove = (e: React.TouchEvent) => setTouchEnd(e.targetTouches[0].clientX);
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
+    // Swipe left-to-right to enter the club
     if (touchStart - touchEnd < -70) router.push('/wisely-club');
   };
 
@@ -175,7 +176,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Personal</span>
-                    <span className="text-2xl font-black">{symbol}{activePersonalSpent.toFixed(2)}</span>
+                    <span className="text-2xl font-black">{symbol}{formatCompactNumber(activePersonalSpent)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -192,7 +193,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Shared</span>
-                    <span className="text-2xl font-black">{symbol}{activeUserGroupShare.toFixed(2)}</span>
+                    <span className="text-2xl font-black">{symbol}{formatCompactNumber(activeUserGroupShare)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -210,7 +211,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black uppercase tracking-widest opacity-80">{budgetTheme.label}</span>
-                      <span className="text-2xl font-black">{symbol}{totalOverallMonthlySpent.toFixed(2)}</span>
+                      <span className="text-2xl font-black">{symbol}{formatCompactNumber(totalOverallMonthlySpent)}</span>
                     </div>
                   </div>
                   {budgetPercentage !== null && (

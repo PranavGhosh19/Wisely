@@ -1,4 +1,3 @@
-
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -30,4 +29,17 @@ export function getCurrencySymbol(currencyCode: string = 'USD') {
     XPF: "₣", YER: "﷼", ZAR: "R", ZMW: "ZK", ZWL: "$"
   };
   return symbols[currencyCode] || '$';
+}
+
+/**
+ * Formats a number into a compact string with suffixes (K, L, M, B).
+ * Supports Lakh (L) for values >= 100,000 as requested.
+ */
+export function formatCompactNumber(value: number): string {
+  const abs = Math.abs(value);
+  if (abs >= 1000000000) return (value / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
+  if (abs >= 1000000) return (value / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (abs >= 100000) return (value / 100000).toFixed(1).replace(/\.0$/, '') + 'L';
+  if (abs >= 1000) return (value / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return value.toFixed(0);
 }
