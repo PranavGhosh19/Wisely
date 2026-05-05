@@ -1,12 +1,8 @@
 import type { MetadataRoute } from 'next'
-import data from './lib/placeholder-images.json'
 
 export const dynamic = 'force-static';
 
 export default function manifest(): MetadataRoute.Manifest {
-  // Use the branded 'W' icon from the source of truth
-  const appIconUrl = data.placeholderImages.find(img => img.id === "app-icon")?.imageUrl || '/wallet.png';
-
   return {
     name: 'Wisely',
     short_name: 'Wisely',
@@ -17,17 +13,17 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#3D737F',
     icons: [
       {
-        src: appIconUrl,
+        src: 'https://placehold.co/192x192/3D737F/FFFFFF?text=W',
         sizes: '192x192',
         type: 'image/png',
       },
       {
-        src: appIconUrl,
+        src: 'https://placehold.co/512x512/3D737F/FFFFFF?text=W',
         sizes: '512x512',
         type: 'image/png',
       },
       {
-        src: appIconUrl,
+        src: 'https://placehold.co/512x512/3D737F/FFFFFF?text=W',
         sizes: '512x512',
         type: 'image/png',
         purpose: 'maskable',

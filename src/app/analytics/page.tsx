@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
@@ -150,42 +149,6 @@ export default function AnalyticsPage() {
     return base;
   }, [personalExpenses, groupExpenses, scope, selectedGroupId, selectedDate]);
 
-  const handleEmailReport = async () => {
-    if (!user || filteredExpenses.length === 0) return;
-    
-    setExporting(true);
-    try {
-      const result = await sendMonthlyReportAction(user.email, format(new Date(), "MMMM yyyy"));
-      if (result.success) {
-        toast({
-          title: "Report Sent",
-          description: `An Excel breakdown for ${format(new Date(), "MMMM")} has been sent to ${user.email}.`
-        });
-      }
-    } catch (e) {
-      toast({
-        variant: "destructive",
-        title: "Export Failed",
-        description: "Could not send the email report. Please try again."
-      });
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const handleDownloadExcel = () => {
-    if (!user || filteredExpenses.length === 0) return;
-    
-    const wb = generateMonthlySpreadsheet(filteredExpenses, user.email, symbol);
-    const fileName = `Wisely_Report_${format(new Date(), "yyyy_MM")}.xlsx`;
-    downloadWorkbook(wb, fileName);
-    
-    toast({
-      title: "Download Started",
-      description: "Your monthly Excel report is being prepared."
-    });
-  };
-
   const pieData = useMemo(() => {
     const categories: Record<string, number> = {};
     filteredExpenses.forEach(exp => {
@@ -208,29 +171,15 @@ export default function AnalyticsPage() {
       if (selectedGroupId !== "all") base = base.filter(exp => exp.groupId === selectedGroupId);
     }
 
-    if (base.length === 0) {
-      return Array.from({ length: 6 }).map((_, i) => ({
-        name: format(subMonths(new Date(), 5 - i), "MMM"),
-        amount: 0
-      }));
-    }
-
-    const minTimestamp = Math.min(...base.map(e => e.date));
-    const startDate = startOfMonth(new Date(minTimestamp));
-    const today = new Date();
-    
     const months = [];
-    let current = new Date(startDate);
-    
-    while (current <= today || format(current, "yyyy-MM") === format(today, "yyyy-MM")) {
+    for (let i = 5; i >= 0; i--) {
+      const date = subMonths(new Date(), i);
       months.push({
-        name: format(current, "MMM"),
-        start: startOfMonth(current),
-        end: endOfMonth(current),
+        name: format(date, "MMM"),
+        start: startOfMonth(date),
+        end: endOfMonth(date),
         amount: 0
       });
-      current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
-      if (months.length > 24) break; 
     }
 
     base.forEach(exp => {
@@ -323,33 +272,10 @@ export default function AnalyticsPage() {
           <div>
             <div className="flex items-center gap-3 mb-1">
               <h2 className="text-3xl font-black text-glow uppercase tracking-tighter">METRICS</h2>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-10 px-4 rounded-xl font-black uppercase tracking-widest text-[10px] border-primary/20 hover:bg-primary/5 glow-primary gap-2" disabled={exporting}>
-                    {exporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
-                    Export
-                    <ChevronDown className="h-3 w-3 opacity-50" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="rounded-xl glass border-white/10 shadow-2xl p-2 w-56">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground px-2 py-2">Monthly Data</p>
-                  <DropdownMenuItem onClick={handleEmailReport} className="rounded-lg py-3 cursor-pointer">
-                    <Mail className="h-4 w-4 mr-3 text-primary" />
-                    <div className="flex flex-col">
-                      <span className="font-bold text-sm">Email Report</span>
-                      <span className="text-[10px] text-muted-foreground">Send Excel to inbox</span>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-white/5" />
-                  <DropdownMenuItem onClick={handleDownloadExcel} className="rounded-lg py-3 cursor-pointer">
-                    <Download className="h-4 w-4 mr-3 text-emerald-500" />
-                    <div className="flex flex-col">
-                      <span className="font-bold text-sm">Download Excel</span>
-                      <span className="text-[10px] text-muted-foreground">Save to device</span>
-                    </div>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button variant="outline" size="sm" className="h-10 px-4 rounded-xl font-black uppercase tracking-widest text-[10px] border-primary/20 hover:bg-primary/5 glow-primary gap-2">
+                <FileSpreadsheet className="h-3.5 w-3.5" />
+                Deep Data
+              </Button>
             </div>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Analysing Period / {format(new Date(), "MMMM yyyy")}</p>
           </div>
@@ -360,25 +286,15 @@ export default function AnalyticsPage() {
                 <CalendarIcon className="h-3 w-3" />
                 Date Point
               </label>
-              <div className="relative group/date">
-                <Input
-                  type="date"
-                  value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setSelectedDate(val ? parseISO(val) : undefined);
-                  }}
-                  className="w-full sm:w-[140px] h-10 px-3 pr-8 rounded-xl glass border-white/10 text-xs font-bold uppercase focus:ring-2 focus:ring-primary outline-none"
-                />
-                {selectedDate && (
-                  <button 
-                    onClick={() => setSelectedDate(undefined)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-white/10 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/20 transition-colors"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
+              <Input
+                type="date"
+                value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedDate(val ? parseISO(val) : undefined);
+                }}
+                className="w-full sm:w-[140px] h-10 px-3 rounded-xl glass border-white/10 text-xs font-bold uppercase focus:ring-primary"
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -407,21 +323,6 @@ export default function AnalyticsPage() {
               <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Processing Neural Patterns...</p>
             </div>
           </div>
-        ) : filteredExpenses.length === 0 ? (
-          <Card className="glass-card p-16 text-center rounded-[2.5rem]">
-            <div className="max-w-xs mx-auto space-y-4">
-              <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto glow-primary">
-                <Zap className="h-8 w-8" />
-              </div>
-              <h3 className="text-xl font-bold font-headline uppercase tracking-tight">Zero Activity Detected</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">Adjust your stream filters or record a new transaction to begin high-fidelity analysis.</p>
-              {selectedDate && (
-                <Button variant="outline" onClick={() => setSelectedDate(undefined)} className="h-10 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest border-primary/20 mt-4">
-                  Reset Time Drift
-                </Button>
-              )}
-            </div>
-          </Card>
         ) : (
           <motion.div 
             initial={{ opacity: 0 }}
@@ -434,9 +335,7 @@ export default function AnalyticsPage() {
                    <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                    Entropy Distribution
                 </CardTitle>
-                <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-1">
-                  Categorical breakdown for {selectedDate ? format(selectedDate, "MMM dd") : "Current Cycle"}
-                </CardDescription>
+                <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-1">Categorical breakdown for cycle</CardDescription>
               </CardHeader>
               <CardContent className="h-[450px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -564,12 +463,6 @@ export default function AnalyticsPage() {
                                   <span className="opacity-60 uppercase">Current Usage:</span>
                                   <span className="text-primary tabular-nums">{symbol}{data.originalSpent.toFixed(0)}</span>
                                 </div>
-                                {data.originalSpent > data.originalBudget && (
-                                  <div className="pt-2 mt-2 border-t border-white/5 flex justify-between gap-8 items-center text-[10px] font-black text-destructive uppercase">
-                                    <span>Deviation:</span>
-                                    <span>+{symbol}{(data.originalSpent - data.originalBudget).toFixed(0)}</span>
-                                  </div>
-                                )}
                               </div>
                             );
                           }
