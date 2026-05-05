@@ -1,9 +1,10 @@
-
 import type { MetadataRoute } from 'next';
+
+export const dynamic = 'force-static';
 
 /**
  * robots.txt generator.
- * Configured to be fully permissive to ensure maximum search visibility.
+ * Configured to be fully permissive with static export force enabled.
  */
 export default function robots(): MetadataRoute.Robots {
   return {
