@@ -344,7 +344,7 @@ function GroupDetailContent() {
                         <div key={expense.id} className="group flex items-center hover:bg-white/5 transition-all">
                           <Link href={`/expenses/details?id=${expense.id}&type=${expense.type}&groupId=${groupId}`} className="flex-1 flex items-center justify-between px-6 py-5 min-w-0">
                             <div className="flex items-center gap-5 min-w-0">
-                              <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center text-xl shrink-0 glass shadow-inner transition-transform group-hover:scale-110", isSettlement ? "text-accent glow-accent" : "text-primary glow-primary")}>
+                              <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 glass shadow-inner transition-transform group-hover:scale-110", isSettlement ? "text-accent glow-accent" : "text-primary glow-primary")}>
                                 {isSettlement ? <Coins className="h-6 w-6" /> : (expense.category[0] || "💰")}
                               </div>
                               <div className="min-w-0">

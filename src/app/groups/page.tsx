@@ -166,7 +166,7 @@ export default function GroupsPage() {
               <Users className="h-10 w-10" />
             </div>
             <h3 className="text-2xl font-black uppercase tracking-tight text-glow">No Peer Groups Linked</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mt-3 mb-10 leading-relaxed uppercase font-bold tracking-widest opacity-60">
+            <p className="text-sm text-muted-foreground max-sm mt-3 mb-10 leading-relaxed uppercase font-bold tracking-widest opacity-60">
               Establish a shared ledger node to begin multi-member tracking and settlements.
             </p>
             <Button onClick={() => setIsCreateOpen(true)} className="h-14 px-10 rounded-2xl font-black uppercase tracking-[0.3em] text-xs">
