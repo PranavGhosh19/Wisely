@@ -84,7 +84,7 @@ function NavbarContent() {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             transition={{ delay: 0.5, type: "spring", stiffness: 260, damping: 20 }}
-            className="fixed bottom-8 right-8 md:bottom-12 md:right-12 z-[100]"
+            className="fixed bottom-28 right-8 md:bottom-12 md:right-12 z-[100] hidden md:flex"
           >
             <Tooltip>
               <TooltipTrigger asChild>
@@ -187,7 +187,7 @@ function NavbarContent() {
       </motion.nav>
 
       <nav 
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md h-20 glass-card rounded-[2.5rem] md:hidden px-4 safe-area-bottom shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md h-20 glass-card rounded-[2.5rem] md:hidden px-2 safe-area-bottom shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
       >
         <div className="relative flex h-full items-center justify-between">
           {navItems
@@ -211,10 +211,13 @@ function NavbarContent() {
               );
             })}
 
-          <div className="px-2">
-            <div className="h-10 w-10 flex items-center justify-center opacity-40">
-              <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_hsl(var(--primary))]" />
-            </div>
+          <div className="flex-1 flex justify-center items-center">
+            <Link
+              href={addExpenseUrl}
+              className="h-14 w-14 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-[0_0_20px_rgba(var(--primary),0.3)] glow-primary transition-all active:scale-90"
+            >
+              <Plus className="h-7 w-7" />
+            </Link>
           </div>
 
           <Link
