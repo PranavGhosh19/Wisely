@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useMemo, Suspense } from "react";
@@ -18,7 +17,6 @@ import {
   Share2,
   Edit2,
   UserPlus,
-  User as UserIcon,
   BarChart3,
   Coins,
   Zap,
@@ -34,12 +32,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -195,7 +187,7 @@ function GroupDetailContent() {
     
     const amount = parseFloat(customAmount);
     if (isNaN(amount) || amount <= 0) {
-      toast({ variant: "destructive", title: "Invalid amount", description: "Please enter a valid amount greater than 0." });
+      toast({ variant: "destructive", title: "Invalid amount", description: "Positive amount required." });
       return;
     }
 
@@ -220,16 +212,16 @@ function GroupDetailContent() {
         isDeleted: false
       };
       setDocumentNonBlocking(settlementRef, settlementData, { merge: true });
-      toast({ title: "Payment Recorded", description: "The balance has been updated." });
+      toast({ title: "Payment Recorded", description: "Vault ledger updated." });
       setSettlementTarget(null);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: "Failed to record payment." });
+      toast({ variant: "destructive", title: "Protocol Error", description: "Failed to record payment." });
     }
   };
 
   const simulateGroupNotification = async () => {
     if (!("Notification" in window)) {
-      toast({ title: "Not Supported", description: "Your browser doesn't support push notifications." });
+      toast({ title: "Signal Error", description: "System doesn't support push notifications." });
       return;
     }
 
@@ -237,10 +229,7 @@ function GroupDetailContent() {
     if (permission === 'granted' && 'serviceWorker' in navigator) {
       const registration = await navigator.serviceWorker.ready;
       
-      toast({ 
-        title: "Simulation Started", 
-        description: "Notification will appear in 3 seconds." 
-      });
+      toast({ title: "Heuristic Link", description: "Signal ping in 3 seconds." });
 
       setTimeout(async () => {
         await registration.showNotification(`New Bill in ${group.name}`, {
@@ -258,20 +247,20 @@ function GroupDetailContent() {
     if (typeof navigator !== 'undefined') {
       navigator.clipboard.writeText(shareUrl);
       setCopied(true);
-      toast({ title: "Link copied!", description: "Invite link is ready to share." });
+      toast({ title: "Link Secured", description: "Invite link copied to memory." });
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
   const handleShareToWhatsApp = () => {
-    const text = `Join my group "${group?.name || 'Shared Expenses'}" on Wisely to track and split expenses together! ${shareUrl}`;
+    const text = `Join my sector "${group?.name || 'Shared Expenses'}" on Wisely to track and split expenses together! ${shareUrl}`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.location.href = whatsappUrl;
   };
 
-  if (!groupId) return <div className="p-8 text-center glass-card rounded-3xl m-8 font-black text-destructive uppercase tracking-widest">Missing Group Context</div>;
+  if (!groupId) return <div className="p-8 text-center glass-card rounded-3xl m-8 font-black text-destructive uppercase tracking-widest">Missing Sector Context</div>;
   if (groupLoading) return <div className="h-screen flex items-center justify-center bg-background"><div className="h-12 w-12 animate-spin rounded-[1rem] border-4 border-primary border-t-transparent glow-primary" /></div>;
-  if (!group) return <div className="p-8 text-center glass-card rounded-3xl m-8 font-black text-destructive uppercase tracking-widest">Vault Not Found</div>;
+  if (!group) return <div className="p-8 text-center glass-card rounded-3xl m-8 font-black text-destructive uppercase tracking-widest">Sector Not Found</div>;
 
   const symbol = getCurrencySymbol(user?.currency);
   const myNet = settlementInfo.stats[user?.uid || ""]?.net || 0;
@@ -528,12 +517,77 @@ function GroupDetailContent() {
         </DialogContent>
       </Dialog>
 
+      {/* Peer Info Dialog */}
+      <Dialog open={isMembersOpen} onOpenChange={setIsMembersOpen}>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[2rem] p-8 border-none shadow-2xl glass-card">
+          <DialogHeader className="mb-6">
+            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-glow flex items-center gap-3">
+              <Users className="h-6 w-6 text-primary" />
+              Sector Nodes
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[40vh] overflow-y-auto custom-scrollbar pr-1">
+            {membersLoading ? (
+              <div className="py-8 flex flex-col items-center gap-2"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+            ) : memberProfiles?.map((member) => (
+              <div key={member.uid} className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+                <Avatar className="h-10 w-10 border-2 border-white/10">
+                  <AvatarFallback className="bg-primary/20 text-primary font-black uppercase text-xs">
+                    {member.name?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-black uppercase tracking-tight truncate">
+                    {member.name} {member.uid === user?.uid && "(YOU)"}
+                  </p>
+                  <p className="text-[9px] font-bold text-muted-foreground truncate uppercase opacity-50">{member.email}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter className="mt-8">
+            <Button className="w-full rounded-2xl font-black uppercase tracking-widest text-[10px] h-12 gap-2 bg-primary glow-primary" onClick={() => { setIsMembersOpen(false); setIsQrOpen(true); }}>
+              Initialize Peer Sync
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Join Dialog */}
+      <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[2rem] p-8 border-none shadow-2xl glass-card">
+          <DialogHeader className="mb-6 text-center">
+            <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4 glow-primary">
+              <UserPlus className="h-8 w-8" />
+            </div>
+            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-glow">Join Sector</DialogTitle>
+            <DialogDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground opacity-60">
+              LINK TO {group?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm text-center text-muted-foreground leading-relaxed">
+            Authorized node requesting access to this vault. Synchronize data streams?
+          </p>
+          <DialogFooter className="mt-8 gap-3">
+            <Button variant="ghost" className="h-12 rounded-xl font-black uppercase tracking-widest text-[10px]" onClick={() => setIsJoinDialogOpen(false)}>Abort</Button>
+            <Button 
+              className="flex-1 h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-primary glow-primary transition-all active:scale-95" 
+              onClick={handleJoinGroup}
+              disabled={isJoining}
+            >
+              {isJoining ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Sync"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Settle Recording Dialog */}
       <Dialog open={!!settlementTarget} onOpenChange={(open) => !open && setSettlementTarget(null)}>
         <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[2rem] p-8 border-none shadow-2xl glass-card">
           <DialogHeader className="mb-6">
             <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-glow flex items-center gap-3">
               <Coins className="h-6 w-6 text-primary animate-pulse" />
-              Settle
+              Execute Payment
             </DialogTitle>
             <DialogDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground opacity-60">
               {settlementTarget?.fromName} paying {settlementTarget?.toName}
@@ -558,63 +612,7 @@ function GroupDetailContent() {
           <DialogFooter className="mt-8 gap-3">
             <Button variant="ghost" className="h-12 rounded-xl font-black uppercase tracking-widest text-[10px]" onClick={() => setSettlementTarget(null)}>Abort</Button>
             <Button className="flex-1 h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-primary glow-primary transition-all active:scale-95" onClick={handleIndividualSettle}>
-              Execute Payment
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isMembersOpen} onOpenChange={setIsMembersOpen}>
-        <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[2rem] p-8 border-none shadow-2xl glass-card">
-          <DialogHeader className="mb-6">
-            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-glow flex items-center gap-3">
-              <Users className="h-6 w-6 text-primary" />
-              Peers
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 max-h-[40vh] overflow-y-auto custom-scrollbar">
-            {membersLoading ? (
-              <div className="py-8 flex flex-col items-center gap-2"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
-            ) : memberProfiles?.map((member) => (
-              <div key={member.uid} className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
-                <Avatar className="h-10 w-10 border-2 border-white/10"><AvatarFallback className="bg-primary/20 text-primary font-black uppercase text-xs">{member.name?.[0]}</AvatarFallback></Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-black uppercase tracking-tight truncate">{member.name} {member.uid === user?.uid && "(YOU)"}</p>
-                  <p className="text-[9px] font-bold text-muted-foreground truncate uppercase opacity-50">{member.email}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <DialogFooter className="mt-8">
-            <Button className="w-full rounded-2xl font-black uppercase tracking-widest text-[10px] h-12 gap-2 bg-primary glow-primary" onClick={() => { setIsMembersOpen(false); setIsQrOpen(true); }}>
-              Initialize peer sync
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
-        <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[2rem] p-8 border-none shadow-2xl glass-card">
-          <DialogHeader className="mb-6 text-center">
-            <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4 glow-primary">
-              <UserPlus className="h-8 w-8" />
-            </div>
-            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-glow">Join Sector</DialogTitle>
-            <DialogDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground opacity-60">
-              Link to {group?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <p className="text-sm text-center text-muted-foreground leading-relaxed">
-            Authorized node requesting access to this vault. Synchronize data streams?
-          </p>
-          <DialogFooter className="mt-8 gap-3">
-            <Button variant="ghost" className="h-12 rounded-xl font-black uppercase tracking-widest text-[10px]" onClick={() => setIsJoinDialogOpen(false)}>Abort</Button>
-            <Button 
-              className="flex-1 h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-primary glow-primary transition-all active:scale-95" 
-              onClick={handleJoinGroup}
-              disabled={isJoining}
-            >
-              {isJoining ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Sync"}
+              Sync Payment
             </Button>
           </DialogFooter>
         </DialogContent>
