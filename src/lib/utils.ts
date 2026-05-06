@@ -39,7 +39,7 @@ export function formatCompactNumber(value: number): string {
   const abs = Math.abs(value);
   if (abs >= 1000000000) return (value / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
   if (abs >= 1000000) return (value / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (abs >= 100000) return (value / 100000).toFixed(1).replace(/\.0$/, '') + 'L';
+  if (abs >= 100000) return (value / 100000).toFixed(1).replace(/\.0$/, '') + 'L'; // Supporting Lakhs
   if (abs >= 1000) return (value / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
   return value.toFixed(0);
 }
