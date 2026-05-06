@@ -123,7 +123,6 @@ function GroupDetailContent() {
 
     groupExpenses.filter(exp => !exp.isSettled).forEach(exp => {
       const isTransfer = exp.category === 'Settlement';
-      
       if (stats[exp.paidBy]) {
         if (!isTransfer) stats[exp.paidBy].paid += exp.amount;
         stats[exp.paidBy].net += exp.amount;
@@ -140,18 +139,15 @@ function GroupDetailContent() {
       .filter(([_, s]) => s.net < -0.01)
       .map(([uid, s]) => ({ uid, amount: Math.abs(s.net) }))
       .sort((a, b) => b.amount - a.amount);
-    
     const creditors = Object.entries(stats)
       .filter(([_, s]) => s.net > 0.01)
       .map(([uid, s]) => ({ uid, amount: s.net }))
       .sort((a, b) => b.amount - a.amount);
 
     const debts: { from: string; to: string; amount: number }[] = [];
-    
     let i = 0, j = 0;
     const tempDebtors = JSON.parse(JSON.stringify(debtors));
     const tempCreditors = JSON.parse(JSON.stringify(creditors));
-
     while (i < tempDebtors.length && j < tempCreditors.length) {
       const amount = Math.min(tempDebtors[i].amount, tempCreditors[j].amount);
       debts.push({ from: tempDebtors[i].uid, to: tempCreditors[j].uid, amount });
@@ -160,7 +156,6 @@ function GroupDetailContent() {
       if (tempDebtors[i].amount < 0.01) i++;
       if (tempCreditors[j].amount < 0.01) j++;
     }
-
     return { stats, debts };
   }, [group?.members, groupExpenses]);
 
@@ -184,13 +179,11 @@ function GroupDetailContent() {
 
   const handleIndividualSettle = () => {
     if (!db || !groupId || !settlementTarget) return;
-    
     const amount = parseFloat(customAmount);
     if (isNaN(amount) || amount <= 0) {
       toast({ variant: "destructive", title: "Invalid amount", description: "Positive amount required." });
       return;
     }
-
     try {
       const settlementId = `settle-${Date.now()}`;
       const settlementRef = doc(db, "groups", groupId, "expenses", settlementId);
@@ -224,15 +217,12 @@ function GroupDetailContent() {
       toast({ title: "Signal Error", description: "System doesn't support push notifications." });
       return;
     }
-
     const permission = await Notification.requestPermission();
     if (permission === 'granted' && 'serviceWorker' in navigator) {
       const registration = await navigator.serviceWorker.ready;
-      
       toast({ title: "Heuristic Link", description: "Signal ping in 3 seconds." });
-
       setTimeout(async () => {
-        await registration.showNotification(`New Bill in ${group.name}`, {
+        await registration.showNotification(`New Bill in ${group?.name || 'Sector'}`, {
           body: `💸 ${user?.name} just added a ${getCurrencySymbol(user?.currency)}50.00 expense.`,
           icon: '/wallet.png',
           badge: '/wallet.png',
@@ -242,7 +232,6 @@ function GroupDetailContent() {
   };
 
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/join?groupId=${groupId}` : `wisely.app/join?groupId=${groupId}`;
-
   const copyToClipboard = () => {
     if (typeof navigator !== 'undefined') {
       navigator.clipboard.writeText(shareUrl);
@@ -276,49 +265,19 @@ function GroupDetailContent() {
           <button 
             className="mb-4 -ml-2 text-muted-foreground hover:text-primary gap-2 flex items-center transition-all px-2 py-1 uppercase font-black text-[10px] tracking-widest"
             onClick={() => router.push("/groups")}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Network nodes
-          </button>
+          ><ArrowLeft className="h-4 w-4" />Network nodes</button>
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-3">
                 <h2 className="text-3xl md:text-5xl font-black text-glow uppercase tracking-tighter truncate max-w-[240px] sm:max-w-none">{group.name}</h2>
                 <div className="flex gap-1">
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="h-8 w-8 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary glow-primary transition-all shrink-0"
-                    onClick={() => setIsQrOpen(true)}
-                  >
-                    <QrCode className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="h-8 w-8 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary glow-primary transition-all shrink-0"
-                    onClick={simulateGroupNotification}
-                  >
-                    <BellRing className="h-3.5 w-3.5" />
-                  </Button>
+                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary glow-primary transition-all shrink-0" onClick={() => setIsQrOpen(true)}><QrCode className="h-3.5 w-3.5" /></Button>
+                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary glow-primary transition-all shrink-0" onClick={simulateGroupNotification}><BellRing className="h-3.5 w-3.5" /></Button>
                 </div>
               </div>
-              <button 
-                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground hover:text-primary transition-colors group w-fit"
-                onClick={() => setIsMembersOpen(true)}
-              >
-                <Users className="h-3 w-3 group-hover:scale-110 transition-transform" />
-                {group.members?.length || 0} SECURED NODES
-              </button>
+              <button className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground hover:text-primary transition-colors group w-fit" onClick={() => setIsMembersOpen(true)}><Users className="h-3 w-3 group-hover:scale-110 transition-transform" />{group.members?.length || 0} SECURED NODES</button>
             </div>
-
-            <Button 
-              className="bg-primary hover:bg-primary/90 gap-2 h-12 px-6 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg glow-primary w-full sm:w-auto"
-              onClick={() => setIsQrOpen(true)}
-            >
-              <UserPlus className="h-4 w-4" />
-              Sync Peer
-            </Button>
+            <Button className="bg-primary hover:bg-primary/90 gap-2 h-12 px-6 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg glow-primary w-full sm:w-auto" onClick={() => setIsQrOpen(true)}><UserPlus className="h-4 w-4" />Sync Peer</Button>
           </div>
         </motion.header>
 
@@ -326,23 +285,11 @@ function GroupDetailContent() {
           <div className="grid gap-4 sm:grid-cols-2">
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
               <Card className="glass-card rounded-[2rem] overflow-hidden group/card relative">
-                <div className="absolute top-0 right-0 p-4">
-                   <Zap className="h-4 w-4 text-accent fill-accent animate-pulse" />
-                </div>
+                <div className="absolute top-0 right-0 p-4"><Zap className="h-4 w-4 text-accent fill-accent animate-pulse" /></div>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Network Total</CardTitle>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      asChild
-                      className="h-7 px-2 text-[9px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 rounded-lg opacity-0 group-hover/card:opacity-100 transition-opacity"
-                    >
-                      <Link href={`/groups/analytics?groupId=${groupId}`}>
-                        <BarChart3 className="h-3 w-3 mr-1" />
-                        Metrics
-                      </Link>
-                    </Button>
+                    <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-[9px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 rounded-lg opacity-0 group-hover/card:opacity-100 transition-opacity"><Link href={`/groups/analytics?groupId=${groupId}`}><BarChart3 className="h-3 w-3 mr-1" />Metrics</Link></Button>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -358,32 +305,13 @@ function GroupDetailContent() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Self Node Net</CardTitle>
                     {Math.abs(myNet) > 0.01 && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        asChild
-                        className="h-7 px-2 text-[9px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 rounded-lg"
-                      >
-                        <Link href={`/groups/settlements?groupId=${groupId}`}>
-                          <Zap className="h-3 w-3 mr-1" />
-                          Settle
-                        </Link>
-                      </Button>
+                      <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-[9px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 rounded-lg"><Link href={`/groups/settlements?groupId=${groupId}`}><Zap className="h-3 w-3 mr-1" />Settle</Link></Button>
                     )}
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className={cn(
-                    "text-3xl font-black text-glow",
-                    myNet > 0.01 ? "text-green-500" : 
-                    myNet < -0.01 ? "text-destructive" : 
-                    "text-foreground"
-                  )}>
-                    {symbol}{formatCompactNumber(Math.abs(myNet))}
-                  </div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mt-1">
-                    {myNet > 0.01 ? "Owed from network" : myNet < -0.01 ? "Due to peers" : "Balanced"}
-                  </p>
+                  <div className={cn("text-3xl font-black text-glow", myNet > 0.01 ? "text-green-500" : myNet < -0.01 ? "text-destructive" : "text-foreground")}>{symbol}{formatCompactNumber(Math.abs(myNet))}</div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mt-1">{myNet > 0.01 ? "Owed from network" : myNet < -0.01 ? "Due to peers" : "Balanced"}</p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -393,9 +321,7 @@ function GroupDetailContent() {
             <Card className="glass-card rounded-[2.5rem] overflow-hidden border-white/5">
               <CardHeader className="border-b border-white/5 px-6 py-5 flex flex-row items-center justify-between">
                 <CardTitle className="text-sm font-black uppercase tracking-[0.3em]">Historical Ledger</CardTitle>
-                <Button variant="link" asChild className="text-accent font-black uppercase tracking-widest text-[10px] p-0 h-auto">
-                  <Link href={`/groups/transactions?groupId=${groupId}`}>Scan All Cycles</Link>
-                </Button>
+                <Button variant="link" asChild className="text-accent font-black uppercase tracking-widest text-[10px] p-0 h-auto"><Link href={`/groups/transactions?groupId=${groupId}`}>Scan All Cycles</Link></Button>
               </CardHeader>
               <CardContent className="p-0">
                 {expensesLoading ? (
@@ -409,56 +335,31 @@ function GroupDetailContent() {
                 ) : (
                   <div className="divide-y divide-white/5">
                     {groupExpenses.slice(0, 8).map((expense) => {
-                      const payerName = expense.paidBy === user?.uid 
-                        ? "You" 
-                        : (memberProfiles?.find(m => m.uid === expense.paidBy)?.name || "Peer");
-                      
+                      const payerName = expense.paidBy === user?.uid ? "You" : (memberProfiles?.find(m => m.uid === expense.paidBy)?.name || "Peer");
                       const userShare = expense.splitBetween?.find((s: any) => s.userId === user?.uid)?.amount || 0;
                       const isPayer = expense.paidBy === user?.uid;
                       const netImpact = isPayer ? (expense.amount - userShare) : -userShare;
                       const isSettlement = expense.category === 'Settlement';
-
                       return (
                         <div key={expense.id} className="group flex items-center hover:bg-white/5 transition-all">
-                          <Link 
-                            href={`/expenses/details?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}
-                            className="flex-1 flex items-center justify-between px-6 py-5 min-w-0"
-                          >
+                          <Link href={`/expenses/details?id=${expense.id}&type=${expense.type}&groupId=${groupId}`} className="flex-1 flex items-center justify-between px-6 py-5 min-w-0">
                             <div className="flex items-center gap-5 min-w-0">
-                              <div className={cn(
-                                "h-14 w-14 rounded-2xl flex items-center justify-center text-xl shrink-0 glass shadow-inner transition-transform group-hover:scale-110",
-                                isSettlement ? "text-accent glow-accent" : "text-primary glow-primary"
-                              )}>
+                              <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center text-xl shrink-0 glass shadow-inner transition-transform group-hover:scale-110", isSettlement ? "text-accent glow-accent" : "text-primary glow-primary")}>
                                 {isSettlement ? <Coins className="h-6 w-6" /> : (expense.category[0] || "💰")}
                               </div>
                               <div className="min-w-0">
                                 <p className="font-black text-base uppercase tracking-tight truncate">{expense.category}</p>
                                 <div className="flex items-center gap-3 mt-1">
-                                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                                    {mounted ? format(expense.date, "MMM dd") : ""}
-                                  </span>
+                                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{mounted ? format(expense.date, "MMM dd") : ""}</span>
                                   <div className="h-1 w-1 bg-white/10 rounded-full" />
-                                  <span className="text-[9px] font-black uppercase tracking-widest text-accent truncate">
-                                    {payerName} paid
-                                  </span>
+                                  <span className="text-[9px] font-black uppercase tracking-widest text-accent truncate">{payerName} paid</span>
                                 </div>
                               </div>
                             </div>
                             <div className="text-right shrink-0">
-                              <p className="font-black text-xl text-glow tracking-tighter">
-                                {isSettlement ? "" : "-"}{symbol}{formatCompactNumber(expense.amount)}
-                              </p>
-                              <p className={cn(
-                                "text-[9px] font-black uppercase tracking-widest",
-                                netImpact > 0.01 ? "text-green-500" : netImpact < -0.01 ? "text-destructive" : "text-muted-foreground"
-                              )}>
-                                {isSettlement ? (
-                                  isPayer ? `Outflow` : `Inflow`
-                                ) : (
-                                  netImpact > 0.01 ? `+${symbol}${formatCompactNumber(netImpact)}` : 
-                                  netImpact < -0.01 ? `-${symbol}${formatCompactNumber(Math.abs(netImpact))}` : 
-                                  "Stable"
-                                )}
+                              <p className="font-black text-xl text-glow tracking-tighter">{isSettlement ? "" : "-"}{symbol}{formatCompactNumber(expense.amount)}</p>
+                              <p className={cn("text-[9px] font-black uppercase tracking-widest", netImpact > 0.01 ? "text-green-500" : netImpact < -0.01 ? "text-destructive" : "text-muted-foreground")}>
+                                {isSettlement ? (isPayer ? `Outflow` : `Inflow`) : (netImpact > 0.01 ? `+${symbol}${formatCompactNumber(netImpact)}` : netImpact < -0.01 ? `-${symbol}${formatCompactNumber(Math.abs(netImpact))}` : "Stable")}
                               </p>
                             </div>
                           </Link>
@@ -473,147 +374,56 @@ function GroupDetailContent() {
         </div>
       </main>
 
-      {/* QR Invitation Dialog */}
       <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
         <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[2rem] p-8 border-none shadow-2xl glass-card">
           <DialogHeader className="mb-6 text-center">
             <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-glow">Invite Node</DialogTitle>
-            <DialogDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground opacity-60">
-              SCAN TO JOIN SECTOR
-            </DialogDescription>
+            <DialogDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground opacity-60">SCAN TO JOIN SECTOR</DialogDescription>
           </DialogHeader>
-          
           <div className="flex flex-col items-center gap-8 py-4">
-            <div className="p-4 bg-white rounded-[2rem] shadow-inner">
-              <QRCodeSVG value={shareUrl} size={200} />
-            </div>
-            
+            <div className="p-4 bg-white rounded-[2rem] shadow-inner"><QRCodeSVG value={shareUrl} size={200} /></div>
             <div className="w-full space-y-4">
               <div className="flex items-center gap-2 p-4 bg-white/5 rounded-2xl border border-white/10 group">
-                <Input 
-                  value={shareUrl} 
-                  readOnly 
-                  className="h-8 bg-transparent border-none text-[10px] font-black uppercase tracking-widest p-0 focus-visible:ring-0"
-                />
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 text-primary"
-                  onClick={copyToClipboard}
-                >
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
+                <Input value={shareUrl} readOnly className="h-8 bg-transparent border-none text-[10px] font-black uppercase tracking-widest p-0 focus-visible:ring-0" />
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-primary" onClick={copyToClipboard}>{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</Button>
               </div>
-              
-              <Button 
-                className="w-full h-12 rounded-2xl bg-[#25D366] hover:bg-[#25D366]/90 font-black uppercase tracking-widest text-[10px] gap-2 shadow-lg"
-                onClick={handleShareToWhatsApp}
-              >
-                <Share2 className="h-4 w-4" />
-                WhatsApp Protocol
-              </Button>
+              <Button className="w-full h-12 rounded-2xl bg-[#25D366] hover:bg-[#25D366]/90 font-black uppercase tracking-widest text-[10px] gap-2 shadow-lg" onClick={handleShareToWhatsApp}><Share2 className="h-4 w-4" />WhatsApp Protocol</Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Peer Info Dialog */}
       <Dialog open={isMembersOpen} onOpenChange={setIsMembersOpen}>
         <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[2rem] p-8 border-none shadow-2xl glass-card">
-          <DialogHeader className="mb-6">
-            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-glow flex items-center gap-3">
-              <Users className="h-6 w-6 text-primary" />
-              Sector Nodes
-            </DialogTitle>
-          </DialogHeader>
+          <DialogHeader className="mb-6"><DialogTitle className="text-2xl font-black uppercase tracking-tighter text-glow flex items-center gap-3"><Users className="h-6 w-6 text-primary" />Sector Nodes</DialogTitle></DialogHeader>
           <div className="space-y-3 max-h-[40vh] overflow-y-auto custom-scrollbar pr-1">
             {membersLoading ? (
               <div className="py-8 flex flex-col items-center gap-2"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
             ) : memberProfiles?.map((member) => (
               <div key={member.uid} className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
-                <Avatar className="h-10 w-10 border-2 border-white/10">
-                  <AvatarFallback className="bg-primary/20 text-primary font-black uppercase text-xs">
-                    {member.name?.[0]}
-                  </AvatarFallback>
-                </Avatar>
+                <Avatar className="h-10 w-10 border-2 border-white/10"><AvatarFallback className="bg-primary/20 text-primary font-black uppercase text-xs">{member.name?.[0]}</AvatarFallback></Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-black uppercase tracking-tight truncate">
-                    {member.name} {member.uid === user?.uid && "(YOU)"}
-                  </p>
+                  <p className="text-sm font-black uppercase tracking-tight truncate">{member.name} {member.uid === user?.uid && "(YOU)"}</p>
                   <p className="text-[9px] font-bold text-muted-foreground truncate uppercase opacity-50">{member.email}</p>
                 </div>
               </div>
             ))}
           </div>
-          <DialogFooter className="mt-8">
-            <Button className="w-full rounded-2xl font-black uppercase tracking-widest text-[10px] h-12 gap-2 bg-primary glow-primary" onClick={() => { setIsMembersOpen(false); setIsQrOpen(true); }}>
-              Initialize Peer Sync
-            </Button>
-          </DialogFooter>
+          <DialogFooter className="mt-8"><Button className="w-full rounded-2xl font-black uppercase tracking-widest text-[10px] h-12 gap-2 bg-primary glow-primary" onClick={() => { setIsMembersOpen(false); setIsQrOpen(true); }}>Initialize Peer Sync</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Join Dialog */}
       <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
         <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[2rem] p-8 border-none shadow-2xl glass-card">
           <DialogHeader className="mb-6 text-center">
-            <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4 glow-primary">
-              <UserPlus className="h-8 w-8" />
-            </div>
+            <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4 glow-primary"><UserPlus className="h-8 w-8" /></div>
             <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-glow">Join Sector</DialogTitle>
-            <DialogDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground opacity-60">
-              LINK TO {group?.name}
-            </DialogDescription>
+            <DialogDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground opacity-60">LINK TO {group?.name}</DialogDescription>
           </DialogHeader>
-          <p className="text-sm text-center text-muted-foreground leading-relaxed">
-            Authorized node requesting access to this vault. Synchronize data streams?
-          </p>
+          <p className="text-sm text-center text-muted-foreground leading-relaxed">Authorized node requesting access to this vault. Synchronize data streams?</p>
           <DialogFooter className="mt-8 gap-3">
             <Button variant="ghost" className="h-12 rounded-xl font-black uppercase tracking-widest text-[10px]" onClick={() => setIsJoinDialogOpen(false)}>Abort</Button>
-            <Button 
-              className="flex-1 h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-primary glow-primary transition-all active:scale-95" 
-              onClick={handleJoinGroup}
-              disabled={isJoining}
-            >
-              {isJoining ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Sync"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Settle Recording Dialog */}
-      <Dialog open={!!settlementTarget} onOpenChange={(open) => !open && setSettlementTarget(null)}>
-        <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[2rem] p-8 border-none shadow-2xl glass-card">
-          <DialogHeader className="mb-6">
-            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-glow flex items-center gap-3">
-              <Coins className="h-6 w-6 text-primary animate-pulse" />
-              Execute Payment
-            </DialogTitle>
-            <DialogDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground opacity-60">
-              {settlementTarget?.fromName} paying {settlementTarget?.toName}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="settle-amount" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Amount ({symbol})</Label>
-              <Input 
-                id="settle-amount"
-                type="number"
-                step="0.01"
-                className="h-16 rounded-2xl text-3xl font-black bg-white/5 border-none text-glow focus:ring-primary"
-                value={customAmount}
-                onChange={(e) => setCustomAmount(e.target.value)}
-                autoFocus
-              />
-            </div>
-          </div>
-
-          <DialogFooter className="mt-8 gap-3">
-            <Button variant="ghost" className="h-12 rounded-xl font-black uppercase tracking-widest text-[10px]" onClick={() => setSettlementTarget(null)}>Abort</Button>
-            <Button className="flex-1 h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-primary glow-primary transition-all active:scale-95" onClick={handleIndividualSettle}>
-              Sync Payment
-            </Button>
+            <Button className="flex-1 h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-primary glow-primary transition-all active:scale-95" onClick={handleJoinGroup} disabled={isJoining}>{isJoining ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Sync"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -625,9 +435,7 @@ export default function GroupDetailPage() {
   return (
     <div className="flex min-h-screen flex-col md:flex-row bg-background no-scrollbar">
       <Navbar />
-      <Suspense fallback={null}>
-        <GroupDetailContent />
-      </Suspense>
+      <Suspense fallback={null}><GroupDetailContent /></Suspense>
     </div>
   );
 }

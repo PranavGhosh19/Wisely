@@ -11,13 +11,14 @@ import {
 import { useStore } from "@/lib/store";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, collectionGroup, query, where } from "firebase/firestore";
-import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
-import { Layers, Calendar as CalendarIcon, BarChart3, FileSpreadsheet, Loader2, Zap } from "lucide-react";
+import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, parseISO, isToday, isThisMonth } from "date-fns";
+import { Layers, Calendar as CalendarIcon, BarChart3, FileSpreadsheet, Loader2, Zap, Filter } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getCurrencySymbol, formatCompactNumber } from "@/lib/utils";
+import { getCurrencySymbol, formatCompactNumber, cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { generateMonthlySpreadsheet, downloadWorkbook } from "@/lib/export-utils";
 
 const COLORS = ['#10B981', '#3380FF', '#facc15', '#8B5CF6', '#EC4899', '#A89E92'];
 
@@ -62,12 +63,15 @@ const renderCustomizedLabel = (props: any, symbol: string) => {
   );
 };
 
+type TimeFilter = 'ALL' | 'MONTH' | 'TODAY';
+
 export default function AnalyticsPage() {
   const { user, categories: storeCategories } = useStore();
   const db = useFirestore();
   const [mounted, setMounted] = useState(false);
   const [scope, setScope] = useState<"ALL" | "PERSONAL" | "GROUP">("ALL");
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('MONTH');
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -99,43 +103,28 @@ export default function AnalyticsPage() {
     const personal = (personalExpenses || []).filter(e => e.category !== 'Settlement');
     const group = (groupExpenses || []).filter(e => e.category !== 'Settlement');
 
-    if (scope === "ALL") {
-      base = [...personal, ...group];
-    } else if (scope === "PERSONAL") {
-      base = personal;
-    } else if (scope === "GROUP") {
-      base = group;
-    }
+    if (scope === "ALL") base = [...personal, ...group];
+    else if (scope === "PERSONAL") base = personal;
+    else if (scope === "GROUP") base = group;
 
-    if (selectedDate) {
-      const start = startOfDay(selectedDate);
-      const end = endOfDay(selectedDate);
-      base = base.filter(exp => {
-        const expDate = new Date(exp.date);
-        return isWithinInterval(expDate, { start, end });
-      });
-    } else {
-      const now = new Date();
-      const monthStart = startOfMonth(now);
-      const monthEnd = endOfMonth(now);
-      base = base.filter(exp => {
-        const expDate = new Date(exp.date);
-        return isWithinInterval(expDate, { start: monthStart, end: monthEnd });
-      });
-    }
-
-    return base;
-  }, [personalExpenses, groupExpenses, scope, selectedDate]);
+    return base.filter(exp => {
+      const date = new Date(exp.date);
+      if (timeFilter === 'TODAY') return isToday(date);
+      if (timeFilter === 'MONTH') return isThisMonth(date);
+      return true;
+    });
+  }, [personalExpenses, groupExpenses, scope, timeFilter]);
 
   const pieData = useMemo(() => {
     const categories: Record<string, number> = {};
     filteredExpenses.forEach(exp => {
-      categories[exp.category] = (categories[exp.category] || 0) + exp.amount;
+      const amount = exp.type === 'GROUP' ? (exp.splitBetween?.find((s: any) => s.userId === user?.uid)?.amount || 0) : exp.amount;
+      categories[exp.category] = (categories[exp.category] || 0) + amount;
     });
     return Object.entries(categories)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
-  }, [filteredExpenses]);
+  }, [filteredExpenses, user?.uid]);
 
   const trendData = useMemo(() => {
     let base: any[] = [];
@@ -159,60 +148,42 @@ export default function AnalyticsPage() {
 
     base.forEach(exp => {
       const expDate = new Date(exp.date);
+      const amount = exp.type === 'GROUP' ? (exp.splitBetween?.find((s: any) => s.userId === user?.uid)?.amount || 0) : exp.amount;
       months.forEach(month => {
         if (isWithinInterval(expDate, { start: month.start, end: month.end })) {
-          month.amount += exp.amount;
+          month.amount += amount;
         }
       });
     });
 
     return months.map(m => ({ name: m.name, amount: parseFloat(m.amount.toFixed(2)) }));
-  }, [personalExpenses, groupExpenses, scope]);
+  }, [personalExpenses, groupExpenses, scope, user?.uid]);
 
-  const budgetChartData = useMemo(() => {
-    if (!user || !storeCategories) return [];
-    
-    const now = new Date();
-    const start = startOfMonth(now).getTime();
-    const end = endOfMonth(now).getTime();
-
-    const spending: Record<string, number> = {};
-    storeCategories.forEach(cat => spending[cat] = 0);
-
-    const personal = (personalExpenses || []).filter(e => !e.isDeleted && e.category !== 'Settlement' && e.date >= start && e.date <= end);
-    const group = (groupExpenses || []).filter(e => !e.isDeleted && e.category !== 'Settlement' && e.date >= start && e.date <= end);
-
-    personal.forEach(exp => {
-      if (spending[exp.category] !== undefined) spending[exp.category] += exp.amount;
-    });
-
-    group.forEach(exp => {
-      const mySplit = exp.splitBetween?.find((s: any) => s.userId === user.uid);
-      if (mySplit && spending[exp.category] !== undefined) {
-        spending[exp.category] += mySplit.amount;
-      }
-    });
-
-    return storeCategories.map(cat => {
-      const budget = user.categoryBudgets?.[cat] || 0;
-      const spent = spending[cat] || 0;
-      return {
-        name: cat,
-        "Current Spend": Math.min(spent, budget),
-        "Remaining": Math.max(0, budget - spent),
-        "Over Budget": Math.max(0, spent - budget),
-        originalBudget: budget,
-        originalSpent: spent
-      };
-    }).filter(item => item.originalSpent > 0.01);
-  }, [user, storeCategories, personalExpenses, groupExpenses]);
+  const handleExport = async () => {
+    if (filteredExpenses.length === 0) return;
+    setIsExporting(true);
+    try {
+      const filename = `Wisely_Metrics_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+      const exportData = filteredExpenses.map(exp => ({
+        ...exp,
+        amount: exp.type === 'GROUP' ? (exp.splitBetween?.find((s: any) => s.userId === user?.uid)?.amount || 0) : exp.amount,
+        paidByLabel: exp.type === 'GROUP' ? 'Shared Vault' : 'Private Vault'
+      }));
+      const workbook = generateMonthlySpreadsheet(exportData, user?.email || '', symbol);
+      downloadWorkbook(workbook, filename);
+    } catch (error) {
+      console.error("Export failed", error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (!mounted) return null;
 
   const isLoading = loadingPersonal || loadingGroups;
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row bg-background">
+    <div className="flex min-h-screen flex-col md:flex-row bg-background no-scrollbar">
       <Navbar />
       
       <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-7xl mx-auto w-full">
@@ -223,47 +194,54 @@ export default function AnalyticsPage() {
         >
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <h2 className="text-3xl font-black text-glow uppercase tracking-tighter">METRICS</h2>
-              <Button variant="outline" size="sm" className="h-10 px-4 rounded-xl font-black uppercase tracking-widest text-[10px] border-primary/20 hover:bg-primary/5 glow-primary gap-2">
-                <FileSpreadsheet className="h-3.5 w-3.5" />
-                Deep Data
+              <h2 className="text-3xl md:text-5xl font-black text-glow uppercase tracking-tighter">DEEP METRICS</h2>
+              <Button 
+                onClick={handleExport}
+                disabled={isExporting || filteredExpenses.length === 0}
+                variant="outline" 
+                size="sm" 
+                className="h-10 px-4 rounded-xl font-black uppercase tracking-widest text-[10px] border-primary/20 hover:bg-primary/5 glow-primary gap-2"
+              >
+                {isExporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
+                Export Ledger
               </Button>
             </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Analysing Period / {format(new Date(), "MMMM yyyy")}</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Neural Pathing / {timeFilter} Analysis</p>
           </div>
 
-          <div className="grid grid-cols-2 sm:flex sm:flex-row gap-3 sm:gap-4 items-end">
-            <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
-                <CalendarIcon className="h-3 w-3" />
-                Date Point
-              </label>
-              <Input
-                type="date"
-                value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setSelectedDate(val ? parseISO(val) : undefined);
-                }}
-                className="w-full sm:w-[140px] h-10 px-3 rounded-xl glass border-white/10 text-xs font-bold uppercase focus:ring-primary"
-              />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
+              {(['ALL', 'PERSONAL', 'GROUP'] as const).map((s) => (
+                <Button 
+                  key={s}
+                  variant={scope === s ? "secondary" : "ghost"} 
+                  size="sm" 
+                  className={cn(
+                    "rounded-lg h-8 text-[9px] uppercase font-black tracking-widest px-3",
+                    scope === s && "bg-primary text-primary-foreground glow-primary"
+                  )}
+                  onClick={() => setScope(s)}
+                >
+                  {s === 'ALL' ? 'Total' : s === 'PERSONAL' ? 'Private' : 'Shared'}
+                </Button>
+              ))}
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
-                <Layers className="h-3 w-3" />
-                Stream Scope
-              </label>
-              <Select value={scope} onValueChange={(val: any) => setScope(val)}>
-                <SelectTrigger className="w-full sm:w-[180px] h-10 rounded-xl glass border-white/10 text-xs font-bold uppercase">
-                  <SelectValue placeholder="Select Scope" />
-                </SelectTrigger>
-                <SelectContent className="glass border-white/10">
-                  <SelectItem value="ALL">All Streams</SelectItem>
-                  <SelectItem value="PERSONAL">Private Only</SelectItem>
-                  <SelectItem value="GROUP">Shared Only</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
+              {(['ALL', 'MONTH', 'TODAY'] as TimeFilter[]).map((f) => (
+                <Button 
+                  key={f}
+                  variant={timeFilter === f ? "secondary" : "ghost"} 
+                  size="sm" 
+                  className={cn(
+                    "rounded-lg h-8 text-[9px] uppercase font-black tracking-widest px-3",
+                    timeFilter === f && "bg-accent text-accent-foreground glow-accent"
+                  )}
+                  onClick={() => setTimeFilter(f)}
+                >
+                  {f === 'ALL' ? 'History' : f === 'MONTH' ? 'Cycle' : 'Today'}
+                </Button>
+              ))}
             </div>
           </div>
         </motion.header>
@@ -272,22 +250,30 @@ export default function AnalyticsPage() {
           <div className="h-[400px] flex items-center justify-center">
             <div className="flex flex-col items-center gap-4">
               <div className="h-12 w-12 animate-spin rounded-[1rem] border-4 border-primary border-t-transparent glow-primary" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Processing Neural Patterns...</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Decrypting Signal Patterns...</p>
             </div>
           </div>
+        ) : filteredExpenses.length === 0 ? (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-24 text-center glass-card rounded-[3rem] border-dashed border-white/10">
+            <div className="h-20 w-20 glass rounded-[2rem] flex items-center justify-center text-primary mb-6 glow-primary">
+              <Filter className="h-8 w-8" />
+            </div>
+            <h3 className="text-xl font-black uppercase tracking-tight text-glow">Zero Data Node</h3>
+            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-2">Initialize a financial cycle to generate metrics.</p>
+          </motion.div>
         ) : (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="grid gap-6 md:grid-cols-2"
           >
-            <Card className="glass-card rounded-[2.5rem] overflow-hidden border-white/5">
+            <Card className="glass-card rounded-[2.5rem] overflow-hidden border-white/5 h-full">
               <CardHeader className="pb-0 pt-8 px-8">
                 <CardTitle className="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3">
                    <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                    Entropy Distribution
                 </CardTitle>
-                <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-1">Categorical breakdown for cycle</CardDescription>
+                <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-1">Categorical split / Active scope</CardDescription>
               </CardHeader>
               <CardContent className="h-[450px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -296,8 +282,8 @@ export default function AnalyticsPage() {
                       data={pieData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={55}
-                      outerRadius={75}
+                      innerRadius={60}
+                      outerRadius={85}
                       paddingAngle={8}
                       dataKey="value"
                       label={(props) => renderCustomizedLabel(props, symbol)}
@@ -318,13 +304,13 @@ export default function AnalyticsPage() {
               </CardContent>
             </Card>
 
-            <Card className="glass-card rounded-[2.5rem] overflow-hidden border-white/5">
+            <Card className="glass-card rounded-[2.5rem] overflow-hidden border-white/5 h-full">
               <CardHeader className="pb-0 pt-8 px-8">
                 <CardTitle className="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3">
                    <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
                    Spending Velocity
                 </CardTitle>
-                <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-1">Movement trajectory (6-Month Context)</CardDescription>
+                <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-1">Trajectory / 6-Cycle Context</CardDescription>
               </CardHeader>
               <CardContent className="h-[450px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -367,81 +353,6 @@ export default function AnalyticsPage() {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-
-            {budgetChartData.length > 0 && (
-              <Card className="glass-card rounded-[2.5rem] overflow-hidden border-white/5 md:col-span-2">
-                <CardHeader className="pb-0 pt-8 px-8">
-                  <CardTitle className="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3">
-                    <BarChart3 className="h-4 w-4 text-primary" />
-                    Target Deviation HUD
-                  </CardTitle>
-                  <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-1">Spend vs. Protocol Limits (This Month)</CardDescription>
-                </CardHeader>
-                <CardContent className="h-[400px] sm:h-[500px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ReBarChart 
-                      data={budgetChartData} 
-                      margin={{ top: 40, right: 40, left: 40, bottom: 80 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                      <XAxis 
-                        dataKey="name" 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fontSize: 9, fontWeight: 900, fill: '#fff', textTransform: 'uppercase' }}
-                        interval={0}
-                        angle={-45}
-                        textAnchor="end"
-                      />
-                      <YAxis 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fontSize: 9, fontWeight: 800, fill: 'rgba(255,255,255,0.4)' }}
-                        tickFormatter={(value) => `${symbol}${formatCompactNumber(value)}`}
-                      />
-                      <Tooltip 
-                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const data = payload[0].payload;
-                            return (
-                              <div className="glass p-4 rounded-2xl border-white/10 shadow-2xl space-y-1">
-                                <p className="font-black text-[10px] uppercase tracking-[0.2em] text-primary mb-2">{data.name}</p>
-                                <div className="flex justify-between gap-8 items-center text-[10px] font-bold">
-                                  <span className="opacity-60 uppercase">Protocol Limit:</span>
-                                  <span className="tabular-nums">{symbol}{formatCompactNumber(data.originalBudget)}</span>
-                                </div>
-                                <div className="flex justify-between gap-8 items-center text-[10px] font-bold">
-                                  <span className="opacity-60 uppercase">Current Usage:</span>
-                                  <span className="text-primary tabular-nums">{symbol}{formatCompactNumber(data.originalSpent)}</span>
-                                </div>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                      <Bar 
-                        dataKey="Current Spend" 
-                        stackId="a" 
-                        fill="hsl(var(--primary))" 
-                        radius={[0, 0, 0, 0]}
-                        label={{ 
-                          position: 'top', 
-                          fill: '#facc15', 
-                          fontSize: 9, 
-                          fontWeight: 900,
-                          offset: 10,
-                          formatter: (val: number) => val > 0 ? `${symbol}${formatCompactNumber(val)}` : ''
-                        }}
-                      />
-                      <Bar dataKey="Remaining" stackId="a" fill="rgba(16, 185, 129, 0.15)" />
-                      <Bar dataKey="Over Budget" stackId="a" fill="hsl(var(--destructive))" />
-                    </ReBarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            )}
           </motion.div>
         )}
       </main>
