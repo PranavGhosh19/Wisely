@@ -16,7 +16,9 @@ import {
   CheckCircle2, 
   AlertTriangle, 
   Crown, 
-  Zap
+  Zap,
+  Activity,
+  ShieldCheck
 } from "lucide-react";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, query, orderBy, where, collectionGroup } from "firebase/firestore";
@@ -26,13 +28,16 @@ import { BudgetRolloverPrompt } from "@/components/budgets/BudgetRolloverPrompt"
 import { startOfMonth, endOfMonth } from "date-fns";
 import { motion } from "framer-motion";
 
+/**
+ * Dashboard UI Definition - High-Performance Command HUD
+ */
 export default function Dashboard() {
   const router = useRouter();
   const { user, isLoading: storeLoading, categories: storeCategories } = useStore();
   const db = useFirestore();
   const [mounted, setMounted] = useState(false);
 
-  // Gesture handling
+  // Gesture handling for immersive HUD navigation
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
@@ -49,8 +54,8 @@ export default function Dashboard() {
   const onTouchMove = (e: React.TouchEvent) => setTouchEnd(e.targetTouches[0].clientX);
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    // Swipe left-to-right to enter the club
-    if (touchStart - touchEnd < -70) router.push('/wisely-club');
+    // Swipe left-to-right (Inward motion) to enter the Club sector
+    if (touchStart - touchEnd < -100) router.push('/wisely-club');
   };
 
   const personalExpensesQuery = useMemoFirebase(() => {
@@ -75,9 +80,16 @@ export default function Dashboard() {
 
   const { data: groupExpenses } = useCollection(groupExpensesQuery);
 
-  const monthlyPersonalExpenses = useMemo(() => (personalExpenses || []).filter(exp => exp.date >= currentMonthStart && exp.date <= currentMonthEnd), [personalExpenses, currentMonthStart, currentMonthEnd]);
-  const monthlyGroupExpenses = useMemo(() => (groupExpenses || []).filter(exp => exp.date >= currentMonthStart && exp.date <= currentMonthEnd), [groupExpenses, currentMonthStart, currentMonthEnd]);
+  // Filter cycles for active telemetry period
+  const monthlyPersonalExpenses = useMemo(() => 
+    (personalExpenses || []).filter(exp => exp.date >= currentMonthStart && exp.date <= currentMonthEnd), 
+  [personalExpenses, currentMonthStart, currentMonthEnd]);
 
+  const monthlyGroupExpenses = useMemo(() => 
+    (groupExpenses || []).filter(exp => exp.date >= currentMonthStart && exp.date <= currentMonthEnd), 
+  [groupExpenses, currentMonthStart, currentMonthEnd]);
+
+  // Aggregate high-load categorical data
   const categorySpending = useMemo(() => {
     const categories: Record<string, number> = {};
     monthlyPersonalExpenses.filter(e => e.category !== 'Settlement').forEach(e => categories[e.category] = (categories[e.category] || 0) + e.amount);
@@ -88,7 +100,9 @@ export default function Dashboard() {
     return categories;
   }, [monthlyPersonalExpenses, monthlyGroupExpenses, user?.uid]);
 
-  const categoryData = useMemo(() => Object.entries(categorySpending).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value), [categorySpending]);
+  const categoryData = useMemo(() => 
+    Object.entries(categorySpending).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value), 
+  [categorySpending]);
 
   const activePersonalSpent = monthlyPersonalExpenses.filter(e => e.category !== 'Settlement').reduce((acc, curr) => acc + curr.amount, 0);
   const activeUserGroupShare = monthlyGroupExpenses.filter(e => !e.isSettled && e.category !== 'Settlement').reduce((acc, curr) => acc + (curr.splitBetween?.find((s: any) => s.userId === user?.uid)?.amount || 0), 0);
@@ -101,6 +115,7 @@ export default function Dashboard() {
 
   const budgetPercentage = totalBudget <= 0 ? null : (totalOverallMonthlySpent / totalBudget) * 100;
 
+  // HUD Theme Logic for status indicators
   const budgetTheme = useMemo(() => {
     if (budgetPercentage === null) return { color: "bg-primary", icon: CreditCard, label: "Monthly Output", glow: "glow-primary" };
     if (budgetPercentage < 60) return { color: "bg-emerald-600", icon: CheckCircle2, label: "Secure Mode", glow: "shadow-[0_0_20px_rgba(16,185,129,0.3)]" };
@@ -112,6 +127,7 @@ export default function Dashboard() {
 
   const symbol = getCurrencySymbol(user.currency);
 
+  // Framer motion variants for HUD synchronization
   const container = {
     hidden: { opacity: 0 },
     show: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -136,20 +152,23 @@ export default function Dashboard() {
         <motion.header 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 flex flex-col gap-4"
+          className="mb-10 flex flex-col gap-4"
         >
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <h2 className="text-3xl md:text-5xl font-black text-glow uppercase tracking-tighter">COMMAND</h2>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">
-                Cycles / {now.toLocaleString('default', { month: 'long' })} {now.getFullYear()}
-              </p>
+              <h2 className="text-3xl md:text-6xl font-black text-glow uppercase tracking-tighter leading-none">COMMAND</h2>
+              <div className="flex items-center gap-3">
+                <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">
+                  Cycles / {now.toLocaleString('default', { month: 'long' })} {now.getFullYear()}
+                </p>
+              </div>
             </div>
 
             <Button 
               asChild
               variant="outline"
-              className="h-12 px-6 text-xs font-black uppercase tracking-widest rounded-2xl border-accent/30 text-accent hover:bg-accent/5 hover:text-white glow-accent transition-colors"
+              className="h-12 px-6 text-[10px] font-black uppercase tracking-widest rounded-2xl border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/5 hover:text-white shadow-[0_0_15px_rgba(212,175,55,0.15)] transition-all active:scale-95"
             >
               <Link href="/wisely-club">
                 <Crown className="h-4 w-4 mr-2" />
@@ -159,23 +178,29 @@ export default function Dashboard() {
           </div>
         </motion.header>
 
+        {/* Telemetry Metrics */}
         <motion.div 
           variants={container}
           initial="hidden"
           animate="show"
-          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-10"
+          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-10"
         >
           <motion.div variants={item}>
-            <Card className="glass-card h-28 relative group cursor-default">
+            <Card className="glass-card h-32 relative group cursor-default overflow-hidden">
               <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-100 transition-opacity">
+                 <ShieldCheck className="h-4 w-4 text-primary" />
+              </div>
               <CardContent className="h-full flex items-center justify-between p-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl glass flex items-center justify-center text-primary glow-primary">
-                    <Wallet className="h-6 w-6" />
+                <div className="flex items-center gap-5">
+                  <div className="h-14 w-14 rounded-2xl glass flex items-center justify-center text-primary glow-primary shadow-inner">
+                    <Wallet className="h-7 w-7" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Personal</span>
-                    <span className="text-2xl font-black">{symbol}{formatCompactNumber(activePersonalSpent)}</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">Private Vault</span>
+                    <span className="text-3xl font-black tracking-tighter text-glow">
+                      {symbol}{formatCompactNumber(activePersonalSpent)}
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -183,16 +208,21 @@ export default function Dashboard() {
           </motion.div>
 
           <motion.div variants={item}>
-            <Card className="glass-card h-28 relative group cursor-default">
+            <Card className="glass-card h-32 relative group cursor-default overflow-hidden">
               <div className="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-100 transition-opacity">
+                 <Users className="h-4 w-4 text-accent" />
+              </div>
               <CardContent className="h-full flex items-center justify-between p-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl glass flex items-center justify-center text-accent glow-accent">
-                    <Users className="h-6 w-6" />
+                <div className="flex items-center gap-5">
+                  <div className="h-14 w-14 rounded-2xl glass flex items-center justify-center text-accent glow-accent shadow-inner">
+                    <Activity className="h-7 w-7" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Shared</span>
-                    <span className="text-2xl font-black">{symbol}{formatCompactNumber(activeUserGroupShare)}</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">Shared Network</span>
+                    <span className="text-3xl font-black tracking-tighter text-glow">
+                      {symbol}{formatCompactNumber(activeUserGroupShare)}
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -201,23 +231,29 @@ export default function Dashboard() {
 
           <motion.div variants={item}>
             <Link href="/budgets">
-              <Card className={cn("h-28 relative overflow-hidden transition-all duration-500 active:scale-95 group", budgetTheme.color, budgetTheme.glow)}>
-                <div className="absolute top-0 right-0 h-32 w-32 bg-white/20 rounded-full blur-3xl -translate-y-16 translate-x-16" />
+              <Card className={cn("h-32 relative overflow-hidden transition-all duration-700 active:scale-95 group", budgetTheme.color, budgetTheme.glow)}>
+                <div className="absolute top-0 right-0 h-40 w-40 bg-white/10 rounded-full blur-[80px] -translate-y-20 translate-x-20" />
                 <CardContent className="h-full flex items-center justify-between p-6 relative z-10 text-white">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-2xl bg-white/20 flex items-center justify-center">
-                      <budgetTheme.icon className="h-6 w-6" />
+                  <div className="flex items-center gap-5">
+                    <div className="h-14 w-14 rounded-2xl bg-white/20 flex items-center justify-center shadow-inner border border-white/10">
+                      <budgetTheme.icon className="h-7 w-7" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-black uppercase tracking-widest opacity-80">{budgetTheme.label}</span>
-                      <span className="text-2xl font-black">{symbol}{formatCompactNumber(totalOverallMonthlySpent)}</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-1">{budgetTheme.label}</span>
+                      <span className="text-3xl font-black tracking-tighter">
+                        {symbol}{formatCompactNumber(totalOverallMonthlySpent)}
+                      </span>
                     </div>
                   </div>
                   {budgetPercentage !== null && (
-                    <div className="text-right">
-                      <span className="text-[10px] font-black opacity-80">{budgetPercentage.toFixed(0)}%</span>
-                      <div className="w-12 h-1 bg-white/30 rounded-full mt-1 overflow-hidden">
-                        <div className="h-full bg-white transition-all" style={{ width: `${Math.min(100, budgetPercentage)}%` }} />
+                    <div className="text-right flex flex-col items-end">
+                      <span className="text-[11px] font-black opacity-90">{budgetPercentage.toFixed(0)}% LOAD</span>
+                      <div className="w-16 h-1.5 bg-white/20 rounded-full mt-2 overflow-hidden p-0.5">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.min(100, budgetPercentage)}%` }}
+                          className="h-full bg-white rounded-full transition-all shadow-[0_0_8px_#fff]" 
+                        />
                       </div>
                     </div>
                   )}
@@ -227,55 +263,62 @@ export default function Dashboard() {
           </motion.div>
         </motion.div>
 
+        {/* Analyst Intelligence */}
         <motion.div 
           variants={item}
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.4 }}
           className="grid gap-6"
         >
-          <Card className="glass-card border-none overflow-hidden relative">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-black uppercase tracking-[0.3em] flex items-center gap-3">
+          <Card className="glass-card border-none overflow-hidden relative min-h-[300px]">
+            <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+            <CardHeader className="pb-4 pt-8">
+              <CardTitle className="text-xs font-black uppercase tracking-[0.4em] flex items-center gap-3 text-glow">
                 <Zap className="h-4 w-4 text-primary fill-primary animate-pulse" />
-                Analyst HUD
+                Analyst HUD Intelligence
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6 pt-4">
-              <div className="p-6 rounded-[2rem] bg-white/5 border border-white/5 space-y-6">
-                <div className="text-sm font-medium leading-relaxed space-y-4">
-                  <p className="text-lg font-bold">
-                    {categoryData.length > 0 ? (
-                      <>
-                        Highest activity detected in <span className="text-primary">"{categoryData[0]?.name}"</span>. 
-                        Impact level: {((categoryData[0]?.value / (totalOverallMonthlySpent || 1)) * 100).toFixed(1)}%.
-                      </>
-                    ) : (
-                      "Initializing data streams. Record a cycle to begin analysis."
-                    )}
-                  </p>
+            <CardContent className="space-y-8 pt-4">
+              <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/5 space-y-8 relative overflow-hidden group/hud">
+                <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/hud:opacity-100 transition-opacity" />
+                <div className="text-sm font-medium leading-relaxed space-y-6 relative z-10">
+                  <div className="flex items-start gap-4">
+                    <div className="h-10 w-10 rounded-xl glass flex items-center justify-center shrink-0 border-white/5">
+                      <Activity className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="text-xl font-black tracking-tight uppercase">
+                      {categoryData.length > 0 ? (
+                        <>
+                          Highest activity in <span className="text-primary text-glow">"{categoryData[0]?.name}"</span>. 
+                          Protocol Impact: {((categoryData[0]?.value / (totalOverallMonthlySpent || 1)) * 100).toFixed(1)}%.
+                        </>
+                      ) : (
+                        "Initializing ledger streams. Record a cycle to begin heuristic analysis."
+                      )}
+                    </p>
+                  </div>
                   
                   {totalBudget > 0 && (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                          <span>Month Cycle Progress</span>
-                          <span>{Math.min(100, (totalOverallMonthlySpent / totalBudget) * 100).toFixed(0)}%</span>
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-end">
+                          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Month Cycle Efficiency</span>
+                          <span className="text-xs font-black text-primary text-glow">{Math.min(100, (totalOverallMonthlySpent / totalBudget) * 100).toFixed(0)}%</span>
                         </div>
-                        <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden p-0.5">
+                        <div className="h-3 w-full bg-white/5 rounded-full overflow-hidden p-1 border border-white/5">
                           <motion.div 
                             initial={{ width: 0 }}
                             animate={{ width: `${Math.min(100, (totalOverallMonthlySpent / totalBudget) * 100)}%` }}
                             className={cn(
-                              "h-full rounded-full transition-all duration-1000",
-                              totalOverallMonthlySpent > totalBudget ? 'bg-destructive glow-destructive' : 'bg-primary glow-primary'
+                              "h-full rounded-full transition-all duration-1500",
+                              totalOverallMonthlySpent > totalBudget ? 'bg-destructive shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-primary glow-primary'
                             )}
                           />
                         </div>
                       </div>
                       
-                      <div className="grid gap-2 sm:grid-cols-2">
+                      <div className="grid gap-3 sm:grid-cols-2">
                         {storeCategories.map(cat => {
                           const budget = user.categoryBudgets?.[cat] || 0;
                           const spent = categorySpending[cat] || 0;
@@ -285,12 +328,15 @@ export default function Dashboard() {
                                 key={cat} 
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                className="flex items-center justify-between p-3 rounded-xl bg-black/20 border border-white/5"
+                                className="flex items-center justify-between p-4 rounded-2xl bg-black/40 border border-white/5 shadow-inner"
                               >
                                 <span className="text-[10px] font-black uppercase tracking-widest opacity-70">{cat}</span>
-                                <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full", spent > budget ? "bg-destructive/20 text-destructive border border-destructive/30" : "bg-orange-500/20 text-orange-500 border border-orange-500/30")}>
-                                  {spent > budget ? "OVER LIMIT" : "APPROACHING"}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <div className={cn("h-1.5 w-1.5 rounded-full animate-pulse", spent > budget ? "bg-destructive" : "bg-orange-500")} />
+                                  <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-lg border", spent > budget ? "bg-destructive/10 text-destructive border-destructive/20" : "bg-orange-500/10 text-orange-500 border-orange-500/20")}>
+                                    {spent > budget ? "OVER LIMIT" : "APPROACHING"}
+                                  </span>
+                                </div>
                               </motion.div>
                             );
                           }
@@ -301,10 +347,12 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
-              <Button variant="outline" asChild className="w-full rounded-2xl gap-2 font-black uppercase tracking-widest h-14 border-white/10 hover:bg-white/5 group">
-                <Link href="/analytics">
-                  Access Deep Metrics
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+
+              <Button variant="ghost" asChild className="w-full rounded-[2rem] gap-3 font-black uppercase tracking-[0.3em] h-16 border border-white/10 hover:bg-white/5 transition-all group overflow-hidden relative">
+                <div className="absolute inset-0 bg-primary/5 translate-y-full group-hover:translate-y-0 transition-transform" />
+                <Link href="/analytics" className="relative z-10 flex items-center gap-3">
+                  Access Deep Data Metrics
+                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" />
                 </Link>
               </Button>
             </CardContent>
