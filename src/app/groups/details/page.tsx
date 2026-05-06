@@ -484,6 +484,50 @@ function GroupDetailContent() {
         </div>
       </main>
 
+      {/* QR Invitation Dialog */}
+      <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[2rem] p-8 border-none shadow-2xl glass-card">
+          <DialogHeader className="mb-6 text-center">
+            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-glow">Invite Node</DialogTitle>
+            <DialogDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground opacity-60">
+              SCAN TO JOIN SECTOR
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col items-center gap-8 py-4">
+            <div className="p-4 bg-white rounded-[2rem] shadow-inner">
+              <QRCodeSVG value={shareUrl} size={200} />
+            </div>
+            
+            <div className="w-full space-y-4">
+              <div className="flex items-center gap-2 p-4 bg-white/5 rounded-2xl border border-white/10 group">
+                <Input 
+                  value={shareUrl} 
+                  readOnly 
+                  className="h-8 bg-transparent border-none text-[10px] font-black uppercase tracking-widest p-0 focus-visible:ring-0"
+                />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-primary"
+                  onClick={copyToClipboard}
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              
+              <Button 
+                className="w-full h-12 rounded-2xl bg-[#25D366] hover:bg-[#25D366]/90 font-black uppercase tracking-widest text-[10px] gap-2 shadow-lg"
+                onClick={handleShareToWhatsApp}
+              >
+                <Share2 className="h-4 w-4" />
+                WhatsApp Protocol
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!settlementTarget} onOpenChange={(open) => !open && setSettlementTarget(null)}>
         <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[2rem] p-8 border-none shadow-2xl glass-card">
           <DialogHeader className="mb-6">
@@ -544,6 +588,33 @@ function GroupDetailContent() {
           <DialogFooter className="mt-8">
             <Button className="w-full rounded-2xl font-black uppercase tracking-widest text-[10px] h-12 gap-2 bg-primary glow-primary" onClick={() => { setIsMembersOpen(false); setIsQrOpen(true); }}>
               Initialize peer sync
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[2rem] p-8 border-none shadow-2xl glass-card">
+          <DialogHeader className="mb-6 text-center">
+            <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4 glow-primary">
+              <UserPlus className="h-8 w-8" />
+            </div>
+            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-glow">Join Sector</DialogTitle>
+            <DialogDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground opacity-60">
+              Link to {group?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm text-center text-muted-foreground leading-relaxed">
+            Authorized node requesting access to this vault. Synchronize data streams?
+          </p>
+          <DialogFooter className="mt-8 gap-3">
+            <Button variant="ghost" className="h-12 rounded-xl font-black uppercase tracking-widest text-[10px]" onClick={() => setIsJoinDialogOpen(false)}>Abort</Button>
+            <Button 
+              className="flex-1 h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-primary glow-primary transition-all active:scale-95" 
+              onClick={handleJoinGroup}
+              disabled={isJoining}
+            >
+              {isJoining ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Sync"}
             </Button>
           </DialogFooter>
         </DialogContent>
