@@ -22,7 +22,8 @@ import {
   BarChart3,
   Coins,
   Zap,
-  BellRing
+  BellRing,
+  Loader2
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -46,8 +47,9 @@ import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase
 import { collection, query, orderBy, doc, updateDoc, arrayUnion, where } from "firebase/firestore";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { cn, getCurrencySymbol } from "@/lib/utils";
+import { cn, getCurrencySymbol, formatCompactNumber } from "@/lib/utils";
 import { QRCodeSVG } from "qrcode.react";
+import { motion } from "framer-motion";
 
 interface SettlementTarget {
   from: string;
@@ -225,13 +227,6 @@ function GroupDetailContent() {
     }
   };
 
-  /**
-   * 🔔 Simulation: Notify Members
-   * This function tests the Progressive Web App (PWA) notification capability.
-   * It checks for browser support, requests permissions, and schedules a 
-   * background notification using the registered Service Worker.
-   * Useful for demonstrating real-time bill alerts to new users.
-   */
   const simulateGroupNotification = async () => {
     if (!("Notification" in window)) {
       toast({ title: "Not Supported", description: "Your browser doesn't support push notifications." });
@@ -244,19 +239,14 @@ function GroupDetailContent() {
       
       toast({ 
         title: "Simulation Started", 
-        description: "Notification will appear in 3 seconds. Lock your phone or leave the app to see the background behavior." 
+        description: "Notification will appear in 3 seconds." 
       });
 
       setTimeout(async () => {
         await registration.showNotification(`New Bill in ${group.name}`, {
-          body: `💸 ${user?.name} just added a ${getCurrencySymbol(user?.currency)}50.00 expense for Dinner.`,
+          body: `💸 ${user?.name} just added a ${getCurrencySymbol(user?.currency)}50.00 expense.`,
           icon: '/wallet.png',
           badge: '/wallet.png',
-          tag: `expense-${groupId}`,
-          data: {
-            targetUrl: `/groups/details?groupId=${groupId}`,
-            groupId: groupId
-          }
         });
       }, 3000);
     }
@@ -279,9 +269,9 @@ function GroupDetailContent() {
     window.location.href = whatsappUrl;
   };
 
-  if (!groupId) return <div className="p-8 text-center">Missing Group ID</div>;
-  if (groupLoading) return <div className="flex h-screen items-center justify-center animate-pulse text-primary font-bold">Loading group...</div>;
-  if (!group) return <div className="p-8 text-center">Group not found</div>;
+  if (!groupId) return <div className="p-8 text-center glass-card rounded-3xl m-8 font-black text-destructive uppercase tracking-widest">Missing Group Context</div>;
+  if (groupLoading) return <div className="h-screen flex items-center justify-center bg-background"><div className="h-12 w-12 animate-spin rounded-[1rem] border-4 border-primary border-t-transparent glow-primary" /></div>;
+  if (!group) return <div className="p-8 text-center glass-card rounded-3xl m-8 font-black text-destructive uppercase tracking-widest">Vault Not Found</div>;
 
   const symbol = getCurrencySymbol(user?.currency);
   const myNet = settlementInfo.stats[user?.uid || ""]?.net || 0;
@@ -289,156 +279,150 @@ function GroupDetailContent() {
   return (
     <>
       <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-7xl mx-auto w-full">
-        <header className="mb-6">
-          <Button 
-            variant="ghost" 
-            className="mb-2 -ml-2 text-muted-foreground hover:text-primary gap-2 px-2"
+        <motion.header 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-10"
+        >
+          <button 
+            className="mb-4 -ml-2 text-muted-foreground hover:text-primary gap-2 flex items-center transition-all px-2 py-1 uppercase font-black text-[10px] tracking-widest"
             onClick={() => router.push("/groups")}
           >
             <ArrowLeft className="h-4 w-4" />
-            Groups
-          </Button>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-2 sm:gap-1">
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <h2 className="text-2xl md:text-3xl font-bold font-headline text-primary truncate max-w-[240px] sm:max-w-none">{group.name}</h2>
+            Network nodes
+          </button>
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-3">
+                <h2 className="text-3xl md:text-5xl font-black text-glow uppercase tracking-tighter truncate max-w-[240px] sm:max-w-none">{group.name}</h2>
                 <div className="flex gap-1">
                   <Button 
                     variant="outline" 
                     size="icon" 
-                    className="h-8 w-8 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm shrink-0"
+                    className="h-8 w-8 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary glow-primary transition-all shrink-0"
                     onClick={() => setIsQrOpen(true)}
                   >
-                    <QrCode className="h-4 w-4" />
+                    <QrCode className="h-3.5 w-3.5" />
                   </Button>
-                  
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="icon" 
-                          className="h-8 w-8 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary transition-all active:scale-95 shadow-sm shrink-0"
-                          onClick={simulateGroupNotification}
-                        >
-                          <BellRing className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="bg-primary text-white border-none rounded-lg font-bold shadow-xl">
-                        <p>Simulate Push Notification: Test real-time alerts for members.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="h-8 w-8 rounded-xl border-primary/20 bg-card hover:bg-primary/5 hover:text-primary glow-primary transition-all shrink-0"
+                    onClick={simulateGroupNotification}
+                  >
+                    <BellRing className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </div>
               <button 
-                className="flex items-center gap-2 mt-0.5 text-sm text-muted-foreground hover:text-primary transition-colors group w-fit"
+                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground hover:text-primary transition-colors group w-fit"
                 onClick={() => setIsMembersOpen(true)}
               >
-                <Users className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                <span className="font-medium underline-offset-4 group-hover:underline">{group.members?.length || 0} Members</span>
+                <Users className="h-3 w-3 group-hover:scale-110 transition-transform" />
+                {group.members?.length || 0} SECURED NODES
               </button>
             </div>
 
             <Button 
-              className="bg-primary hover:bg-primary/90 gap-2 h-11 rounded-xl font-bold shadow-lg shadow-primary/20 w-full sm:w-auto"
+              className="bg-primary hover:bg-primary/90 gap-2 h-12 px-6 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg glow-primary w-full sm:w-auto"
               onClick={() => setIsQrOpen(true)}
             >
               <UserPlus className="h-4 w-4" />
-              Add Members
+              Sync Peer
             </Button>
           </div>
-        </header>
+        </motion.header>
 
-        <div className="grid gap-6 lg:grid-cols-1 mb-8">
-          <div className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Card className="border-none shadow-sm bg-card rounded-2xl relative overflow-hidden group/card">
-                <CardHeader className="pb-2 px-4 sm:px-6">
+        <div className="grid gap-6 mb-8">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+              <Card className="glass-card rounded-[2rem] overflow-hidden group/card relative">
+                <div className="absolute top-0 right-0 p-4">
+                   <Zap className="h-4 w-4 text-accent fill-accent animate-pulse" />
+                </div>
+                <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active Group Spend</CardTitle>
+                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Network Total</CardTitle>
                     <Button 
                       variant="ghost" 
                       size="sm" 
                       asChild
-                      className="h-7 px-2 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10 rounded-lg opacity-0 group-hover/card:opacity-100 transition-opacity"
+                      className="h-7 px-2 text-[9px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 rounded-lg opacity-0 group-hover/card:opacity-100 transition-opacity"
                     >
                       <Link href={`/groups/analytics?groupId=${groupId}`}>
                         <BarChart3 className="h-3 w-3 mr-1" />
-                        Details
+                        Metrics
                       </Link>
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-                  <div className="text-2xl sm:text-3xl font-bold text-primary">{symbol}{totalSpent.toFixed(2)}</div>
-                  <div className="flex items-center gap-1 mt-1 text-accent text-[10px] sm:text-[11px] font-bold uppercase">
-                    <Zap className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-accent" />
-                    Unsettled Total
-                  </div>
+                <CardContent>
+                  <div className="text-3xl font-black text-primary text-glow">{symbol}{formatCompactNumber(totalSpent)}</div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mt-1">Active group load</p>
                 </CardContent>
               </Card>
-              <Card className="border-none shadow-sm bg-card rounded-2xl relative overflow-hidden group/card">
-                <CardHeader className="pb-2 px-4 sm:px-6">
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
+              <Card className="glass-card rounded-[2rem] overflow-hidden group/card relative">
+                <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Net Position</CardTitle>
-                    <div className="flex items-center gap-1">
-                      {Math.abs(myNet) > 0.01 && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          asChild
-                          className="h-7 px-2 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10 rounded-lg"
-                        >
-                          <Link href={`/groups/settlements?groupId=${groupId}`}>
-                            <Zap className="h-3 w-3 mr-1" />
-                            Settle Up
-                          </Link>
-                        </Button>
-                      )}
-                    </div>
+                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Self Node Net</CardTitle>
+                    {Math.abs(myNet) > 0.01 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        asChild
+                        className="h-7 px-2 text-[9px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 rounded-lg"
+                      >
+                        <Link href={`/groups/settlements?groupId=${groupId}`}>
+                          <Zap className="h-3 w-3 mr-1" />
+                          Settle
+                        </Link>
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
-                <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                <CardContent>
                   <div className={cn(
-                    "text-2xl sm:text-3xl font-bold",
+                    "text-3xl font-black text-glow",
                     myNet > 0.01 ? "text-green-500" : 
                     myNet < -0.01 ? "text-destructive" : 
                     "text-foreground"
                   )}>
-                    {symbol}{Math.abs(myNet).toFixed(2)}
+                    {symbol}{formatCompactNumber(Math.abs(myNet))}
                   </div>
-                  <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-1 uppercase font-bold tracking-tight">
-                    {myNet > 0.01 ? "You are owed" : myNet < -0.01 ? "You owe" : "Settled"}
+                  <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mt-1">
+                    {myNet > 0.01 ? "Owed from network" : myNet < -0.01 ? "Due to peers" : "Balanced"}
                   </p>
                 </CardContent>
               </Card>
-            </div>
+            </motion.div>
+          </div>
 
-            <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
-              <CardHeader className="border-b px-4 sm:px-6 py-4 flex flex-row items-center justify-between">
-                <CardTitle className="font-headline text-base sm:text-lg font-bold">Group History</CardTitle>
-                <Button variant="link" asChild className="text-accent font-bold p-0 h-auto text-xs sm:text-sm">
-                  <Link href={`/groups/transactions?groupId=${groupId}`}>All Transactions</Link>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <Card className="glass-card rounded-[2.5rem] overflow-hidden border-white/5">
+              <CardHeader className="border-b border-white/5 px-6 py-5 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-black uppercase tracking-[0.3em]">Historical Ledger</CardTitle>
+                <Button variant="link" asChild className="text-accent font-black uppercase tracking-widest text-[10px] p-0 h-auto">
+                  <Link href={`/groups/transactions?groupId=${groupId}`}>Scan All Cycles</Link>
                 </Button>
               </CardHeader>
               <CardContent className="p-0">
                 {expensesLoading ? (
-                  <div className="py-20 flex justify-center"><div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" /></div>
+                  <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary glow-primary" /></div>
                 ) : !groupExpenses || groupExpenses.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-                    <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                      <Receipt className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-lg font-bold font-headline">No shared expenses</h3>
-                    <p className="text-sm text-muted-foreground max-w-xs mt-1">Activities will appear here once you start tracking.</p>
+                  <div className="flex flex-col items-center justify-center py-20 text-center px-6">
+                    <Receipt className="h-12 w-12 text-primary mb-6 opacity-30 glow-primary" />
+                    <h3 className="text-lg font-black uppercase tracking-tight text-glow">Zero Activity Detected</h3>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-2">Initialize a cycle to begin ledger tracking.</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-muted">
-                    {groupExpenses.slice(0, 10).map((expense) => {
+                  <div className="divide-y divide-white/5">
+                    {groupExpenses.slice(0, 8).map((expense) => {
                       const payerName = expense.paidBy === user?.uid 
                         ? "You" 
-                        : (memberProfiles?.find(m => m.uid === expense.paidBy)?.name || "Member");
+                        : (memberProfiles?.find(m => m.uid === expense.paidBy)?.name || "Peer");
                       
                       const userShare = expense.splitBetween?.find((s: any) => s.userId === user?.uid)?.amount || 0;
                       const isPayer = expense.paidBy === user?.uid;
@@ -446,60 +430,49 @@ function GroupDetailContent() {
                       const isSettlement = expense.category === 'Settlement';
 
                       return (
-                        <div key={expense.id} className="group flex items-center hover:bg-muted/5 transition-colors">
+                        <div key={expense.id} className="group flex items-center hover:bg-white/5 transition-all">
                           <Link 
                             href={`/expenses/details?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}
-                            className="flex-1 flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 min-w-0"
+                            className="flex-1 flex items-center justify-between px-6 py-5 min-w-0"
                           >
-                            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                            <div className="flex items-center gap-5 min-w-0">
                               <div className={cn(
-                                "h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center text-lg sm:text-xl shrink-0",
-                                isSettlement ? "bg-accent/10 text-accent" : "bg-primary/10 text-primary"
+                                "h-14 w-14 rounded-2xl flex items-center justify-center text-xl shrink-0 glass shadow-inner transition-transform group-hover:scale-110",
+                                isSettlement ? "text-accent glow-accent" : "text-primary glow-primary"
                               )}>
-                                {isSettlement ? <Coins className="h-5 w-5 sm:h-6 sm:w-6" /> : (expense.category[0] || "💰")}
+                                {isSettlement ? <Coins className="h-6 w-6" /> : (expense.category[0] || "💰")}
                               </div>
                               <div className="min-w-0">
-                                <div className="flex items-center gap-1.5">
-                                  <p className="font-bold text-sm sm:text-base truncate">{expense.category}</p>
-                                </div>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                  <span className="text-[10px] sm:text-[11px] font-medium text-muted-foreground uppercase whitespace-nowrap">
+                                <p className="font-black text-base uppercase tracking-tight truncate">{expense.category}</p>
+                                <div className="flex items-center gap-3 mt-1">
+                                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                                     {mounted ? format(expense.date, "MMM dd") : ""}
                                   </span>
-                                  <span className="h-0.5 w-0.5 bg-muted-foreground rounded-full"></span>
-                                  <span className="text-[9px] sm:text-[10px] uppercase font-bold text-accent truncate">
-                                    {payerName} {isSettlement ? "transferred" : "paid"}
+                                  <div className="h-1 w-1 bg-white/10 rounded-full" />
+                                  <span className="text-[9px] font-black uppercase tracking-widest text-accent truncate">
+                                    {payerName} paid
                                   </span>
                                 </div>
                               </div>
                             </div>
-                            <div className="text-right shrink-0 pl-4">
-                              <p className="font-bold text-base sm:text-lg text-foreground">
-                                {isSettlement ? "" : "-"}{symbol}{expense.amount.toFixed(2)}
+                            <div className="text-right shrink-0">
+                              <p className="font-black text-xl text-glow tracking-tighter">
+                                {isSettlement ? "" : "-"}{symbol}{formatCompactNumber(expense.amount)}
                               </p>
                               <p className={cn(
-                                "text-[9px] sm:text-[10px] font-bold uppercase tracking-tight truncate max-w-[100px] sm:max-w-none",
+                                "text-[9px] font-black uppercase tracking-widest",
                                 netImpact > 0.01 ? "text-green-500" : netImpact < -0.01 ? "text-destructive" : "text-muted-foreground"
                               )}>
                                 {isSettlement ? (
-                                  isPayer ? `You paid ${symbol}${expense.amount.toFixed(2)}` : `You received ${symbol}${expense.amount.toFixed(2)}`
+                                  isPayer ? `Outflow` : `Inflow`
                                 ) : (
-                                  netImpact > 0.01 ? `You are owed ${symbol}${netImpact.toFixed(2)}` : 
-                                  netImpact < -0.01 ? `You owe ${symbol}${Math.abs(netImpact).toFixed(2)}` : 
-                                  "Not involved"
+                                  netImpact > 0.01 ? `+${symbol}${formatCompactNumber(netImpact)}` : 
+                                  netImpact < -0.01 ? `-${symbol}${formatCompactNumber(Math.abs(netImpact))}` : 
+                                  "Stable"
                                 )}
                               </p>
                             </div>
                           </Link>
-                          <div className="pr-4 sm:pr-6 shrink-0 hidden sm:block">
-                            {!expense.isSettled && (
-                              <Button asChild variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}&groupId=${groupId}`}>
-                                  <Edit2 className="h-4 w-4 text-muted-foreground" />
-                                </Link>
-                              </Button>
-                            )}
-                          </div>
                         </div>
                       );
                     })}
@@ -507,120 +480,72 @@ function GroupDetailContent() {
                 )}
               </CardContent>
             </Card>
-          </div>
+          </motion.div>
         </div>
       </main>
 
       <Dialog open={!!settlementTarget} onOpenChange={(open) => !open && setSettlementTarget(null)}>
-        <DialogContent className="sm:max-w-[400px] rounded-2xl p-6 border-none shadow-2xl">
-          <DialogHeader className="mb-4">
-            <DialogTitle className="text-xl font-bold font-headline flex items-center gap-2">
-              <Coins className="h-5 w-5 text-primary" />
-              Settle Payment
+        <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[2rem] p-8 border-none shadow-2xl glass-card">
+          <DialogHeader className="mb-6">
+            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-glow flex items-center gap-3">
+              <Coins className="h-6 w-6 text-primary animate-pulse" />
+              Settle
             </DialogTitle>
-            <DialogDescription>
-              {settlementTarget?.fromName} paying {settlementTarget?.toName}.
+            <DialogDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground opacity-60">
+              {settlementTarget?.fromName} paying {settlementTarget?.toName}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label htmlFor="settle-amount" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Amount ({symbol})</Label>
+              <Label htmlFor="settle-amount" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Amount ({symbol})</Label>
               <Input 
                 id="settle-amount"
                 type="number"
                 step="0.01"
-                className="h-14 rounded-xl text-2xl font-bold bg-muted/30 border-none"
+                className="h-16 rounded-2xl text-3xl font-black bg-white/5 border-none text-glow focus:ring-primary"
                 value={customAmount}
                 onChange={(e) => setCustomAmount(e.target.value)}
                 autoFocus
               />
-              <p className="text-[10px] text-muted-foreground font-medium">
-                The total debt is {symbol}{settlementTarget?.amount.toFixed(2)}. You can edit this amount for partial settlements.
-              </p>
             </div>
           </div>
 
-          <DialogFooter className="mt-6">
-            <Button variant="outline" className="h-11 rounded-xl font-bold" onClick={() => setSettlementTarget(null)}>Cancel</Button>
-            <Button className="flex-1 h-11 rounded-xl font-bold bg-primary shadow-lg shadow-primary/10 transition-all active:scale-95" onClick={handleIndividualSettle}>
-              Record Payment
+          <DialogFooter className="mt-8 gap-3">
+            <Button variant="ghost" className="h-12 rounded-xl font-black uppercase tracking-widest text-[10px]" onClick={() => setSettlementTarget(null)}>Abort</Button>
+            <Button className="flex-1 h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-primary glow-primary transition-all active:scale-95" onClick={handleIndividualSettle}>
+              Execute Payment
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isMembersOpen} onOpenChange={setIsMembersOpen}>
-        <DialogContent className="sm:max-w-[400px] rounded-2xl p-6 border-none shadow-2xl">
-          <DialogHeader className="mb-4">
-            <DialogTitle className="text-xl font-bold font-headline flex items-center gap-2"><Users className="h-5 w-5 text-primary" />Group Members</DialogTitle>
-            <DialogDescription>Sharing expenses in <span className="font-bold text-foreground">"{group.name}"</span>.</DialogDescription>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[2rem] p-8 border-none shadow-2xl glass-card">
+          <DialogHeader className="mb-6">
+            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-glow flex items-center gap-3">
+              <Users className="h-6 w-6 text-primary" />
+              Peers
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="space-y-3 max-h-[40vh] overflow-y-auto custom-scrollbar">
             {membersLoading ? (
-              <div className="py-8 flex flex-col items-center gap-2"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /><span className="text-xs text-muted-foreground">Loading members...</span></div>
+              <div className="py-8 flex flex-col items-center gap-2"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
             ) : memberProfiles?.map((member) => (
-              <div key={member.uid} className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl border border-border/50">
-                <Avatar className="h-10 w-10 border-2 border-background"><AvatarFallback className="bg-primary/10 text-primary font-bold">{member.name?.[0] || <UserIcon className="h-4 w-4" />}</AvatarFallback></Avatar>
+              <div key={member.uid} className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+                <Avatar className="h-10 w-10 border-2 border-white/10"><AvatarFallback className="bg-primary/20 text-primary font-black uppercase text-xs">{member.name?.[0]}</AvatarFallback></Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate">{member.name} {member.uid === user?.uid && "(You)"}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{member.email}</p>
+                  <p className="text-sm font-black uppercase tracking-tight truncate">{member.name} {member.uid === user?.uid && "(YOU)"}</p>
+                  <p className="text-[9px] font-bold text-muted-foreground truncate uppercase opacity-50">{member.email}</p>
                 </div>
               </div>
             ))}
           </div>
-          <DialogFooter className="mt-6">
-            <Button className="w-full rounded-xl font-bold h-11 gap-2 bg-primary shadow-lg shadow-primary/10 transition-all active:scale-95" onClick={() => { setIsMembersOpen(false); setIsQrOpen(true); }}>
-              <UserPlus className="h-4 w-4" />Invite More Members
+          <DialogFooter className="mt-8">
+            <Button className="w-full rounded-2xl font-black uppercase tracking-widest text-[10px] h-12 gap-2 bg-primary glow-primary" onClick={() => { setIsMembersOpen(false); setIsQrOpen(true); }}>
+              Initialize peer sync
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isJoinDialogOpen} onOpenChange={(open) => { if (!isJoining) setIsJoinDialogOpen(open); }}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl p-8 border-none shadow-2xl">
-          <DialogHeader className="text-center space-y-4">
-            <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto"><UserPlus className="h-8 w-8" /></div>
-            <DialogTitle className="text-2xl font-bold font-headline">Join Group?</DialogTitle>
-            <DialogDescription className="text-base">Would you like to join <span className="font-bold text-foreground">"{group?.name}"</span>?</DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex flex-col sm:flex-row gap-3 mt-6">
-            <Button variant="outline" className="flex-1 h-12 rounded-xl font-bold order-2 sm:order-1 transition-all active:scale-95" onClick={() => { setIsJoinDialogOpen(false); router.push("/dashboard"); }} disabled={isJoining}>No</Button>
-            <Button className="flex-1 h-12 rounded-xl font-bold bg-primary order-1 sm:order-2 transition-all active:scale-95 shadow-lg shadow-primary/20" onClick={handleJoinGroup} disabled={isJoining}>{isJoining ? "Joining..." : "Ok"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
-        <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[1.5rem] p-5 sm:p-10 border-none shadow-2xl overflow-hidden">
-          <DialogHeader className="text-center space-y-2 mb-2">
-            <DialogTitle className="text-xl sm:text-2xl font-bold font-headline text-primary">Invite Members</DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm px-2">Share this code with friends to join <span className="font-bold text-foreground">"{group.name}"</span></DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col items-center gap-5 py-2 overflow-x-hidden">
-            <div className="bg-white p-4 sm:p-6 rounded-[1.5rem] shadow-xl shadow-primary/5 border border-primary/10">
-              <QRCodeSVG 
-                value={shareUrl} 
-                size={160} 
-                level="H" 
-                includeMargin={false}
-                className="w-32 h-32 sm:w-40 sm:h-40"
-              />
-            </div>
-            <div className="w-full space-y-3">
-              <div className="flex items-center gap-2.5 p-2.5 bg-muted/30 rounded-lg border border-border/40 overflow-hidden w-full">
-                <span className="flex-1 text-[10px] sm:text-xs truncate text-muted-foreground font-mono block overflow-hidden">{shareUrl}</span>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-primary shrink-0 rounded-md" onClick={copyToClipboard}>{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</Button>
-              </div>
-              <Button 
-                className="w-full rounded-xl font-bold h-12 gap-2 text-sm bg-primary shadow-lg shadow-primary/10 transition-all active:scale-95" 
-                onClick={handleShareToWhatsApp}
-              >
-                <Share2 className="h-4 w-4" />
-                Share Group Link
-              </Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
     </>
@@ -629,9 +554,9 @@ function GroupDetailContent() {
 
 export default function GroupDetailPage() {
   return (
-    <div className="flex min-h-screen flex-col md:flex-row bg-background">
+    <div className="flex min-h-screen flex-col md:flex-row bg-background no-scrollbar">
       <Navbar />
-      <Suspense fallback={<div className="flex h-screen items-center justify-center animate-pulse text-primary font-bold">Loading group details...</div>}>
+      <Suspense fallback={null}>
         <GroupDetailContent />
       </Suspense>
     </div>

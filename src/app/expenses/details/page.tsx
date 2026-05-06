@@ -14,7 +14,11 @@ import {
   Users,
   Wallet,
   Receipt,
-  Trash2
+  Trash2,
+  Loader2,
+  Calendar,
+  Zap,
+  ShieldAlert
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
@@ -22,7 +26,7 @@ import { useDoc, useFirestore, useMemoFirebase, useCollection, deleteDocumentNon
 import { doc, collection, query, where } from "firebase/firestore";
 import { ExpenseType } from "@/types";
 import Image from "next/image";
-import { cn, getCurrencySymbol } from "@/lib/utils";
+import { cn, getCurrencySymbol, formatCompactNumber } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +39,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
 
 function ExpenseDetailContent() {
   const router = useRouter();
@@ -65,182 +70,194 @@ function ExpenseDetailContent() {
     if (!docRef || !user || !id) return;
     deleteDocumentNonBlocking(docRef, user.uid, user.name);
     deleteExpenseFromStore(id);
-    toast({ title: "Expense deleted", description: "The transaction has been removed from your history." });
+    toast({ title: "Cycle Deleted", description: "Record removed from unified ledger." });
     router.back();
   };
 
-  if (!id) return <div className="p-8 text-center">Invalid Transaction ID</div>;
-
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
+  if (isLoading) return <div className="h-screen flex items-center justify-center bg-background"><Loader2 className="h-12 w-12 animate-spin text-primary glow-primary" /></div>;
 
   if (!expense || expense.isDeleted) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold">Transaction not found</h2>
-          <Button variant="link" onClick={() => router.back()}>Go Back</Button>
-        </div>
+      <div className="flex h-screen items-center justify-center bg-background p-6">
+        <Card className="glass-card p-12 text-center rounded-[3rem] border-dashed border-white/10 max-w-md">
+          <ShieldAlert className="h-16 w-16 text-destructive mx-auto mb-6 opacity-40" />
+          <h2 className="text-2xl font-black uppercase tracking-tight text-glow">Signal Lost</h2>
+          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-4 mb-8">This transaction cycle no longer exists in the vault.</p>
+          <Button onClick={() => router.back()} className="w-full h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-primary glow-primary">Return to Command</Button>
+        </Card>
       </div>
     );
   }
 
   const payer = memberProfiles?.find(m => m.uid === expense.paidBy);
-  const payerName = expense.paidBy === user?.uid ? "You" : (payer?.name || "Unknown");
+  const payerName = expense.paidBy === user?.uid ? "YOU" : (payer?.name || "PEER").toUpperCase();
   const symbol = getCurrencySymbol(user?.currency);
 
   return (
     <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-3xl mx-auto w-full">
-      <header className="mb-8 flex items-center justify-between">
-        <Button variant="ghost" className="gap-2 -ml-2 text-muted-foreground hover:text-primary" onClick={() => router.back()}>
+      <motion.header 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-10 flex items-center justify-between"
+      >
+        <button 
+          className="text-muted-foreground hover:text-primary gap-2 flex items-center transition-all px-2 py-1 uppercase font-black text-[10px] tracking-widest"
+          onClick={() => router.back()}
+        >
           <ArrowLeft className="h-4 w-4" />
           Back
-        </Button>
+        </button>
         
         <div className="flex items-center gap-2">
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl">
-                <Trash2 className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl glass border-white/5 hover:bg-destructive/10 hover:text-destructive transition-all">
+                <Trash2 className="h-4 w-4" />
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="rounded-2xl">
+            <AlertDialogContent className="glass-card rounded-[2rem] border-none shadow-2xl">
               <AlertDialogHeader>
-                <AlertDialogTitle>Delete Transaction?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete this expense? This action cannot be undone.
+                <AlertDialogTitle className="text-xl font-black uppercase tracking-tighter text-glow">Purge Record?</AlertDialogTitle>
+                <AlertDialogDescription className="text-xs uppercase font-bold tracking-widest opacity-60">
+                  This action will permanently delist this cycle from the ledger.
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="rounded-xl font-bold">Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90 rounded-xl font-bold">
-                  Delete
+              <AlertDialogFooter className="mt-6 gap-3">
+                <AlertDialogCancel className="h-12 rounded-xl font-black uppercase tracking-widest text-[10px]">Abort</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90 glow-destructive h-12 rounded-xl font-black uppercase tracking-widest text-[10px]">
+                  Confirm Purge
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
 
-          <Button asChild variant="outline" className="rounded-xl font-bold gap-2">
+          <Button asChild className="rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 h-10 px-4 bg-primary glow-primary">
             <Link href={`/expenses/edit?id=${expense.id}&type=${expense.type}${groupId ? `&groupId=${groupId}` : ''}`}>
-              <Edit2 className="h-4 w-4" />
-              Edit
+              <Edit2 className="h-3.5 w-3.5" />
+              Edit Cycle
             </Link>
           </Button>
         </div>
-      </header>
+      </motion.header>
 
-      <div className="space-y-6">
-        <section className="text-center py-8">
-          <div className="inline-flex h-16 w-16 bg-primary/10 rounded-full items-center justify-center text-primary mb-4">
-            <Receipt className="h-8 w-8" />
+      <div className="space-y-10">
+        <motion.section 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="text-center py-8"
+        >
+          <div className="inline-flex h-20 w-20 glass rounded-[2.5rem] items-center justify-center text-primary mb-6 glow-primary">
+            <Receipt className="h-10 w-10" />
           </div>
-          <h1 className="text-5xl font-bold font-headline text-foreground tracking-tight">
-            {symbol}{expense.amount.toFixed(2)}
+          <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-glow">
+            {symbol}{formatCompactNumber(expense.amount)}
           </h1>
-          <p className="text-muted-foreground mt-2 font-medium flex items-center justify-center gap-2">
-            {expense.category}
-            <span className="h-1 w-1 bg-muted-foreground rounded-full"></span>
-            {format(expense.date, "MMM dd, yyyy")}
-          </p>
-        </section>
+          <div className="flex items-center justify-center gap-4 mt-6">
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">{expense.category}</span>
+            <div className="h-1 w-1 bg-white/20 rounded-full" />
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">{format(expense.date, "MMM dd, yyyy")}</span>
+          </div>
+        </motion.section>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Card className="border-none bg-card rounded-2xl shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <Wallet className="h-3.5 w-3.5" />
-                Payment Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Paid by</span>
-                <span className="text-sm font-bold text-foreground">{payerName}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Method</span>
-                <span className="text-sm font-bold text-foreground">Wisely {expense.type === 'GROUP' ? 'Shared' : 'Private'}</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none bg-card rounded-2xl shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <Tag className="h-3.5 w-3.5" />
-                Meta Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Recorded by</span>
-                <span className="text-sm font-bold text-foreground">{expense.createdBy}</span>
-              </div>
-              {expense.notes && (
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Notes</p>
-                  <p className="text-sm font-medium">{expense.notes}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {expense.type === 'GROUP' && (
-            <Card className="border-none bg-card rounded-2xl shadow-sm md:col-span-2">
-              <CardHeader>
-                <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                  <Users className="h-3.5 w-3.5" />
-                  Split Breakdown ({expense.splitType})
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+            <Card className="glass-card rounded-[2rem] border-white/5 h-full relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-30" />
+              <CardHeader className="pb-4">
+                <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground flex items-center gap-3">
+                  <Wallet className="h-3.5 w-3.5 text-primary" />
+                  Source Node
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="divide-y divide-muted">
-                  {expense.splitBetween?.map((split: any) => {
-                    const member = memberProfiles?.find(m => m.uid === split.userId);
-                    return (
-                      <div key={split.userId} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-primary/5 flex items-center justify-center text-primary font-bold text-xs">
-                            {member?.name?.[0] || "?"}
-                          </div>
-                          <span className="text-sm font-medium">{member?.uid === user?.uid ? "You" : (member?.name || "Unknown")}</span>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-bold">{symbol}{split.amount.toFixed(2)}</p>
-                          {split.percentage && <p className="text-[10px] text-muted-foreground">{split.percentage}%</p>}
-                        </div>
-                      </div>
-                    );
-                  })}
+              <CardContent className="space-y-6">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Paid By</p>
+                  <p className="text-lg font-black text-primary uppercase tracking-tight">{payerName}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Vault Status</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-foreground">
+                    {expense.type === 'GROUP' ? 'SHARED NETWORK' : 'PRIVATE VAULT'}
+                  </p>
                 </div>
               </CardContent>
             </Card>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+            <Card className="glass-card rounded-[2rem] border-white/5 h-full relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-30" />
+              <CardHeader className="pb-4">
+                <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground flex items-center gap-3">
+                  <Tag className="h-3.5 w-3.5 text-accent" />
+                  Meta Protocol
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Recorded By</p>
+                  <p className="text-sm font-black uppercase tracking-tight">{expense.createdBy}</p>
+                </div>
+                {expense.notes && (
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Signal Notes</p>
+                    <p className="text-xs font-bold italic leading-relaxed text-muted-foreground">"{expense.notes}"</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {expense.type === 'GROUP' && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="md:col-span-2">
+              <Card className="glass-card rounded-[2rem] border-white/5 relative overflow-hidden">
+                <CardHeader className="border-b border-white/5">
+                  <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground flex items-center gap-3">
+                    <Users className="h-3.5 w-3.5 text-primary" />
+                    Peer Distribution ({expense.splitType})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="divide-y divide-white/5">
+                    {expense.splitBetween?.map((split: any) => {
+                      const member = memberProfiles?.find(m => m.uid === split.userId);
+                      return (
+                        <div key={split.userId} className="flex items-center justify-between p-6 hover:bg-white/5 transition-colors">
+                          <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 rounded-xl glass border-white/10 flex items-center justify-center text-primary font-black text-xs uppercase">
+                              {member?.name?.[0] || "?"}
+                            </div>
+                            <span className="text-xs font-black uppercase tracking-tight">{member?.uid === user?.uid ? "YOU" : (member?.name || "PEER")}</span>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-base font-black tracking-tight text-glow">{symbol}{formatCompactNumber(split.amount)}</p>
+                            {split.percentage && <p className="text-[9px] font-black text-primary uppercase tracking-widest">{split.percentage}% LOAD</p>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           )}
 
           {expense.receiptUrl && (
-            <Card className="border-none bg-card rounded-2xl shadow-sm md:col-span-2 overflow-hidden">
-              <CardHeader className="bg-muted/30">
-                <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                  <Receipt className="h-3.5 w-3.5" />
-                  Receipt Preview
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0 flex justify-center bg-black/5">
-                <div className="relative w-full max-w-md aspect-[3/4] my-4 shadow-xl border">
-                  <Image 
-                    src={expense.receiptUrl} 
-                    alt="Receipt" 
-                    fill 
-                    className="object-contain"
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="md:col-span-2">
+              <Card className="glass-card rounded-[2rem] border-white/5 overflow-hidden">
+                <CardHeader className="bg-white/5 border-b border-white/5 py-4">
+                  <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground flex items-center gap-3">
+                    <Receipt className="h-3.5 w-3.5 text-accent" />
+                    Record capture
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-8 flex justify-center bg-black/20">
+                  <div className="relative w-full max-w-sm aspect-[3/4] shadow-2xl rounded-2xl overflow-hidden border border-white/10 group">
+                    <Image src={expense.receiptUrl} alt="Receipt Capture" fill className="object-contain transition-transform group-hover:scale-105 duration-700" />
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           )}
         </div>
       </div>
@@ -250,9 +267,9 @@ function ExpenseDetailContent() {
 
 export default function TransactionDetailPage() {
   return (
-    <div className="flex min-h-screen flex-col md:flex-row bg-background">
+    <div className="flex min-h-screen flex-col md:flex-row bg-background no-scrollbar">
       <Navbar />
-      <Suspense fallback={<div className="flex h-screen items-center justify-center bg-background"><div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" /></div>}>
+      <Suspense fallback={null}>
         <ExpenseDetailContent />
       </Suspense>
     </div>

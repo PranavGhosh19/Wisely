@@ -12,7 +12,6 @@ import { useStore } from "@/lib/store";
 import { useTheme } from "next-themes";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  User as UserIcon, 
   Mail, 
   Phone, 
   Moon, 
@@ -31,13 +30,16 @@ import {
   Type,
   Camera,
   Loader2,
-  MessageSquare
+  MessageSquare,
+  Cpu,
+  Zap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth, useFirestore, updateDocumentNonBlocking } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { doc } from "firebase/firestore";
 import Image from "next/image";
+import { motion } from "framer-motion";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -49,8 +51,6 @@ export default function ProfilePage() {
     categories, 
     addCategory, 
     removeCategory, 
-    installPrompt, 
-    setInstallPrompt,
     fontSize,
     setFontSize
   } = useStore();
@@ -69,75 +69,47 @@ export default function ProfilePage() {
   if (!mounted || !user) return null;
 
   const handleLogout = async () => {
-    if (auth) {
-      await signOut(auth);
-    }
+    if (auth) await signOut(auth);
     logout();
-    router.push("/auth");
+    router.push("/");
   };
 
   const handleAddCategory = (e: React.FormEvent) => {
     e.preventDefault();
     const catName = newCategory.trim();
     if (!catName || !user || !db) return;
-    
-    if (categories.includes(catName)) {
-      toast({
-        variant: "destructive",
-        title: "Already exists",
-        description: "This category is already in your list."
-      });
-      return;
-    }
+    if (categories.includes(catName)) return;
 
     const updatedCategories = [...categories, catName];
     const userRef = doc(db, "users", user.uid);
-    
-    // Save to Firestore (Non-blocking)
     updateDocumentNonBlocking(userRef, { categories: updatedCategories });
-
-    // Update local state for immediate feedback
     addCategory(catName);
     setNewCategory("");
-    toast({
-      title: "Category added",
-      description: `"${catName}" is now available for your expenses.`
-    });
+    toast({ title: "Sector Added", description: `"${catName}" class enabled.` });
   };
 
   const handleRemoveCategory = (cat: string) => {
     if (!user || !db) return;
-    
     const updatedCategories = categories.filter(c => c !== cat);
     const userRef = doc(db, "users", user.uid);
-    
-    // Save to Firestore (Non-blocking)
     updateDocumentNonBlocking(userRef, { categories: updatedCategories });
-
-    // Update local state
     removeCategory(cat);
-    toast({
-      title: "Category removed",
-      description: `"${cat}" has been removed from your list.`
-    });
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast({ variant: "destructive", title: "File too large", description: "Please pick an image smaller than 5MB." });
+        toast({ variant: "destructive", title: "Memory Overload", description: "Max file size: 5MB." });
         return;
       }
-      
       setUploading(true);
       const reader = new FileReader();
       reader.onloadend = () => {
         if (user && db) {
-          const base64String = reader.result as string;
           const userRef = doc(db, "users", user.uid);
-          updateDocumentNonBlocking(userRef, { photoURL: base64String });
-          toast({ title: "Photo Updated", description: "Your profile picture has been saved." });
+          updateDocumentNonBlocking(userRef, { photoURL: reader.result as string });
+          toast({ title: "Avatar Synced", description: "Identity visual updated." });
         }
         setUploading(false);
       };
@@ -145,279 +117,144 @@ export default function ProfilePage() {
     }
   };
 
-  const handleReferFriend = () => {
-    const text = `Hey! I'm using Wisely to track my expenses and split bills with friends. Check it out!`;
-    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-    window.location.href = whatsappUrl;
-  };
-
-  const appearanceOptions = [
-    { id: 'light', name: 'Light', icon: Sun },
-    { id: 'dark', name: 'Dark', icon: Moon },
-    { id: 'system', name: 'System', icon: Monitor },
-  ];
-
-  const fontSizeOptions = [
-    { id: '10px', name: '10px' },
-    { id: '12px', name: '12px' },
-    { id: '14px', name: '14px' },
-  ];
-
   return (
-    <div className="flex min-h-screen flex-col md:flex-row bg-background">
+    <div className="flex min-h-screen flex-col md:flex-row bg-background no-scrollbar">
       <Navbar />
       
-      <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-2xl mx-auto w-full">
-        <header className="mb-8 text-center md:text-left">
-          <h2 className="text-3xl font-bold font-headline text-primary">Settings</h2>
-          <p className="text-muted-foreground">Manage your profile, categories, and preferences.</p>
-        </header>
+      <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-4xl mx-auto w-full">
+        <motion.header 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-10 text-center md:text-left space-y-1"
+        >
+          <h2 className="text-3xl md:text-5xl font-black text-glow uppercase tracking-tighter">System</h2>
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">User Terminal / Configuration</p>
+        </motion.header>
 
-        <div className="space-y-6">
-          <Card className="border-none shadow-sm overflow-hidden rounded-2xl">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-4">
-                <div 
-                  className="relative group cursor-pointer"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold border-4 border-background shadow-sm overflow-hidden relative">
-                    {user.photoURL ? (
-                      <Image 
-                        src={user.photoURL} 
-                        alt={user.name} 
-                        fill 
-                        className="object-cover"
-                      />
-                    ) : (
-                      user.name?.[0] || "?"
-                    )}
-                    
-                    {uploading && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <Loader2 className="h-6 w-6 text-white animate-spin" />
-                      </div>
-                    )}
-                    
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Camera className="h-6 w-6 text-white" />
-                    </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card className="glass-card rounded-[2.5rem] border-white/5 overflow-hidden h-full">
+            <CardHeader className="pb-6">
+              <div className="flex items-center gap-6">
+                <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                  <div className="h-20 w-20 rounded-[1.5rem] glass border-2 border-primary/20 flex items-center justify-center text-primary text-3xl font-black shadow-inner overflow-hidden relative glow-primary">
+                    {user.photoURL ? <Image src={user.photoURL} alt={user.name} fill className="object-cover" /> : user.name?.[0]}
+                    {uploading && <div className="absolute inset-0 bg-black/60 flex items-center justify-center"><Loader2 className="h-6 w-6 text-primary animate-spin" /></div>}
+                    <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><Camera className="h-6 w-6 text-white" /></div>
                   </div>
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    className="hidden" 
-                    accept="image/*" 
-                    onChange={handleImageUpload} 
-                  />
+                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
                 </div>
-                <div>
-                  <CardTitle className="font-headline text-xl">{user.name}</CardTitle>
-                  <CardDescription className="text-sm">Personal Account</CardDescription>
+                <div className="space-y-1">
+                  <CardTitle className="font-black uppercase tracking-tight text-xl">{user.name}</CardTitle>
+                  <CardDescription className="text-[9px] font-black uppercase tracking-widest text-primary">Identity Authorized</CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4 pt-0">
-              <div className="grid gap-3">
-                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl border border-border/50">
-                  <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider leading-none mb-1">Email</p>
-                    <p className="text-sm font-medium truncate">{user.email}</p>
-                  </div>
+            <CardContent className="space-y-4">
+              <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-4">
+                <div className="flex items-center gap-3">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-[11px] font-black uppercase tracking-tight truncate">{user.email}</span>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl border border-border/50">
-                  <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider leading-none mb-1">Phone Number</p>
-                    <p className="text-sm font-medium truncate">{user.phoneNumber || "Not provided"}</p>
-                  </div>
+                <div className="flex items-center gap-3">
+                  <Cpu className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-[11px] font-black uppercase tracking-tight">Active Terminal Node</span>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm rounded-2xl">
+          <Card className="glass-card rounded-[2.5rem] border-white/5 overflow-hidden h-full">
             <CardHeader className="pb-4">
-              <CardTitle className="font-headline text-lg flex items-center gap-2">
-                <Tag className="h-5 w-5 text-primary" />
-                Expense Categories
+              <CardTitle className="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3">
+                <Tag className="h-4 w-4 text-primary" />
+                Sector classes
               </CardTitle>
-              <CardDescription>Customize the categories you use for tracking.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <form onSubmit={handleAddCategory} className="flex gap-2">
                 <Input 
-                  placeholder="New category name..." 
+                  placeholder="NEW SECTOR..." 
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
-                  className="rounded-xl h-11"
+                  className="rounded-xl h-11 glass border-white/5 text-[10px] font-black uppercase tracking-widest"
                 />
-                <Button type="submit" size="icon" className="h-11 w-11 shrink-0 rounded-xl bg-primary">
+                <Button type="submit" size="icon" className="h-11 w-11 shrink-0 rounded-xl bg-primary glow-primary">
                   <Plus className="h-5 w-5" />
                 </Button>
               </form>
-              <div className="flex flex-wrap gap-2 pt-2">
+              <div className="flex flex-wrap gap-2">
                 {categories.map((cat) => (
-                  <div 
-                    key={cat} 
-                    className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-full border border-border/50 group hover:bg-muted transition-colors"
-                  >
-                    <span className="text-sm font-medium">{cat}</span>
-                    <button 
-                      onClick={() => handleRemoveCategory(cat)}
-                      className="text-muted-foreground hover:text-destructive transition-colors"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                  <div key={cat} className="group flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 hover:border-primary/50 transition-all">
+                    <span className="text-[9px] font-black uppercase tracking-widest">{cat}</span>
+                    <button onClick={() => handleRemoveCategory(cat)} className="text-muted-foreground hover:text-destructive transition-colors"><X className="h-3 w-3" /></button>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm rounded-2xl">
+          <Card className="glass-card rounded-[2.5rem] border-white/5 overflow-hidden">
             <CardHeader className="pb-4">
-              <CardTitle className="font-headline text-lg flex items-center gap-2">
-                <Monitor className="h-5 w-5 text-primary" />
-                Appearance
+              <CardTitle className="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3">
+                <Monitor className="h-4 w-4 text-primary" />
+                HUD Theme
               </CardTitle>
-              <CardDescription>Customize how Wisely looks on your device.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-2 p-1 bg-muted/50 rounded-xl border border-border/50">
-                {appearanceOptions.map((option) => {
-                  const Icon = option.icon;
-                  const isActive = theme === option.id;
-                  return (
-                    <button
-                      key={option.id}
-                      onClick={() => setTheme(option.id)}
-                      className={cn(
-                        "flex flex-col items-center gap-1.5 py-3 rounded-lg transition-all",
-                        isActive 
-                          ? "bg-background text-primary shadow-sm" 
-                          : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-                      )}
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">{option.name}</span>
-                    </button>
-                  );
-                })}
+              <div className="grid grid-cols-3 gap-2 p-1 bg-white/5 rounded-2xl border border-white/5">
+                {[
+                  { id: 'light', icon: Sun, label: 'Standard' },
+                  { id: 'dark', icon: Moon, label: 'Dark HUD' },
+                  { id: 'system', icon: Monitor, label: 'Neural' }
+                ].map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setTheme(opt.id)}
+                    className={cn(
+                      "flex flex-col items-center gap-2 py-4 rounded-xl transition-all",
+                      theme === opt.id ? "bg-primary text-primary-foreground glow-primary" : "text-muted-foreground hover:bg-white/5"
+                    )}
+                  >
+                    <opt.icon className="h-5 w-5" />
+                    <span className="text-[8px] font-black uppercase tracking-widest">{opt.label}</span>
+                  </button>
+                ))}
               </div>
             </CardContent>
           </Card>
 
-          <div className="space-y-2">
-            <p className="text-[10px] font-bold uppercase text-muted-foreground px-2 tracking-widest">Preferences & Feedback</p>
-            <div className="bg-card rounded-2xl overflow-hidden shadow-sm border-none">
-              <button 
-                className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
-                onClick={() => router.push("/profile/currency")}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                    <Globe className="h-4 w-4" />
+          <div className="space-y-4">
+            <p className="text-[9px] font-black uppercase tracking-[0.4em] text-muted-foreground px-4">Protocols</p>
+            <div className="glass-card rounded-[2rem] border-white/5 overflow-hidden divide-y divide-white/5">
+              {[
+                { label: 'Default Currency', value: user.currency || "USD", icon: Globe, color: 'text-emerald-500', href: '/profile/currency' },
+                { label: 'Notifications', value: user.notificationSettings?.masterEnabled ? 'ACTIVE' : 'SILENT', icon: Bell, color: 'text-primary', href: '/profile/notifications' },
+                { label: 'Feedback Signal', icon: MessageSquare, color: 'text-accent', href: '/profile/feedback' }
+              ].map((item, i) => (
+                <button key={i} className="w-full flex items-center justify-between p-5 hover:bg-white/5 transition-all group" onClick={() => router.push(item.href)}>
+                  <div className="flex items-center gap-4">
+                    <div className={cn("h-10 w-10 rounded-xl glass border-white/5 flex items-center justify-center transition-all group-hover:scale-110", item.color)}>
+                      <item.icon className="h-4 w-4" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest">{item.label}</p>
+                      {item.value && <p className="text-[9px] font-bold text-muted-foreground opacity-60 uppercase">{item.value}</p>}
+                    </div>
                   </div>
-                  <div className="flex flex-col items-start">
-                    <span className="text-sm font-medium">Default Currency</span>
-                    <span className="text-[10px] text-muted-foreground font-bold uppercase">{user.currency || "USD"}</span>
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
-
-              <button 
-                className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
-                onClick={() => router.push("/profile/notifications")}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                    <Bell className="h-4 w-4" />
-                  </div>
-                  <div className="flex flex-col items-start">
-                    <span className="text-sm font-medium">Notifications</span>
-                    <span className={cn(
-                      "text-[10px] font-bold uppercase",
-                      user.notificationSettings?.masterEnabled ? "text-emerald-500" : "text-muted-foreground"
-                    )}>
-                      {user.notificationSettings?.masterEnabled ? "Enabled" : "Silenced"}
-                    </span>
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
-
-              <button 
-                className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
-                onClick={handleReferFriend}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-pink-500/10 flex items-center justify-center text-pink-500">
-                    <Share2 className="h-4 w-4" />
-                  </div>
-                  <span className="text-sm font-medium">Refer a Friend</span>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
-
-              <div className="p-4 border-b border-border/50">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
-                    <Type className="h-4 w-4" />
-                  </div>
-                  <span className="text-sm font-medium">Font Size</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 p-1 bg-muted/30 rounded-xl">
-                  {fontSizeOptions.map((option) => {
-                    const isActive = fontSize === option.id;
-                    return (
-                      <button
-                        key={option.id}
-                        onClick={() => setFontSize(option.id)}
-                        className={cn(
-                          "py-2 rounded-lg transition-all text-[10px] font-bold uppercase tracking-wider",
-                          isActive 
-                            ? "bg-background text-primary shadow-sm" 
-                            : "text-muted-foreground hover:bg-background/30"
-                        )}
-                      >
-                        {option.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <button 
-                className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/50"
-                onClick={() => router.push("/profile/feedback")}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                    <MessageSquare className="h-4 w-4" />
-                  </div>
-                  <span className="text-sm font-medium">Give Feedback</span>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                </button>
+              ))}
             </div>
           </div>
-
-          <Button 
-            variant="outline" 
-            className="w-full h-12 rounded-2xl border-2 text-destructive hover:text-destructive hover:bg-destructive/5 font-bold gap-2 mt-4"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" />
-            Sign Out of Wisely
-          </Button>
-          
-          <p className="text-center text-[10px] text-muted-foreground uppercase font-medium tracking-[0.2em] py-4">
-            Wisely Version 1.2.0 (with Deep Linking)
-          </p>
         </div>
+
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-12 flex flex-col items-center gap-8">
+          <Button variant="ghost" className="w-full h-14 rounded-[2rem] border-2 border-destructive/20 text-destructive hover:bg-destructive/5 font-black uppercase tracking-widest text-[10px] gap-3" onClick={handleLogout}>
+            <LogOut className="h-4 w-4" />
+            Terminate Session
+          </Button>
+          <p className="text-[8px] font-black uppercase tracking-[0.6em] text-muted-foreground/30">Wisely Terminal v1.2.0 • Secured Link Established</p>
+        </motion.div>
       </main>
     </div>
   );
