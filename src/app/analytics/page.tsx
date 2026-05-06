@@ -6,27 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { 
   PieChart as RePieChart, Pie, Cell, ResponsiveContainer, 
   BarChart as ReBarChart, Bar, XAxis, YAxis, CartesianGrid,
-  LineChart as ReLineChart, Line, Tooltip, Legend
+  LineChart as ReLineChart, Line, Tooltip
 } from "recharts";
 import { useStore } from "@/lib/store";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, collectionGroup, query, where } from "firebase/firestore";
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
-import { PieChart, Layers, User, Users, Calendar as CalendarIcon, X, BarChart3, Download, Mail, FileSpreadsheet, Loader2, ChevronDown, Zap } from "lucide-react";
+import { Layers, Calendar as CalendarIcon, BarChart3, FileSpreadsheet, Loader2, Zap } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getCurrencySymbol, cn, formatCompactNumber } from "@/lib/utils";
+import { getCurrencySymbol, formatCompactNumber } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger,
-  DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu";
-import { generateMonthlySpreadsheet, downloadWorkbook } from "@/lib/export-utils";
-import { sendMonthlyReportAction } from "@/app/actions/send-report";
-import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 
 const COLORS = ['#10B981', '#3380FF', '#facc15', '#8B5CF6', '#EC4899', '#A89E92'];
@@ -75,12 +65,9 @@ const renderCustomizedLabel = (props: any, symbol: string) => {
 export default function AnalyticsPage() {
   const { user, categories: storeCategories } = useStore();
   const db = useFirestore();
-  const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
   const [scope, setScope] = useState<"ALL" | "PERSONAL" | "GROUP">("ALL");
-  const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -107,12 +94,6 @@ export default function AnalyticsPage() {
   }, [db, user]);
   const { data: groupExpenses, isLoading: loadingGroups } = useCollection(groupExpensesQuery);
 
-  const groupsQuery = useMemoFirebase(() => {
-    if (!db || !user) return null;
-    return query(collection(db, "groups"), where("members", "array-contains", user.uid));
-  }, [db, user]);
-  const { data: userGroups } = useCollection(groupsQuery);
-
   const filteredExpenses = useMemo(() => {
     let base: any[] = [];
     const personal = (personalExpenses || []).filter(e => e.category !== 'Settlement');
@@ -124,9 +105,6 @@ export default function AnalyticsPage() {
       base = personal;
     } else if (scope === "GROUP") {
       base = group;
-      if (selectedGroupId !== "all") {
-        base = base.filter(exp => exp.groupId === selectedGroupId);
-      }
     }
 
     if (selectedDate) {
@@ -147,7 +125,7 @@ export default function AnalyticsPage() {
     }
 
     return base;
-  }, [personalExpenses, groupExpenses, scope, selectedGroupId, selectedDate]);
+  }, [personalExpenses, groupExpenses, scope, selectedDate]);
 
   const pieData = useMemo(() => {
     const categories: Record<string, number> = {};
@@ -166,10 +144,7 @@ export default function AnalyticsPage() {
 
     if (scope === "ALL") base = [...personal, ...group];
     else if (scope === "PERSONAL") base = personal;
-    else if (scope === "GROUP") {
-      base = group;
-      if (selectedGroupId !== "all") base = base.filter(exp => exp.groupId === selectedGroupId);
-    }
+    else if (scope === "GROUP") base = group;
 
     const months = [];
     for (let i = 5; i >= 0; i--) {
@@ -192,30 +167,7 @@ export default function AnalyticsPage() {
     });
 
     return months.map(m => ({ name: m.name, amount: parseFloat(m.amount.toFixed(2)) }));
-  }, [personalExpenses, groupExpenses, scope, selectedGroupId]);
-
-  const splitData = useMemo(() => {
-    const now = new Date();
-    const dateStart = selectedDate ? startOfDay(selectedDate) : startOfMonth(now);
-    const dateEnd = selectedDate ? endOfDay(selectedDate) : endOfMonth(now);
-
-    const filterByDate = (exp: any) => {
-      const expDate = new Date(exp.date);
-      return isWithinInterval(expDate, { start: dateStart, end: dateEnd });
-    };
-
-    const personal = (personalExpenses || [])
-      .filter(e => e.category !== 'Settlement' && filterByDate(e))
-      .reduce((acc, exp) => acc + exp.amount, 0);
-    const group = (groupExpenses || [])
-      .filter(e => e.category !== 'Settlement' && filterByDate(e))
-      .reduce((acc, exp) => acc + exp.amount, 0);
-      
-    return [
-      { name: 'Personal', amount: parseFloat(personal.toFixed(2)) },
-      { name: 'Group Shared', amount: parseFloat(group.toFixed(2)) }
-    ];
-  }, [personalExpenses, groupExpenses, selectedDate]);
+  }, [personalExpenses, groupExpenses, scope]);
 
   const budgetChartData = useMemo(() => {
     if (!user || !storeCategories) return [];
@@ -457,11 +409,11 @@ export default function AnalyticsPage() {
                                 <p className="font-black text-[10px] uppercase tracking-[0.2em] text-primary mb-2">{data.name}</p>
                                 <div className="flex justify-between gap-8 items-center text-[10px] font-bold">
                                   <span className="opacity-60 uppercase">Protocol Limit:</span>
-                                  <span className="tabular-nums">{symbol}{data.originalBudget.toFixed(0)}</span>
+                                  <span className="tabular-nums">{symbol}{formatCompactNumber(data.originalBudget)}</span>
                                 </div>
                                 <div className="flex justify-between gap-8 items-center text-[10px] font-bold">
                                   <span className="opacity-60 uppercase">Current Usage:</span>
-                                  <span className="text-primary tabular-nums">{symbol}{data.originalSpent.toFixed(0)}</span>
+                                  <span className="text-primary tabular-nums">{symbol}{formatCompactNumber(data.originalSpent)}</span>
                                 </div>
                               </div>
                             );
@@ -490,50 +442,6 @@ export default function AnalyticsPage() {
                 </CardContent>
               </Card>
             )}
-
-            <Card className="glass-card rounded-[2.5rem] overflow-hidden border-white/5 md:col-span-2">
-              <CardHeader className="pb-0 pt-8 px-8">
-                <CardTitle className="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3">
-                  Vault Split Analysis
-                </CardTitle>
-                <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-1">Private vs Shared Ledger Balance</CardDescription>
-              </CardHeader>
-              <CardContent className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ReBarChart data={splitData} layout="vertical" margin={{ left: 40, right: 100, top: 40 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.05)" />
-                    <XAxis 
-                      type="number" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 10, fontWeight: '800', fill: 'rgba(255,255,255,0.4)' }}
-                      tickFormatter={(value) => `${symbol}${formatCompactNumber(value)}`}
-                    />
-                    <YAxis 
-                      dataKey="name" 
-                      type="category" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 10, fontWeight: '900', fill: '#fff', textTransform: 'uppercase' }}
-                    />
-                    <Bar 
-                      dataKey="amount" 
-                      fill="hsl(var(--primary))" 
-                      radius={[0, 10, 10, 0]} 
-                      barSize={40} 
-                      label={{ 
-                        position: 'right', 
-                        fill: '#facc15', 
-                        fontSize: 10, 
-                        fontWeight: 900,
-                        offset: 12,
-                        formatter: (val: number) => `${symbol}${formatCompactNumber(val)}`
-                      }}
-                    />
-                  </ReBarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
           </motion.div>
         )}
       </main>

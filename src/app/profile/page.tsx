@@ -5,14 +5,12 @@ import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useStore } from "@/lib/store";
 import { useTheme } from "next-themes";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Mail, 
-  Phone, 
   Moon, 
   Sun, 
   Monitor, 
@@ -22,11 +20,7 @@ import {
   Bell,
   Tag,
   Plus,
-  Trash2,
-  Smartphone,
-  Share2,
   Globe,
-  Type,
   Camera,
   Loader2,
   MessageSquare,
@@ -42,8 +36,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 
 /**
- * ProfilePage - Reimagined as a high-fidelity "System Configuration" hub.
- * Features a hardware-inspired HUD aesthetic with responsive reactive states.
+ * ProfilePage - High-fidelity "System Configuration" hub.
  */
 export default function ProfilePage() {
   const router = useRouter();
@@ -54,9 +47,7 @@ export default function ProfilePage() {
     logout, 
     categories, 
     addCategory, 
-    removeCategory, 
-    fontSize,
-    setFontSize
+    removeCategory
   } = useStore();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();

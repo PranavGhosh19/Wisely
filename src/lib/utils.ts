@@ -33,7 +33,7 @@ export function getCurrencySymbol(currencyCode: string = 'USD') {
 
 /**
  * Formats a number into a compact string with suffixes (K, L, M, B).
- * Supports Lakh (L) for values >= 100,000 as requested.
+ * Supports Lakh (L) for values >= 100,000.
  */
 export function formatCompactNumber(value: number): string {
   const abs = Math.abs(value);

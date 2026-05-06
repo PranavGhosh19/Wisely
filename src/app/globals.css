@@ -56,6 +56,10 @@
     box-shadow: 0 0 30px -10px hsl(var(--accent) / 0.5);
   }
 
+  .glow-destructive {
+    box-shadow: 0 0 25px -5px hsl(var(--destructive) / 0.4);
+  }
+
   .text-glow {
     text-shadow: 0 0 12px hsl(var(--primary) / 0.4);
   }
@@ -70,6 +74,16 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-primary/20 rounded-full;
   }
 }
 
