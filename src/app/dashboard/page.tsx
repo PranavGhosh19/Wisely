@@ -169,12 +169,7 @@ export default function Dashboard() {
               asChild
               variant="outline"
               className="h-12 px-6 text-[10px] font-black uppercase tracking-widest rounded-2xl border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/5 hover:text-white shadow-[0_0_15px_rgba(212,175,55,0.15)] transition-all active:scale-95"
-            >
-              <Link href="/wisely-club">
-                <Crown className="h-4 w-4 mr-2" />
-                The Club
-              </Link>
-            </Button>
+            ><Link href="/wisely-club"><Crown className="h-4 w-4 mr-2" />The Club</Link></Button>
           </div>
         </motion.header>
 
@@ -349,11 +344,7 @@ export default function Dashboard() {
               </div>
 
               <Button variant="ghost" asChild className="w-full rounded-[2rem] gap-3 font-black uppercase tracking-[0.3em] h-16 border border-white/10 hover:bg-white/5 transition-all group overflow-hidden relative">
-                <Link href="/analytics" className="relative z-10 flex items-center justify-center gap-3">
-                  <div className="absolute inset-0 bg-primary/5 translate-y-full group-hover:translate-y-0 transition-transform -z-10" />
-                  Access Deep Data Metrics
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" />
-                </Link>
+                <Link href="/analytics" className="relative z-10 flex items-center justify-center gap-3"><div className="absolute inset-0 bg-primary/5 translate-y-full group-hover:translate-y-0 transition-transform -z-10" />Access Deep Data Metrics<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" /></Link>
               </Button>
             </CardContent>
           </Card>
