@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -110,6 +109,7 @@ export default function BudgetsPage() {
     } catch (error: any) {
       toast({ variant: "destructive", title: "Sync Failed", description: error.message });
     } finally {
+      } finally {
       setSaving(false);
     }
   };

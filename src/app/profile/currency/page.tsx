@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, Suspense, useMemo } from "react";
@@ -336,7 +335,7 @@ function CurrencyContent() {
             {isSetup && (
               <div className="flex flex-col items-center gap-2 opacity-30">
                  <Cpu className="h-4 w-4 text-primary" />
-                 <p className="text-[8px] font-black uppercase tracking-widest italic">Node parameters can be modified via Profile > Terminal.</p>
+                 <p className="text-[8px] font-black uppercase tracking-widest italic">Node parameters can be modified via Profile {'>'} Terminal.</p>
               </div>
             )}
           </CardContent>

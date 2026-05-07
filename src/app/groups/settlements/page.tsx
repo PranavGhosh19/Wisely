@@ -1,8 +1,7 @@
-
 "use client";
 
-import { useEffect, useState, useMemo, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { use, useEffect, useState, useMemo, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,8 @@ import {
   Zap, 
   Check, 
   User as UserIcon,
+  ArrowUpRight,
+  ArrowDownLeft,
   Loader2,
   Cpu
 } from "lucide-react";
@@ -46,8 +47,8 @@ interface SettlementTarget {
 
 function SettlementsContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const groupId = searchParams.get('groupId');
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const groupId = searchParams?.get('groupId');
   const { user } = useStore();
   const db = useFirestore();
   const { toast } = useToast();

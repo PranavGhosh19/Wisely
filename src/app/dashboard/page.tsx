@@ -165,7 +165,9 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <Button asChild variant="outline" className="h-12 px-6 text-[10px] font-black uppercase tracking-widest rounded-2xl border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/5 hover:text-white shadow-[0_0_15px_rgba(212,175,55,0.15)] transition-all active:scale-95"><Link href="/wisely-club"><Crown className="h-4 w-4 mr-2" />The Club</Link></Button>
+            <Button asChild variant="outline" className="h-12 px-6 text-[10px] font-black uppercase tracking-widest rounded-2xl border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/5 hover:text-white shadow-[0_0_15px_rgba(212,175,55,0.15)] transition-all active:scale-95">
+              <Link href="/wisely-club"><Crown className="h-4 w-4 mr-2" />The Club</Link>
+            </Button>
           </div>
         </motion.header>
 
