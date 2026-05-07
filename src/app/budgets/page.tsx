@@ -109,7 +109,6 @@ export default function BudgetsPage() {
     } catch (error: any) {
       toast({ variant: "destructive", title: "Sync Failed", description: error.message });
     } finally {
-      } finally {
       setSaving(false);
     }
   };

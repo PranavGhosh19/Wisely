@@ -339,7 +339,11 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <Button variant="ghost" asChild className="w-full rounded-[2rem] gap-3 font-black uppercase tracking-[0.3em] h-16 border border-white/10 hover:bg-white/5 transition-all group overflow-hidden relative"><Link href="/analytics" className="relative z-10 flex items-center justify-center gap-3">Access Deep Data Metrics<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" /></Link></Button>
+              <Button variant="ghost" asChild className="w-full rounded-[2rem] gap-3 font-black uppercase tracking-[0.3em] h-16 border border-white/10 hover:bg-white/5 transition-all group overflow-hidden relative">
+                <Link href="/analytics" className="relative z-10 flex items-center justify-center gap-3">
+                  Access Deep Data Metrics<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" />
+                </Link>
+              </Button>
             </CardContent>
           </Card>
         </motion.div>
