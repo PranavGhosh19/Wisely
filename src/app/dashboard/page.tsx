@@ -166,7 +166,10 @@ export default function Dashboard() {
             </div>
 
             <Button asChild variant="outline" className="h-12 px-6 text-[10px] font-black uppercase tracking-widest rounded-2xl border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/5 hover:text-white shadow-[0_0_15px_rgba(212,175,55,0.15)] transition-all active:scale-95">
-              <Link href="/wisely-club"><Crown className="h-4 w-4 mr-2" />The Club</Link>
+              <Link href="/wisely-club">
+                <Crown className="h-4 w-4 mr-2" />
+                The Club
+              </Link>
             </Button>
           </div>
         </motion.header>
@@ -222,8 +225,8 @@ export default function Dashboard() {
           </motion.div>
 
           <motion.div variants={item}>
-            <Link href="/budgets">
-              <Card className={cn("h-32 relative overflow-hidden transition-all duration-700 active:scale-95 group", budgetTheme.color, budgetTheme.glow)}>
+            <Link href="/budgets" className="block outline-none">
+              <Card className={cn("h-32 relative overflow-hidden transition-all duration-700 active:scale-95 group border-none shadow-none", budgetTheme.color, budgetTheme.glow)}>
                 <div className="absolute top-0 right-0 h-40 w-40 bg-white/10 rounded-full blur-[80px] -translate-y-20 translate-x-20" />
                 <CardContent className="h-full flex items-center justify-between p-6 relative z-10 text-white">
                   <div className="flex items-center gap-5">
@@ -340,7 +343,10 @@ export default function Dashboard() {
               </div>
 
               <Button variant="ghost" asChild className="w-full rounded-[2rem] gap-3 font-black uppercase tracking-[0.3em] h-16 border border-white/10 hover:bg-white/5 transition-all group overflow-hidden relative">
-                <Link href="/analytics" className="relative z-10 flex items-center justify-center gap-3">Access Deep Data Metrics<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" /></Link>
+                <Link href="/analytics" className="relative z-10 flex items-center justify-center gap-3">
+                  Access Deep Data Metrics
+                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" />
+                </Link>
               </Button>
             </CardContent>
           </Card>
