@@ -27,13 +27,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const navItems = [
-  { name: "Dash", href: "/dashboard", icon: LayoutDashboard },
-  { name: "History", href: "/transactions", icon: ReceiptText },
-  { name: "Groups", href: "/groups", icon: Users },
-  { name: "Insights", href: "/analytics", icon: PieChart },
-];
-
 function NavbarContent() {
   const pathname = usePathname();
   const router = useRouter();
@@ -60,7 +53,6 @@ function NavbarContent() {
   const isHiddenPage = pathname === "/" || pathname === "/auth" || isClubPage;
   if (isHiddenPage || !user) return null;
 
-  // Logic to hide FAB on specific sectors
   const hideFab = pathname.includes("analytics") || pathname.includes("profile");
 
   const handleSignOut = async () => {
@@ -76,31 +68,6 @@ function NavbarContent() {
 
   return (
     <TooltipProvider delayDuration={0}>
-      <AnimatePresence>
-        {!hideFab && (
-          <motion.div 
-            key="fab"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ delay: 0.5, type: "spring", stiffness: 260, damping: 20 }}
-            className="fixed bottom-28 right-8 md:bottom-12 md:right-12 z-[100] hidden md:flex"
-          >
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  asChild
-                  className="h-16 w-16 md:h-20 md:w-20 rounded-full bg-primary shadow-[0_0_35px_-5px_hsl(var(--primary)/0.6)] hover:scale-110 active:scale-95 transition-all duration-300 border-4 border-background group glow-primary p-0 flex items-center justify-center"
-                ><Link href={addExpenseUrl}><Plus className="h-8 w-8 md:h-10 md:w-10 text-white group-hover:rotate-90 transition-transform duration-500" /></Link></Button>
-              </TooltipTrigger>
-              <TooltipContent side="left" className="glass font-black uppercase text-[10px] tracking-widest px-4 py-2 mb-2 mr-2 border-primary/20">
-                Initialize Cycle
-              </TooltipContent>
-            </Tooltip>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <motion.nav 
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
@@ -118,7 +85,12 @@ function NavbarContent() {
           </div>
           
           <div className="flex flex-col gap-2">
-            {navItems.map((item) => {
+            {[
+              { name: "Dash", href: "/dashboard", icon: LayoutDashboard },
+              { name: "History", href: "/transactions", icon: ReceiptText },
+              { name: "Groups", href: "/groups", icon: Users },
+              { name: "Insights", href: "/analytics", icon: PieChart },
+            ].map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
               
@@ -190,9 +162,11 @@ function NavbarContent() {
         className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md h-20 glass-card rounded-[2.5rem] md:hidden px-2 safe-area-bottom shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
       >
         <div className="relative flex h-full items-center justify-between">
-          {navItems
-            .filter(item => item.name !== "Insights") 
-            .map((item) => {
+          {[
+            { name: "Dash", href: "/dashboard", icon: LayoutDashboard },
+            { name: "History", href: "/transactions", icon: ReceiptText },
+            { name: "Groups", href: "/groups", icon: Users },
+          ].map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
               return (
