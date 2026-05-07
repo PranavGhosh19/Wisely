@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -26,7 +27,8 @@ import {
   MessageSquare,
   Cpu,
   Zap,
-  X
+  X,
+  Type
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth, useFirestore, updateDocumentNonBlocking } from "@/firebase";
@@ -47,7 +49,9 @@ export default function ProfilePage() {
     logout, 
     categories, 
     addCategory, 
-    removeCategory
+    removeCategory,
+    fontSize,
+    setFontSize
   } = useStore();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
@@ -237,6 +241,38 @@ export default function ProfilePage() {
                   >
                     <opt.icon className="h-5 w-5" />
                     <span className="text-[8px] font-black uppercase tracking-widest">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Optical Protocol (Font Size) */}
+          <Card className="glass-card rounded-[2.5rem] border-white/5 overflow-hidden">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3">
+                <Type className="h-4 w-4 text-primary" />
+                Optical Protocol
+              </CardTitle>
+              <CardDescription className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Adjust display density</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-2 p-1 bg-white/5 rounded-2xl border border-white/5">
+                {[
+                  { id: '10px', label: 'Compact' },
+                  { id: '12px', label: 'Standard' },
+                  { id: '14px', label: 'Expanded' }
+                ].map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setFontSize(opt.id)}
+                    className={cn(
+                      "flex flex-col items-center gap-1.5 py-4 rounded-xl transition-all",
+                      fontSize === opt.id ? "bg-primary text-primary-foreground glow-primary" : "text-muted-foreground hover:bg-white/5"
+                    )}
+                  >
+                    <span className="text-[10px] font-black uppercase tracking-widest">{opt.label}</span>
+                    <span className="text-[8px] font-mono opacity-50">{opt.id}</span>
                   </button>
                 ))}
               </div>
