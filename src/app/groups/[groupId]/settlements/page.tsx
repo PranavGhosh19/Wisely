@@ -1,3 +1,4 @@
+
 "use client";
 
 import { use, useEffect, useState, useMemo, Suspense } from "react";
@@ -13,14 +14,15 @@ import {
   User as UserIcon,
   ArrowUpRight,
   ArrowDownLeft,
-  Loader2
+  Loader2,
+  Cpu
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useCollection, useMemoFirebase, useFirestore, useDoc } from "@/firebase";
 import { collection, query, doc, where } from "firebase/firestore";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { cn, getCurrencySymbol } from "@/lib/utils";
+import { cn, getCurrencySymbol, formatCompactNumber } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +36,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { User, Expense, Group, SimplifiedDebt } from "@/types";
+import { motion } from "framer-motion";
 
 interface SettlementTarget {
   from: string;
@@ -65,7 +68,6 @@ function SettlementsContent({ groupId }: { groupId: string }) {
   }, [db, groupId]);
   const { data: group, isLoading: groupLoading } = useDoc<Group>(groupRef);
 
-  // Initialize preference from Group Firebase data
   useEffect(() => {
     if (group && !hasSetInitial && group.isSmartSettleEnabled !== undefined) {
       setIsGreedyActive(group.isSmartSettleEnabled);
@@ -102,22 +104,14 @@ function SettlementsContent({ groupId }: { groupId: string }) {
 
   const settlementInfo = useMemo(() => {
     if (!group?.members || !groupExpenses) return { stats: {}, debts: [], rawDebts: [] };
-    
     const stats: Record<string, { net: number }> = {};
     group.members.forEach(uid => stats[uid] = { net: 0 });
-
     const rawDebtMap: Record<string, number> = {};
 
     groupExpenses.filter(exp => !exp.isSettled).forEach(exp => {
-      if (stats[exp.paidBy]) {
-        stats[exp.paidBy].net += exp.amount;
-      }
+      if (stats[exp.paidBy]) stats[exp.paidBy].net += exp.amount;
       exp.splitBetween?.forEach(split => {
-        if (stats[split.userId]) {
-          stats[split.userId].net -= split.amount;
-        }
-
-        // Calculate direct (raw) debts from this transaction
+        if (stats[split.userId]) stats[split.userId].net -= split.amount;
         if (split.userId !== exp.paidBy && split.amount > 0.01) {
           const key = `${split.userId}_${exp.paidBy}`;
           rawDebtMap[key] = (rawDebtMap[key] || 0) + split.amount;
@@ -125,7 +119,6 @@ function SettlementsContent({ groupId }: { groupId: string }) {
       });
     });
 
-    // Net out raw debts (A->B and B->A)
     const rawDebts: SimplifiedDebt[] = [];
     const processed = new Set<string>();
     Object.keys(rawDebtMap).forEach(key => {
@@ -134,66 +127,38 @@ function SettlementsContent({ groupId }: { groupId: string }) {
       const revKey = `${u2}_${u1}`;
       const a1 = rawDebtMap[key] || 0;
       const a2 = rawDebtMap[revKey] || 0;
-      
-      if (a1 > a2) {
-        rawDebts.push({ from: u1, to: u2, amount: a1 - a2 });
-      } else if (a2 > a1) {
-        rawDebts.push({ from: u2, to: u1, amount: a2 - a1 });
-      }
-      processed.add(key);
-      processed.add(revKey);
+      if (a1 > a2) rawDebts.push({ from: u1, to: u2, amount: a1 - a2 });
+      else if (a2 > a1) rawDebts.push({ from: u2, to: u1, amount: a2 - a1 });
+      processed.add(key); processed.add(revKey);
     });
 
-    // Greedy simplification for "Smart Settle"
-    const debtors = Object.entries(stats)
-      .filter(([_, s]) => s.net < -0.01)
-      .map(([uid, s]) => ({ uid, amount: Math.abs(s.net) }))
-      .sort((a, b) => b.amount - a.amount);
-    
-    const creditors = Object.entries(stats)
-      .filter(([_, s]) => s.net > 0.01)
-      .map(([uid, s]) => ({ uid, amount: s.net }))
-      .sort((a, b) => b.amount - a.amount);
-
+    const debtors = Object.entries(stats).filter(([_, s]) => s.net < -0.01).map(([uid, s]) => ({ uid, amount: Math.abs(s.net) })).sort((a, b) => b.amount - a.amount);
+    const creditors = Object.entries(stats).filter(([_, s]) => s.net > 0.01).map(([uid, s]) => ({ uid, amount: s.net })).sort((a, b) => b.amount - a.amount);
     const optimizedDebts: SimplifiedDebt[] = [];
     let i = 0, j = 0;
     const tempDebtors = JSON.parse(JSON.stringify(debtors));
     const tempCreditors = JSON.parse(JSON.stringify(creditors));
-
     while (i < tempDebtors.length && j < tempCreditors.length) {
       const amount = Math.min(tempDebtors[i].amount, tempCreditors[j].amount);
       optimizedDebts.push({ from: tempDebtors[i].uid, to: tempCreditors[j].uid, amount });
-      tempDebtors[i].amount -= amount;
-      tempCreditors[j].amount -= amount;
+      tempDebtors[i].amount -= amount; tempCreditors[j].amount -= amount;
       if (tempDebtors[i].amount < 0.01) i++;
       if (tempCreditors[j].amount < 0.01) j++;
     }
-
     return { stats, debts: optimizedDebts, rawDebts };
   }, [group?.members, groupExpenses]);
 
-  // Filter debts to only show those involving the current user
-  const involvedDebts = useMemo(() => {
+  const activeDebtsToShow = useMemo(() => {
     if (!user) return [];
-    return settlementInfo.debts.filter(debt => debt.from === user.uid || debt.to === user.uid);
-  }, [settlementInfo.debts, user]);
-
-  // Filter raw debts to only show those involving the current user
-  const involvedRawDebts = useMemo(() => {
-    if (!user) return [];
-    return settlementInfo.rawDebts.filter(debt => debt.from === user.uid || debt.to === user.uid);
-  }, [settlementInfo.rawDebts, user]);
-
-  const activeDebtsToShow = isGreedyActive ? involvedDebts : involvedRawDebts;
+    const base = isGreedyActive ? settlementInfo.debts : settlementInfo.rawDebts;
+    return base.filter(debt => debt.from === user.uid || debt.to === user.uid);
+  }, [settlementInfo, isGreedyActive, user]);
 
   const openSettleDialog = (debt: SimplifiedDebt) => {
     const fromUser = memberProfiles?.find(m => m.uid === debt.from);
     const toUser = memberProfiles?.find(m => m.uid === debt.to);
-    
     setSettlementTarget({
-      from: debt.from,
-      to: debt.to,
-      amount: debt.amount,
+      from: debt.from, to: debt.to, amount: debt.amount,
       fromName: debt.from === user?.uid ? "You" : (fromUser?.name || "Member"),
       toName: debt.to === user?.uid ? "you" : (toUser?.name || "Member")
     });
@@ -202,111 +167,72 @@ function SettlementsContent({ groupId }: { groupId: string }) {
 
   const handleRecordPayment = () => {
     if (!db || !groupId || !settlementTarget) return;
-    
     const amount = parseFloat(customAmount);
-    if (isNaN(amount) || amount <= 0) {
-      toast({ variant: "destructive", title: "Invalid amount", description: "Please enter a valid amount." });
-      return;
-    }
-
+    if (isNaN(amount) || amount <= 0) return;
     try {
       const settlementId = `settle-${Date.now()}`;
       const settlementRef = doc(db, "groups", groupId, "expenses", settlementId);
       const settlementData = {
-        id: settlementId,
-        amount: amount,
-        category: "Settlement",
-        type: "GROUP",
-        date: Date.now(),
-        createdBy: user?.name || "User",
-        createdById: user?.uid || "",
-        paidBy: settlementTarget.from,
-        splitBetween: [{ userId: settlementTarget.to, amount: amount }],
-        splitType: "UNEQUAL",
-        isSettled: false,
-        notes: isGreedyActive ? "Smart Settlement Recording" : "Direct Settlement Recording",
-        groupId: groupId,
-        groupMemberIds: group?.members || [],
-        isDeleted: false
+        id: settlementId, amount: amount, category: "Settlement", type: "GROUP", date: Date.now(),
+        createdBy: user?.name || "User", createdById: user?.uid || "", paidBy: settlementTarget.from,
+        splitBetween: [{ userId: settlementTarget.to, amount: amount }], splitType: "UNEQUAL", isSettled: false,
+        notes: isGreedyActive ? "Smart Settle Sync" : "Direct Settle Sync",
+        groupId: groupId, groupMemberIds: group?.members || [], isDeleted: false
       };
       setDocumentNonBlocking(settlementRef, settlementData, { merge: true });
-      toast({ title: "Payment Recorded", description: "Balance updated successfully." });
+      toast({ title: "Cycle Recorded", description: "Ledger synchronized." });
       setSettlementTarget(null);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: "Failed to record payment." });
+      toast({ variant: "destructive", title: "Sync Failed", description: "Protocol error." });
     }
   };
 
   if (!mounted) return null;
-
   const symbol = getCurrencySymbol(user?.currency);
   const isLoading = groupLoading || expensesLoading || membersLoading;
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row bg-background">
+    <div className="flex min-h-screen flex-col md:flex-row bg-background no-scrollbar">
       <Navbar />
       <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-3xl mx-auto w-full">
-        <header className="mb-8">
-          <Button 
-            variant="ghost" 
-            className="mb-4 -ml-2 text-muted-foreground hover:text-primary gap-2"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Group
-          </Button>
-          
+        <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
+          <button className="mb-4 -ml-2 text-muted-foreground hover:text-primary gap-2 flex items-center transition-all px-2 py-1 uppercase font-black text-[10px] tracking-widest" onClick={() => router.back()}><ArrowLeft className="h-4 w-4" />Back to Sector</button>
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold font-headline text-primary tracking-tight">Active Settlements</h1>
-              <p className="text-muted-foreground">Manage payments and balance the group.</p>
+            <div className="space-y-1">
+              <h1 className="text-3xl md:text-5xl font-black text-glow uppercase tracking-tighter">CLEARANCE</h1>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Network Balancing / Node Payloads</p>
             </div>
-
-            <div className="flex items-center gap-3 bg-muted/30 px-4 py-2 rounded-2xl border border-border/50">
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground leading-none">Smart Settle</span>
-                <span className="text-[9px] font-medium text-muted-foreground">Minimize Transactions</span>
+            <div className="flex items-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/10 group">
+              <div className="flex flex-col text-right">
+                <span className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">Smart Settle</span>
+                <span className="text-[8px] font-bold text-primary uppercase tracking-[0.2em]">Optimization Engine</span>
               </div>
-              <Switch 
-                checked={isGreedyActive} 
-                onCheckedChange={handleToggleSmartSettle} 
-                className="data-[state=checked]:bg-primary"
-              />
+              <Switch checked={isGreedyActive} onCheckedChange={handleToggleSmartSettle} className="data-[state=checked]:bg-primary" />
             </div>
           </div>
-        </header>
+        </motion.header>
 
         {isLoading ? (
-          <div className="flex h-64 items-center justify-center">
-            <Loader2 className="h-8 w-8 text-primary animate-spin" />
-          </div>
+          <div className="flex h-64 items-center justify-center"><Loader2 className="h-12 w-12 text-primary animate-spin glow-primary" /></div>
         ) : (
           <div className="space-y-6">
-            <Card className="border-none shadow-sm bg-card rounded-3xl overflow-hidden">
-              <CardHeader className="bg-muted/10 border-b">
-                <CardTitle className="text-lg font-headline flex items-center gap-2">
-                  <Coins className="h-5 w-5 text-accent" />
-                  {isGreedyActive ? "Smart Settlements" : "Current Standings"}
+            <Card className="glass-card rounded-[2.5rem] overflow-hidden border-white/5">
+              <CardHeader className="bg-white/5 border-b border-white/5 px-8 py-6">
+                <CardTitle className="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3">
+                  <Coins className="h-4 w-4 text-accent fill-accent" />
+                  {isGreedyActive ? "Calculated Paths" : "Direct Node Links"}
                 </CardTitle>
-                <CardDescription>
-                  {isGreedyActive 
-                    ? "Personalized transfers to balance your account efficiently." 
-                    : "Your direct debt relationships within this group."}
+                <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-1">
+                  {isGreedyActive ? "Minimized transaction payloads for efficient clearance." : "Raw debt data between network nodes."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="divide-y divide-muted">
+                <div className="divide-y divide-white/5">
                   {activeDebtsToShow.length === 0 ? (
-                    <div className="p-16 text-center">
-                      <div className="h-16 w-16 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Check className="h-8 w-8" />
-                      </div>
-                      <h3 className="text-xl font-bold font-headline">You are all settled!</h3>
-                      <p className="text-muted-foreground mt-1">
-                        {isGreedyActive 
-                          ? "No smart transfers currently involve your account." 
-                          : "You don't have any outstanding raw debts with other members."}
-                      </p>
+                    <div className="p-20 text-center">
+                      <div className="h-16 w-16 glass text-green-500 rounded-2xl flex items-center justify-center mx-auto mb-6 glow-primary border-green-500/20"><Check className="h-8 w-8" /></div>
+                      <h3 className="text-xl font-black uppercase tracking-tight text-glow">Node Balanced</h3>
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-2">Zero variance detected in your node profile.</p>
                     </div>
                   ) : (
                     activeDebtsToShow.map((debt, idx) => {
@@ -314,39 +240,26 @@ function SettlementsContent({ groupId }: { groupId: string }) {
                       const toUser = memberProfiles?.find(m => m.uid === debt.to);
                       const isFromMe = debt.from === user?.uid;
                       const isToMe = debt.to === user?.uid;
-
                       return (
-                        <div key={idx} className="p-6 hover:bg-muted/5 transition-colors group">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                            <div className="flex items-center gap-4">
-                              <div className="flex -space-x-4">
-                                <Avatar className="h-12 w-12 border-4 border-card shadow-lg">
-                                  <AvatarFallback className="bg-primary/10 text-primary font-bold">{fromUser?.name?.[0] || "?"}</AvatarFallback>
-                                </Avatar>
-                                <Avatar className="h-12 w-12 border-4 border-card shadow-lg">
-                                  <AvatarFallback className="bg-accent/10 text-accent font-bold">{toUser?.name?.[0] || "?"}</AvatarFallback>
-                                </Avatar>
+                        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.1 }} key={idx} className="p-8 hover:bg-white/5 transition-all group">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-8">
+                            <div className="flex items-center gap-6">
+                              <div className="flex -space-x-6">
+                                <Avatar className="h-14 w-14 border-4 border-background glass shadow-2xl z-20"><AvatarFallback className="bg-primary/20 text-primary font-black uppercase text-xs">{fromUser?.name?.[0]}</AvatarFallback></Avatar>
+                                <Avatar className="h-14 w-14 border-4 border-background glass shadow-2xl z-10"><AvatarFallback className="bg-accent/20 text-accent font-black uppercase text-xs">{toUser?.name?.[0]}</AvatarFallback></Avatar>
                               </div>
                               <div className="space-y-1">
-                                <p className="text-sm font-medium text-muted-foreground">
-                                  <span className={cn("font-bold text-foreground", isFromMe && "text-primary")}>{isFromMe ? "You" : (fromUser?.name || "Member")}</span>
-                                  <span className="mx-2">owes</span>
-                                  <span className={cn("font-bold text-foreground", isToMe && "text-accent")}>{isToMe ? "you" : (toUser?.name || "Member")}</span>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                                  <span className={cn("text-foreground font-black", isFromMe && "text-primary")}>{isFromMe ? "YOU" : (fromUser?.name || "NODE").toUpperCase()}</span>
+                                  <span className="mx-2 opacity-30">▶</span>
+                                  <span className={cn("text-foreground font-black", isToMe && "text-accent")}>{isToMe ? "YOU" : (toUser?.name || "NODE").toUpperCase()}</span>
                                 </p>
-                                <div className="text-2xl font-black tracking-tight text-foreground">
-                                  {symbol}{debt.amount.toFixed(2)}
-                                </div>
+                                <div className="text-3xl font-black tracking-tighter text-glow">{symbol}{formatCompactNumber(debt.amount)}</div>
                               </div>
                             </div>
-                            <Button 
-                              className="rounded-xl font-bold h-11 px-6 shadow-lg shadow-primary/10 group-hover:scale-105 transition-all"
-                              onClick={() => openSettleDialog(debt)}
-                            >
-                              <Zap className="h-4 w-4 mr-2" />
-                              Settle Now
-                            </Button>
+                            <Button className="rounded-xl font-black uppercase tracking-widest text-[10px] h-12 px-8 bg-primary glow-primary shadow-xl group-hover:scale-105 transition-all active:scale-95" onClick={() => openSettleDialog(debt)}><Zap className="h-4 w-4 mr-2" />Execute</Button>
                           </div>
-                        </div>
+                        </motion.div>
                       );
                     })
                   )}
@@ -357,42 +270,23 @@ function SettlementsContent({ groupId }: { groupId: string }) {
         )}
       </main>
 
-      {/* Settle Recording Dialog */}
       <Dialog open={!!settlementTarget} onOpenChange={(open) => !open && setSettlementTarget(null)}>
-        <DialogContent className="sm:max-w-[400px] rounded-3xl p-8 border-none shadow-2xl">
-          <DialogHeader className="mb-6">
-            <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mb-4">
-              <Coins className="h-8 w-8" />
-            </div>
-            <DialogTitle className="text-2xl font-bold font-headline">Record Payment</DialogTitle>
-            <DialogDescription className="text-base">
-              Recording that <span className="font-bold text-foreground">{settlementTarget?.fromName}</span> paid <span className="font-bold text-foreground">{settlementTarget?.toName}</span>.
-            </DialogDescription>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-[2rem] p-8 border-none shadow-2xl glass-card">
+          <DialogHeader className="mb-8 text-center">
+            <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4 glow-primary"><Coins className="h-8 w-8" /></div>
+            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-glow">Sync Clearance</DialogTitle>
+            <DialogDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">Record node payload</DialogDescription>
           </DialogHeader>
-          
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="settle-amount" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Amount to Record ({symbol})</Label>
-              <Input 
-                id="settle-amount"
-                type="number"
-                step="0.01"
-                className="h-16 rounded-2xl text-3xl font-black bg-muted/30 border-none px-6"
-                value={customAmount}
-                onChange={(e) => setCustomAmount(e.target.value)}
-                autoFocus
-              />
-              <p className="text-[10px] text-muted-foreground font-medium italic mt-2 px-1">
-                The total calculated debt is {symbol}{settlementTarget?.amount.toFixed(2)}. This entry will update balances for both members instantly.
-              </p>
+          <div className="space-y-8">
+            <div className="space-y-3">
+              <Label className="text-[9px] font-black uppercase tracking-widest text-primary ml-1">Clearance Value ({symbol})</Label>
+              <Input type="number" step="0.01" className="h-20 rounded-[2rem] text-4xl font-black bg-white/5 border-none text-glow focus:ring-primary px-6" value={customAmount} onChange={(e) => setCustomAmount(e.target.value)} autoFocus />
+              <p className="text-[8px] text-muted-foreground font-black uppercase tracking-widest text-center opacity-40">Target calculated: {symbol}{settlementTarget?.amount.toFixed(2)}</p>
             </div>
           </div>
-
-          <DialogFooter className="mt-10 flex flex-col sm:flex-row gap-3">
-            <Button variant="ghost" className="h-12 rounded-xl font-bold order-2 sm:order-1" onClick={() => setSettlementTarget(null)}>Cancel</Button>
-            <Button className="flex-1 h-12 rounded-xl font-bold bg-primary shadow-xl shadow-primary/20 transition-all active:scale-95 order-1 sm:order-2" onClick={handleRecordPayment}>
-              Confirm Payment
-            </Button>
+          <DialogFooter className="mt-10 gap-3">
+            <Button variant="ghost" className="h-12 rounded-xl font-black uppercase tracking-widest text-[10px]" onClick={() => setSettlementTarget(null)}>Abort</Button>
+            <Button className="flex-1 h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-primary glow-primary transition-all active:scale-95" onClick={handleRecordPayment}>Synchronize</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -402,9 +296,8 @@ function SettlementsContent({ groupId }: { groupId: string }) {
 
 export default function GroupSettlementsPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
-  
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center animate-pulse text-primary font-bold">Calculating smart paths...</div>}>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-background"><Loader2 className="h-12 w-12 animate-spin text-primary glow-primary" /></div>}>
       <SettlementsContent groupId={groupId} />
     </Suspense>
   );

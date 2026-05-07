@@ -12,14 +12,11 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { doc, updateDoc, collection, query, where, collectionGroup } from "firebase/firestore";
-import { ArrowLeft, Target, Loader2, Save, TrendingUp } from "lucide-react";
-import { getCurrencySymbol, cn } from "@/lib/utils";
+import { ArrowLeft, Target, Loader2, Save, TrendingUp, Zap, ShieldCheck } from "lucide-react";
+import { getCurrencySymbol, cn, formatCompactNumber } from "@/lib/utils";
 import { startOfMonth, endOfMonth } from "date-fns";
+import { motion } from "framer-motion";
 
-/**
- * Dedicated page for managing category-level budgets.
- * Visual comparison moved to Analytics for better overview.
- */
 export default function BudgetsPage() {
   const router = useRouter();
   const { user, categories, isLoading: storeLoading } = useStore();
@@ -32,17 +29,13 @@ export default function BudgetsPage() {
 
   useEffect(() => {
     setMounted(true);
-    if (!storeLoading && !user) {
-      router.push("/auth");
-    }
+    if (!storeLoading && !user) router.push("/auth");
   }, [user, router, storeLoading]);
 
-  // Fetch range for current month
   const now = new Date();
   const monthStart = startOfMonth(now).getTime();
   const monthEnd = endOfMonth(now).getTime();
 
-  // Fetch Personal Expenses
   const personalExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -53,7 +46,6 @@ export default function BudgetsPage() {
     );
   }, [db, user, monthStart, monthEnd]);
 
-  // Fetch Group Expenses
   const groupExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -66,7 +58,6 @@ export default function BudgetsPage() {
   const { data: personalExpenses } = useCollection(personalExpensesQuery);
   const { data: groupExpenses } = useCollection(groupExpensesQuery);
 
-  // Initialize form state from user profile data
   useEffect(() => {
     if (user && categories.length > 0) {
       const initial: Record<string, string> = {};
@@ -77,25 +68,19 @@ export default function BudgetsPage() {
     }
   }, [user, categories]);
 
-  // Calculate actual spending per category with client-side date filtering
   const actualSpending = useMemo(() => {
     const spending: Record<string, number> = {};
     categories.forEach(cat => spending[cat] = 0);
 
     personalExpenses?.forEach(exp => {
-      if (spending[exp.category] !== undefined) {
-        spending[exp.category] += exp.amount;
-      }
+      if (spending[exp.category] !== undefined) spending[exp.category] += exp.amount;
     });
 
     groupExpenses?.forEach(exp => {
       if (exp.date < monthStart || exp.date > monthEnd) return;
-
       if (spending[exp.category] !== undefined) {
         const mySplit = exp.splitBetween?.find((s: any) => s.userId === user?.uid);
-        if (mySplit) {
-          spending[exp.category] += mySplit.amount;
-        }
+        if (mySplit) spending[exp.category] += mySplit.amount;
       }
     });
 
@@ -104,10 +89,8 @@ export default function BudgetsPage() {
 
   const handleSave = async () => {
     if (!user || !db) return;
-    
     const updates: Record<string, number> = {};
     let total = 0;
-    
     for (const [cat, val] of Object.entries(categoryBudgets)) {
       const num = parseFloat(val);
       if (!isNaN(num) && num >= 0) {
@@ -122,10 +105,10 @@ export default function BudgetsPage() {
         categoryBudgets: updates,
         monthlyBudget: total
       });
-      toast({ title: "Budgets Saved", description: "Your spending targets have been updated." });
+      toast({ title: "Protocol Updated", description: "Spending targets synchronized." });
       router.push("/dashboard");
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: error.message });
+      toast({ variant: "destructive", title: "Sync Failed", description: error.message });
     } finally {
       setSaving(false);
     }
@@ -137,107 +120,117 @@ export default function BudgetsPage() {
   const totalBudget = Object.values(categoryBudgets).reduce((acc, val) => acc + (parseFloat(val) || 0), 0);
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row bg-background">
+    <div className="flex min-h-screen flex-col md:flex-row bg-background no-scrollbar">
       <Navbar />
       
       <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-4xl mx-auto w-full">
-        <header className="mb-8">
-          <Button 
-            variant="ghost" 
-            className="mb-4 -ml-2 text-muted-foreground hover:text-primary gap-2 px-2"
+        <motion.header 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <button 
+            className="mb-4 -ml-2 text-muted-foreground hover:text-primary gap-2 flex items-center transition-all px-2 py-1 uppercase font-black text-[10px] tracking-widest"
             onClick={() => router.push("/dashboard")}
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Button>
+            Back to Command
+          </button>
           
-          <div className="flex flex-col gap-2">
-            <h1 className="text-3xl font-bold font-headline text-primary tracking-tight">Category Budgets</h1>
-            <p className="text-muted-foreground">Monitor and adjust your monthly spending targets. Comparison charts are available on the Analytics page.</p>
+          <div className="space-y-1">
+            <h1 className="text-3xl md:text-5xl font-black text-glow uppercase tracking-tighter">TARGETS</h1>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Budget Partitioning / Resource Allocation</p>
           </div>
-        </header>
+        </motion.header>
 
         <div className="grid gap-6">
-          <Card className="border-none shadow-sm bg-card rounded-3xl overflow-hidden">
-            <CardHeader className="bg-primary/5 border-b border-primary/10 py-6 px-6">
+          <Card className="glass-card rounded-[2.5rem] overflow-hidden border-white/5 relative">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+            <CardHeader className="bg-white/5 border-b border-white/5 py-8 px-8">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                    <Target className="h-6 w-6" />
+                <div className="flex items-center gap-5">
+                  <div className="h-14 w-14 rounded-2xl glass flex items-center justify-center text-primary glow-primary shadow-inner">
+                    <Target className="h-7 w-7" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-headline">Monthly Targets</CardTitle>
-                    <CardDescription>Adjust limits for each category</CardDescription>
+                    <CardTitle className="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-2">
+                       <Zap className="h-3 w-3 text-accent fill-accent" />
+                       Allocation HUD
+                    </CardTitle>
+                    <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-1">Adjust categorical load limits</CardDescription>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground block mb-1">Total Goal</span>
-                  <span className="text-2xl font-black text-primary">{symbol}{totalBudget.toFixed(2)}</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground block mb-1 opacity-50">Combined Limit</span>
+                  <span className="text-3xl font-black text-primary text-glow tracking-tighter">{symbol}{formatCompactNumber(totalBudget)}</span>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-6">
+            <CardContent className="p-8">
+              <div className="space-y-8">
                 {categories.map(cat => (
-                  <div key={cat} className="group animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <div className="flex items-center justify-between mb-2">
-                      <Label htmlFor={`budget-${cat}`} className="text-sm font-bold text-foreground">
+                  <motion.div 
+                    key={cat} 
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="group"
+                  >
+                    <div className="flex items-center justify-between mb-3 px-1">
+                      <Label htmlFor={`budget-${cat}`} className="text-[10px] font-black uppercase tracking-widest text-foreground">
                         {cat}
                       </Label>
-                      <div className="flex items-center gap-3">
-                        <span className="text-[9px] font-bold text-muted-foreground uppercase opacity-60">
-                          Spent: {symbol}{(actualSpending[cat] || 0).toFixed(2)}
+                      <div className="flex items-center gap-4">
+                        <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
+                          Current: {symbol}{formatCompactNumber(actualSpending[cat] || 0)}
                         </span>
                         {user.categoryBudgets?.[cat] !== undefined && (
-                          <span className={cn(
-                            "text-[9px] font-bold uppercase",
-                            (actualSpending[cat] || 0) > (user.categoryBudgets[cat] || 0) ? "text-destructive" : "text-primary"
-                          )}>
-                            Limit: {symbol}{user.categoryBudgets[cat]}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <div className={cn("h-1 w-1 rounded-full animate-pulse", (actualSpending[cat] || 0) > (user.categoryBudgets[cat] || 0) ? "bg-destructive" : "bg-primary")} />
+                            <span className={cn(
+                              "text-[8px] font-black uppercase tracking-widest",
+                              (actualSpending[cat] || 0) > (user.categoryBudgets[cat] || 0) ? "text-destructive" : "text-primary"
+                            )}>
+                              {symbol}{formatCompactNumber(user.categoryBudgets[cat])} MAX
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
                     <div className="relative group/input">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
-                        <span className="text-lg font-bold text-primary">{symbol}</span>
+                      <div className="absolute left-5 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+                        <span className="text-sm font-black text-primary/40">{symbol}</span>
                       </div>
                       <Input 
                         id={`budget-${cat}`}
                         type="number"
                         step="0.01"
                         placeholder="0.00"
-                        className="h-14 pl-12 rounded-2xl font-bold bg-muted/20 border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus-visible:ring-2 focus-visible:ring-primary text-lg transition-all"
+                        className="h-16 pl-12 rounded-2xl font-black bg-white/5 border-white/5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus-visible:ring-primary text-xl transition-all group-hover/input:bg-white/10"
                         value={categoryBudgets[cat] || ""}
                         onChange={(e) => setCategoryBudgets(prev => ({ ...prev, [cat]: e.target.value }))}
                       />
-                      <TrendingUp className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/20 group-hover/input:text-primary/40 transition-colors" />
+                      <TrendingUp className="absolute right-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/10 group-hover/input:text-primary/30 transition-colors" />
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </CardContent>
-            <CardFooter className="p-6 bg-muted/10 border-t flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <p className="text-xs text-muted-foreground leading-relaxed italic">
-                  Your "Analyst" on the dashboard uses these targets to alert you when you're nearing limits or overspending.
+            <CardFooter className="p-8 bg-white/5 border-t border-white/5 flex flex-col sm:flex-row gap-6">
+              <div className="flex-1 flex items-start gap-3">
+                <ShieldCheck className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+                <p className="text-[10px] text-muted-foreground leading-relaxed font-bold uppercase tracking-widest opacity-60">
+                  Data will be indexed by the Analyst HUD to provide real-time heuristic spending alerts.
                 </p>
               </div>
               <Button 
                 onClick={handleSave} 
                 disabled={saving}
-                className="w-full sm:w-auto min-w-[180px] h-14 rounded-2xl font-bold text-lg bg-primary shadow-xl shadow-primary/20 transition-all active:scale-95"
+                className="w-full sm:w-auto min-w-[200px] h-14 rounded-2xl font-black uppercase tracking-widest text-[11px] bg-primary glow-primary shadow-xl transition-all active:scale-95"
               >
                 {saving ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                    Saving...
-                  </>
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Syncing...</>
                 ) : (
-                  <>
-                    <Save className="h-5 w-5 mr-2" />
-                    Save Targets
-                  </>
+                  <><Save className="h-4 w-4 mr-2" /> Synchronize</>
                 )}
               </Button>
             </CardFooter>

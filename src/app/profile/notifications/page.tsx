@@ -12,8 +12,9 @@ import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore } from "@/firebase";
 import { doc, updateDoc } from "firebase/firestore";
-import { ArrowLeft, Bell, BellOff, Shield, ShieldCheck, Loader2 } from "lucide-react";
+import { ArrowLeft, Bell, BellOff, Shield, ShieldCheck, Loader2, Zap, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 export default function NotificationSettingsPage() {
   const router = useRouter();
@@ -24,7 +25,6 @@ export default function NotificationSettingsPage() {
   const [mounted, setMounted] = useState(false);
   const [updating, setUpdating] = useState(false);
 
-  // Initialize state from user profile
   const [settings, setSettings] = useState({
     masterEnabled: user?.notificationSettings?.masterEnabled ?? true,
     expenseAdded: user?.notificationSettings?.expenseAdded ?? true,
@@ -50,163 +50,145 @@ export default function NotificationSettingsPage() {
 
   const handleToggle = async (key: string, value: boolean) => {
     if (!db || !user) return;
-    
     const nextSettings = { ...settings, [key]: value };
     setSettings(nextSettings);
     setUpdating(true);
-
     try {
       const userRef = doc(db, "users", user.uid);
-      const updateData: any = {
-        [`notificationSettings.${key}`]: value
-      };
-
-      // If turning master OFF, we should clear tokens to stop server pushes
-      if (key === 'masterEnabled' && !value) {
-        updateData.fcmTokens = [];
-      }
-
+      const updateData: any = { [`notificationSettings.${key}`]: value };
+      if (key === 'masterEnabled' && !value) updateData.fcmTokens = [];
       await updateDoc(userRef, updateData);
-      
-      toast({
-        title: "Preference Saved",
-        description: `Notification setting updated successfully.`
-      });
+      toast({ title: "Protocol Updated", description: "Signal settings synchronized." });
     } catch (error: any) {
-      // Revert local state on error
       setSettings(settings);
-      toast({
-        variant: "destructive",
-        title: "Update Failed",
-        description: error.message || "Could not save your preference."
-      });
+      toast({ variant: "destructive", title: "Sync Failed", description: error.message });
     } finally {
       setUpdating(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row bg-background">
+    <div className="flex min-h-screen flex-col md:flex-row bg-background no-scrollbar">
       <Navbar />
       
       <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-2xl mx-auto w-full">
-        <header className="mb-8 flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => router.back()} 
-            className="rounded-full h-10 w-10 shrink-0"
-          >
-            <ArrowLeft className="h-5 w-5" />
+        <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-10 flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full h-10 w-10 shrink-0 glass border-white/5">
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold font-headline text-primary">Notification Settings</h1>
-            <p className="text-muted-foreground">Manage how Wisely reaches you.</p>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-black uppercase tracking-tighter text-glow">ALERTS</h1>
+            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground">Signal Monitoring / Comms Protocol</p>
           </div>
-        </header>
+        </motion.header>
 
-        <div className="space-y-6">
-          <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-card">
+        <div className="space-y-8">
+          <Card className="glass-card rounded-[2.5rem] overflow-hidden border-white/5 relative">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
             <CardHeader className={cn(
-              "transition-colors duration-500",
-              settings.masterEnabled ? "bg-primary/5" : "bg-muted/30"
+              "transition-colors duration-700 py-8 px-8",
+              settings.masterEnabled ? "bg-primary/5" : "bg-white/5"
             )}>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-5">
                   <div className={cn(
-                    "h-12 w-12 rounded-2xl flex items-center justify-center transition-all",
-                    settings.masterEnabled ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-muted text-muted-foreground"
+                    "h-14 w-14 rounded-2xl flex items-center justify-center transition-all shadow-inner",
+                    settings.masterEnabled ? "bg-primary text-primary-foreground glow-primary" : "glass text-muted-foreground"
                   )}>
-                    {settings.masterEnabled ? <Bell className="h-6 w-6" /> : <BellOff className="h-6 w-6" />}
+                    {settings.masterEnabled ? <Bell className="h-7 w-7" /> : <BellOff className="h-7 w-7" />}
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-headline">Master Switch</CardTitle>
-                    <CardDescription>Enable or disable all alerts instantly</CardDescription>
+                    <CardTitle className="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-2">
+                       Master Switch
+                       {updating && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+                    </CardTitle>
+                    <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-1">Enable all signal transmissions</CardDescription>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  {updating && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
-                  <Switch 
-                    checked={settings.masterEnabled} 
-                    onCheckedChange={(val) => handleToggle('masterEnabled', val)}
-                    disabled={updating}
-                    className="data-[state=checked]:bg-primary"
-                  />
-                </div>
+                <Switch 
+                  checked={settings.masterEnabled} 
+                  onCheckedChange={(val) => handleToggle('masterEnabled', val)}
+                  disabled={updating}
+                  className="data-[state=checked]:bg-primary scale-110"
+                />
               </div>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-6">
-                <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/20 border border-border/50">
-                  {settings.masterEnabled ? (
-                    <ShieldCheck className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
-                  ) : (
-                    <Shield className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                  )}
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold">Smart Listening</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {settings.masterEnabled 
-                        ? "Wisely is listening for activity. You will receive push notifications when relevant events occur in your groups." 
-                        : "All background and foreground alerts have been disabled. Your device tokens have been cleared for privacy."}
-                    </p>
-                  </div>
+            <CardContent className="p-8 space-y-8">
+              <div className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 border border-white/5 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                {settings.masterEnabled ? (
+                  <ShieldCheck className="h-5 w-5 text-green-500 shrink-0 mt-0.5 animate-pulse" />
+                ) : (
+                  <Shield className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5 opacity-40" />
+                )}
+                <div className="space-y-1 relative z-10">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-foreground">Listening Status</p>
+                  <p className="text-[9px] font-bold text-muted-foreground leading-relaxed uppercase tracking-wider">
+                    {settings.masterEnabled 
+                      ? "High-fidelity listening active. Cross-node synchronization will trigger instant push telemetry." 
+                      : "Signal broadcast disabled. Local cache will still update, but push protocols are offline."}
+                  </p>
                 </div>
+              </div>
 
-                {settings.masterEnabled && (
-                  <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-500">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-1">Detailed Preferences</p>
-                    
-                    <div className="grid gap-3">
-                      <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/10">
-                        <div className="space-y-0.5">
-                          <p className="text-sm font-bold">New Expense Added</p>
-                          <p className="text-[10px] text-muted-foreground">Get notified when someone adds a bill to a group.</p>
-                        </div>
-                        <Switch 
-                          checked={settings.expenseAdded} 
-                          onCheckedChange={(val) => handleToggle('expenseAdded', val)}
-                          disabled={updating}
-                        />
+              {settings.masterEnabled && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+                  <p className="text-[9px] font-black uppercase tracking-[0.4em] text-primary ml-1">Sub-Channel Logic</p>
+                  
+                  <div className="grid gap-4">
+                    <div className="flex items-center justify-between p-6 rounded-2xl glass border-white/5 hover:border-primary/20 transition-all">
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-black uppercase tracking-widest">Inflow Telemetry</p>
+                        <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">Notify when peers initialize cycles.</p>
                       </div>
+                      <Switch 
+                        checked={settings.expenseAdded} 
+                        onCheckedChange={(val) => handleToggle('expenseAdded', val)}
+                        disabled={updating}
+                        className="scale-90"
+                      />
+                    </div>
 
-                      <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/10">
-                        <div className="space-y-0.5">
-                          <p className="text-sm font-bold">Settlement Reminders</p>
-                          <p className="text-[10px] text-muted-foreground">Alerts when debts are settled or reminders are sent.</p>
-                        </div>
-                        <Switch 
-                          checked={settings.settlementReminders} 
-                          onCheckedChange={(val) => handleToggle('settlementReminders', val)}
-                          disabled={updating}
-                        />
+                    <div className="flex items-center justify-between p-6 rounded-2xl glass border-white/5 hover:border-primary/20 transition-all">
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-black uppercase tracking-widest">Clearance Alerts</p>
+                        <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">Notify when node paybacks occur.</p>
                       </div>
+                      <Switch 
+                        checked={settings.settlementReminders} 
+                        onCheckedChange={(val) => handleToggle('settlementReminders', val)}
+                        disabled={updating}
+                        className="scale-90"
+                      />
                     </div>
                   </div>
-                )}
+                </motion.div>
+              )}
 
-                {!settings.masterEnabled && (
-                  <div className="p-8 rounded-2xl border-2 border-dashed border-muted text-center">
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Enable the master switch to configure individual alert types.
-                    </p>
-                  </div>
-                )}
-              </div>
+              {!settings.masterEnabled && (
+                <div className="p-12 rounded-[2rem] border-2 border-dashed border-white/5 text-center opacity-40">
+                  <Zap className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-[10px] font-black uppercase tracking-widest">Enable master node to configure sub-channels</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm rounded-2xl bg-primary text-primary-foreground">
-            <CardHeader>
-              <CardTitle className="text-lg font-headline">Sync Status</CardTitle>
+          <Card className="glass-card rounded-[2.5rem] bg-primary border-none relative overflow-hidden">
+            <div className="absolute top-0 right-0 h-40 w-40 bg-white/10 rounded-full blur-3xl -translate-y-20 translate-x-20" />
+            <CardHeader className="relative z-10">
+              <CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-primary-foreground flex items-center gap-3">
+                 <Activity className="h-4 w-4" />
+                 Registration Sync
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm opacity-80 leading-relaxed">
-                Your account is currently synced with Firebase Cloud Messaging. This allows real-time updates across all your logged-in devices.
+            <CardContent className="space-y-6 relative z-10">
+              <p className="text-[10px] font-bold text-primary-foreground uppercase tracking-widest leading-relaxed opacity-80">
+                Your account node is currently registered with Firebase Cloud Messaging (FCM) for multi-vault synchronization.
               </p>
-              <div className="p-3 bg-white/10 rounded-lg flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-widest">Active Device Registrations</span>
-                <span className="text-xs font-mono font-bold">{(user.fcmTokens?.length || 0)}</span>
+              <div className="p-4 bg-black/20 rounded-xl flex items-center justify-between border border-white/10">
+                <span className="text-[9px] font-black uppercase tracking-widest text-primary-foreground/60">Active node tokens</span>
+                <span className="text-xs font-black font-mono text-primary-foreground">{(user.fcmTokens?.length || 0)}</span>
               </div>
             </CardContent>
           </Card>

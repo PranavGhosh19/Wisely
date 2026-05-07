@@ -11,11 +11,12 @@ import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore } from "@/firebase";
 import { doc, updateDoc } from "firebase/firestore";
-import { ArrowLeft, Globe, Loader2, Save, Check, Search, ChevronDown } from "lucide-react";
+import { ArrowLeft, Globe, Loader2, Save, Check, Search, ChevronDown, Cpu } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 const CURRENCIES = [
   { code: "AED", label: "United Arab Emirates Dirham (د.إ)" },
@@ -189,7 +190,6 @@ function CurrencyContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
-  // Sort currencies alphabetically by label
   const sortedCurrencies = useMemo(() => {
     return [...CURRENCIES].sort((a, b) => a.label.localeCompare(b.label));
   }, []);
@@ -202,9 +202,7 @@ function CurrencyContent() {
   }, [sortedCurrencies, searchQuery]);
 
   useEffect(() => {
-    if (user?.currency) {
-      setSelectedCurrency(user.currency);
-    }
+    if (user?.currency) setSelectedCurrency(user.currency);
   }, [user]);
 
   const selectedCurrencyLabel = useMemo(() => {
@@ -215,103 +213,86 @@ function CurrencyContent() {
     if (!db || !user || !selectedCurrency) return;
     setLoading(true);
     try {
-      await updateDoc(doc(db, "users", user.uid), {
-        currency: selectedCurrency
-      });
-      toast({
-        title: isSetup ? "Setup Complete" : "Currency Updated",
-        description: `Your default currency is now set to ${selectedCurrency}.`
-      });
-      
-      if (isSetup) {
-        router.replace("/dashboard");
-      } else {
-        router.back();
-      }
+      await updateDoc(doc(db, "users", user.uid), { currency: selectedCurrency });
+      toast({ title: "Preference Saved", description: `Vault currency updated to ${selectedCurrency}.` });
+      if (isSetup) router.replace("/dashboard");
+      else router.back();
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Update Failed",
-        description: error.message || "Could not save currency preference."
-      });
+      toast({ variant: "destructive", title: "Sync Failed", description: error.message });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row bg-background">
+    <div className="flex min-h-screen flex-col md:flex-row bg-background no-scrollbar">
       {!isSetup && <Navbar />}
       
       <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 max-w-2xl mx-auto w-full flex flex-col justify-center">
         {!isSetup && (
-          <header className="mb-8 flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full h-10 w-10 shrink-0">
-              <ArrowLeft className="h-5 w-5" />
+          <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-10 flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full h-10 w-10 shrink-0 glass border-white/5">
+              <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold font-headline text-primary">Default Currency</h1>
-              <p className="text-muted-foreground">Select how your amounts are displayed.</p>
+            <div className="space-y-1">
+              <h1 className="text-2xl font-black uppercase tracking-tighter text-glow">Currency</h1>
+              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground">Regional Payload Formatter</p>
             </div>
-          </header>
+          </motion.header>
         )}
 
-        <Card className="border-none shadow-xl rounded-3xl overflow-hidden bg-card">
-          <CardHeader className="text-center pt-10">
-            <div className="mx-auto h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mb-4">
+        <Card className="glass-card rounded-[2.5rem] overflow-hidden border-white/5 relative">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+          <CardHeader className="text-center pt-12 pb-6">
+            <div className="mx-auto h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mb-6 glow-primary shadow-inner">
               <Globe className="h-8 w-8" />
             </div>
-            <CardTitle className="font-headline text-xl">
-              {isSetup ? "Welcome to Wisely!" : "Change Currency"}
+            <CardTitle className="text-xl font-black uppercase tracking-tighter text-glow">
+              {isSetup ? "IDENTITY PROTOCOL" : "UPDATE FORMAT"}
             </CardTitle>
-            <CardDescription className="text-sm px-6">
+            <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-2 px-8 leading-relaxed">
               {isSetup 
-                ? "Let's get started by picking your preferred currency for personal and shared tracking."
-                : "This updates the symbol and calculations used across all your expenses."}
+                ? "Establish your default currency for cross-vault ledger synchronization."
+                : "Recalculate global visual output using a new regional currency node."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-8 p-8">
             <div className="space-y-3">
-              <Label htmlFor="currency" className="font-bold text-sm uppercase tracking-widest text-muted-foreground px-1">
-                Select Currency
-              </Label>
+              <Label className="text-[9px] font-black uppercase tracking-widest text-primary ml-1">Select Node</Label>
               
               <Popover open={isPickerOpen} onOpenChange={setIsPickerOpen}>
                 <PopoverTrigger asChild>
                   <Button
-                    id="currency"
                     variant="outline"
-                    role="combobox"
-                    aria-expanded={isPickerOpen}
-                    className="w-full h-14 rounded-2xl bg-muted/30 border-none text-base font-medium justify-between px-4 hover:bg-muted/40 transition-colors"
+                    className="w-full h-16 rounded-2xl glass border-white/5 text-xs font-black uppercase tracking-widest justify-between px-6 hover:bg-white/5 transition-all"
                   >
                     <span className="truncate pr-4">{selectedCurrencyLabel}</span>
-                    <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                    <ChevronDown className="h-4 w-4 shrink-0 text-primary opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-2xl border-none shadow-2xl overflow-hidden bg-card" align="start">
-                  <div className="p-3 border-b flex items-center gap-3 bg-muted/10">
-                    <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-[2rem] border-white/5 shadow-2xl overflow-hidden glass-card" align="start">
+                  <div className="p-4 border-b border-white/5 flex items-center gap-3 bg-white/5">
+                    <Search className="h-4 w-4 text-primary shrink-0" />
                     <Input
-                      placeholder="Search currency name or code..."
-                      className="h-9 border-none bg-transparent focus-visible:ring-0 px-0 placeholder:text-muted-foreground/60"
+                      placeholder="SEARCH SYMBOL..."
+                      className="h-9 border-none bg-transparent focus-visible:ring-0 px-0 text-[10px] font-black uppercase tracking-widest placeholder:opacity-30"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       autoFocus
                     />
                   </div>
-                  <ScrollArea className="h-72">
-                    <div className="p-1 space-y-0.5">
+                  <ScrollArea className="h-80">
+                    <div className="p-2 space-y-1">
                       {filteredCurrencies.map((currency) => {
                         const isSelected = selectedCurrency === currency.code;
                         return (
                           <button
                             key={currency.code}
                             className={cn(
-                              "flex w-full items-center justify-between px-3 py-3 rounded-xl text-sm transition-all group",
+                              "flex w-full items-center justify-between px-4 py-4 rounded-xl text-xs transition-all",
                               isSelected 
-                                ? "bg-primary text-primary-foreground font-bold" 
-                                : "hover:bg-muted text-foreground"
+                                ? "bg-primary text-primary-foreground font-black shadow-lg glow-primary" 
+                                : "hover:bg-white/5 text-muted-foreground hover:text-foreground"
                             )}
                             onClick={() => {
                               setSelectedCurrency(currency.code);
@@ -320,10 +301,10 @@ function CurrencyContent() {
                             }}
                           >
                             <div className="flex flex-col items-start min-w-0">
-                              <span className="truncate text-left">{currency.label}</span>
+                              <span className="truncate text-left uppercase font-black text-[10px] tracking-tight">{currency.label}</span>
                               <span className={cn(
-                                "text-[10px] uppercase font-bold tracking-widest",
-                                isSelected ? "text-primary-foreground/70" : "text-muted-foreground"
+                                "text-[8px] font-black uppercase tracking-widest mt-0.5 opacity-50",
+                                isSelected && "opacity-100"
                               )}>
                                 {currency.code}
                               </span>
@@ -332,12 +313,6 @@ function CurrencyContent() {
                           </button>
                         );
                       })}
-                      {filteredCurrencies.length === 0 && (
-                        <div className="py-10 text-center flex flex-col items-center gap-2">
-                          <Globe className="h-8 w-8 text-muted-foreground opacity-20" />
-                          <p className="text-xs text-muted-foreground font-medium">No currency matches your search.</p>
-                        </div>
-                      )}
                     </div>
                   </ScrollArea>
                 </PopoverContent>
@@ -346,28 +321,23 @@ function CurrencyContent() {
 
             <Button 
               onClick={handleUpdateCurrency} 
-              className="w-full bg-primary h-14 rounded-2xl font-bold text-base gap-2 shadow-lg shadow-primary/20 transition-all active:scale-95" 
+              className="w-full bg-primary h-16 rounded-[2rem] font-black uppercase tracking-widest text-[11px] gap-3 shadow-xl glow-primary transition-all active:scale-95" 
               disabled={loading || !selectedCurrency || (!isSetup && selectedCurrency === user?.currency)}
             >
               {loading ? (
-                <Loader2 className="h-6 w-6 animate-spin" />
+                <Loader2 className="h-5 w-5 animate-spin" />
               ) : isSetup ? (
-                <>
-                  Complete Setup
-                  <Check className="h-6 w-6" />
-                </>
+                <>Initialize System<Check className="h-5 w-5" /></>
               ) : (
-                <>
-                  Save Preference
-                  <Save className="h-6 w-6" />
-                </>
+                <>Synchronize Preference<Save className="h-5 w-5" /></>
               )}
             </Button>
             
             {isSetup && (
-              <p className="text-center text-xs text-muted-foreground font-medium italic">
-                You can change this anytime in your profile settings.
-              </p>
+              <div className="flex flex-col items-center gap-2 opacity-30">
+                 <Cpu className="h-4 w-4 text-primary" />
+                 <p className="text-[8px] font-black uppercase tracking-widest italic">Node parameters can be modified via Profile > Terminal.</p>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -378,7 +348,7 @@ function CurrencyContent() {
 
 export default function CurrencyPage() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-background text-primary font-bold">Loading setup...</div>}>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-background"><Loader2 className="h-12 w-12 animate-spin text-primary glow-primary" /></div>}>
       <CurrencyContent />
     </Suspense>
   );
