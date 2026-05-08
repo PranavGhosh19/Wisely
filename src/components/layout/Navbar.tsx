@@ -153,6 +153,7 @@ function NavbarContent() {
         </div>
       </motion.nav>
 
+      {/* MOBILE NAV: Static geometry that doesn't scale with font-size */}
       <nav 
         className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-[448px] h-[80px] glass-card rounded-[40px] md:hidden px-2 safe-area-bottom shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
       >
@@ -185,7 +186,7 @@ function NavbarContent() {
               href={addExpenseUrl}
               className="h-[56px] w-[56px] rounded-[16px] bg-primary flex items-center justify-center text-primary-foreground shadow-[0_0_20px_rgba(var(--primary),0.3)] glow-primary transition-all active:scale-90"
             >
-              <Plus className="h-[28px] w-[28px]" />
+              <Plus size={28} />
             </Link>
           </div>
 
@@ -200,14 +201,14 @@ function NavbarContent() {
               "h-7 w-7 rounded-lg flex items-center justify-center border-2 transition-all overflow-hidden relative",
               pathname === "/profile" ? "border-primary shadow-[0_0_10px_hsl(var(--primary)/0.3)]" : "border-transparent bg-white/10"
             )}>
-              {user.photoURL ? <Image src={user.photoURL} alt={user.name} fill className="object-cover" /> : <LucideUser className="h-4 w-4" />}
+              {user.photoURL ? <Image src={user.photoURL} alt={user.name} fill className="object-cover" /> : <LucideUser size={16} />}
             </div>
             <span className="text-[9px] font-black uppercase tracking-widest">Me</span>
           </Link>
         </div>
         {!isOnline && (
           <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-orange-500 text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest shadow-lg flex items-center gap-1.5 border border-white/20">
-            <WifiOff className="h-2 w-2" /> OFFLINE
+            <WifiOff size={8} /> OFFLINE
           </div>
         )}
       </nav>

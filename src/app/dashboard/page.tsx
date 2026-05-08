@@ -28,18 +28,11 @@ import { BudgetRolloverPrompt } from "@/components/budgets/BudgetRolloverPrompt"
 import { startOfMonth, endOfMonth } from "date-fns";
 import { motion } from "framer-motion";
 
-/**
- * Dashboard UI Definition - High-Performance Command HUD
- */
 export default function Dashboard() {
   const router = useRouter();
   const { user, isLoading: storeLoading, categories: storeCategories } = useStore();
   const db = useFirestore();
   const [mounted, setMounted] = useState(false);
-
-  // Gesture handling for immersive HUD navigation
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -49,14 +42,6 @@ export default function Dashboard() {
   const now = new Date();
   const currentMonthStart = startOfMonth(now).getTime();
   const currentMonthEnd = endOfMonth(now).getTime();
-
-  const onTouchStart = (e: React.TouchEvent) => setTouchStart(e.targetTouches[0].clientX);
-  const onTouchMove = (e: React.TouchEvent) => setTouchEnd(e.targetTouches[0].clientX);
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    // Swipe left-to-right (Inward motion) to enter the Club sector
-    if (touchStart - touchEnd < -100) router.push('/wisely-club');
-  };
 
   const personalExpensesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -80,7 +65,6 @@ export default function Dashboard() {
 
   const { data: groupExpenses } = useCollection(groupExpensesQuery);
 
-  // Filter cycles for active telemetry period
   const monthlyPersonalExpenses = useMemo(() => 
     (personalExpenses || []).filter(exp => exp.date >= currentMonthStart && exp.date <= currentMonthEnd), 
   [personalExpenses, currentMonthStart, currentMonthEnd]);
@@ -89,7 +73,6 @@ export default function Dashboard() {
     (groupExpenses || []).filter(exp => exp.date >= currentMonthStart && exp.date <= currentMonthEnd), 
   [groupExpenses, currentMonthStart, currentMonthEnd]);
 
-  // Aggregate high-load categorical data
   const categorySpending = useMemo(() => {
     const categories: Record<string, number> = {};
     monthlyPersonalExpenses.filter(e => e.category !== 'Settlement').forEach(e => categories[e.category] = (categories[e.category] || 0) + e.amount);
@@ -115,7 +98,6 @@ export default function Dashboard() {
 
   const budgetPercentage = totalBudget <= 0 ? null : (totalOverallMonthlySpent / totalBudget) * 100;
 
-  // HUD Theme Logic for status indicators
   const budgetTheme = useMemo(() => {
     if (budgetPercentage === null) return { color: "bg-primary", icon: CreditCard, label: "Monthly Output", glow: "glow-primary" };
     if (budgetPercentage < 60) return { color: "bg-emerald-600", icon: CheckCircle2, label: "Secure Mode", glow: "shadow-[0_0_20px_rgba(16,185,129,0.3)]" };
@@ -127,7 +109,6 @@ export default function Dashboard() {
 
   const symbol = getCurrencySymbol(user.currency);
 
-  // Framer motion variants for HUD synchronization
   const container = {
     hidden: { opacity: 0 },
     show: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -139,12 +120,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div 
-      className="flex min-h-screen flex-col md:flex-row bg-background no-scrollbar"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-    >
+    <div className="flex min-h-screen flex-col md:flex-row bg-background no-scrollbar">
       <Navbar />
       <BudgetRolloverPrompt />
       
@@ -343,9 +319,11 @@ export default function Dashboard() {
               </div>
 
               <Button variant="ghost" asChild className="w-full rounded-[2rem] gap-3 font-black uppercase tracking-[0.3em] h-16 border border-white/10 hover:bg-white/5 transition-all group overflow-hidden relative">
-                <Link href="/analytics" className="relative z-10 flex items-center justify-center gap-3">
-                  Access Deep Data Metrics
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" />
+                <Link href="/analytics">
+                  <span className="relative z-10 flex items-center justify-center gap-3">
+                    Access Deep Data Metrics
+                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" />
+                  </span>
                 </Link>
               </Button>
             </CardContent>

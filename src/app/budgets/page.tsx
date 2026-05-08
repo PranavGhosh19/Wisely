@@ -184,7 +184,7 @@ export default function BudgetsPage() {
                         </span>
                         {user.categoryBudgets?.[cat] !== undefined && (
                           <div className="flex items-center gap-2">
-                            <div className={cn("h-1 w-1 rounded-full animate-pulse", (actualSpending[cat] || 0) > (user.categoryBudgets[cat] || 0) ? "bg-destructive" : "bg-primary")} />
+                            <div className={cn("h-1.5 w-1.5 rounded-full animate-pulse", (actualSpending[cat] || 0) > (user.categoryBudgets[cat] || 0) ? "bg-destructive" : "bg-primary")} />
                             <span className={cn(
                               "text-[8px] font-black uppercase tracking-widest",
                               (actualSpending[cat] || 0) > (user.categoryBudgets[cat] || 0) ? "text-destructive" : "text-primary"
