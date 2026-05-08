@@ -61,8 +61,8 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative py-20 sm:py-32 overflow-hidden bg-background">
-        <div className="container mx-auto px-4 relative z-10">
+      <section className="relative py-20 sm:py-32 overflow-hidden bg-background px-4">
+        <div className="container mx-auto relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -91,7 +91,7 @@ export default function LandingPage() {
                 </Link>
               </Button>
               <Button variant="outline" size="lg" className="h-16 px-10 rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] border-2 border-white/5 glass hover:border-primary/50 transition-all">
-                <Link href="#features">Scan Protocols</Link>
+                <Link href="/features">Scan Protocols</Link>
               </Button>
             </motion.div>
           </div>
@@ -102,7 +102,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Preview */}
-      <section id="features" className="py-24 bg-white/5 border-y border-white/5">
+      <section className="py-24 bg-white/5 border-y border-white/5">
         <div className="container mx-auto px-4">
           <div className="text-center mb-20 space-y-2">
             <h2 className="text-4xl md:text-5xl font-black font-headline text-glow uppercase tracking-tighter">System Standards</h2>
@@ -210,8 +210,8 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-20 border-t border-white/5 bg-background">
-        <div className="container mx-auto px-4">
+      <footer className="py-20 border-t border-white/5 bg-background px-4">
+        <div className="container mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-16">
             <div className="flex flex-col items-center md:items-start gap-4">
               <div className="flex items-center gap-2">

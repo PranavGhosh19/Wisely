@@ -5,19 +5,16 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { 
   PieChart as RePieChart, Pie, Cell, ResponsiveContainer, 
-  BarChart as ReBarChart, Bar, XAxis, YAxis, CartesianGrid,
-  LineChart as ReLineChart, Line, Tooltip
+  LineChart as ReLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip
 } from "recharts";
 import { useStore } from "@/lib/store";
 import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { collection, collectionGroup, query, where } from "firebase/firestore";
-import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, parseISO, isToday, isThisMonth } from "date-fns";
-import { Layers, Calendar as CalendarIcon, BarChart3, FileSpreadsheet, Loader2, Zap, Filter } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getCurrencySymbol, formatCompactNumber, cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
+import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, isToday, isThisMonth } from "date-fns";
+import { FileSpreadsheet, Loader2, Filter, Zap, LayoutGrid, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
+import { getCurrencySymbol, formatCompactNumber, cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 import { generateMonthlySpreadsheet, downloadWorkbook } from "@/lib/export-utils";
 
 const COLORS = ['#10B981', '#3380FF', '#facc15', '#8B5CF6', '#EC4899', '#A89E92'];
@@ -64,13 +61,15 @@ const renderCustomizedLabel = (props: any, symbol: string) => {
 };
 
 type TimeFilter = 'ALL' | 'MONTH' | 'TODAY';
+type Scope = 'ALL' | 'PERSONAL' | 'GROUP';
 
 export default function AnalyticsPage() {
-  const { user, categories: storeCategories } = useStore();
+  const { user } = useStore();
   const db = useFirestore();
   const [mounted, setMounted] = useState(false);
-  const [scope, setScope] = useState<"ALL" | "PERSONAL" | "GROUP">("ALL");
+  const [scope, setScope] = useState<Scope>("ALL");
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('MONTH');
+  const [selectedGroupId, setSelectedGroupId] = useState<string>("ALL_GROUPS");
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
@@ -98,6 +97,12 @@ export default function AnalyticsPage() {
   }, [db, user]);
   const { data: groupExpenses, isLoading: loadingGroups } = useCollection(groupExpensesQuery);
 
+  const groupsQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, "groups"), where("members", "array-contains", user.uid));
+  }, [db, user]);
+  const { data: userGroups } = useCollection(groupsQuery);
+
   const filteredExpenses = useMemo(() => {
     let base: any[] = [];
     const personal = (personalExpenses || []).filter(e => e.category !== 'Settlement');
@@ -105,7 +110,11 @@ export default function AnalyticsPage() {
 
     if (scope === "ALL") base = [...personal, ...group];
     else if (scope === "PERSONAL") base = personal;
-    else if (scope === "GROUP") base = group;
+    else if (scope === "GROUP") {
+      base = selectedGroupId === "ALL_GROUPS" 
+        ? group 
+        : group.filter(e => e.groupId === selectedGroupId);
+    }
 
     return base.filter(exp => {
       const date = new Date(exp.date);
@@ -113,7 +122,7 @@ export default function AnalyticsPage() {
       if (timeFilter === 'MONTH') return isThisMonth(date);
       return true;
     });
-  }, [personalExpenses, groupExpenses, scope, timeFilter]);
+  }, [personalExpenses, groupExpenses, scope, timeFilter, selectedGroupId]);
 
   const pieData = useMemo(() => {
     const categories: Record<string, number> = {};
@@ -127,14 +136,6 @@ export default function AnalyticsPage() {
   }, [filteredExpenses, user?.uid]);
 
   const trendData = useMemo(() => {
-    let base: any[] = [];
-    const personal = (personalExpenses || []).filter(e => e.category !== 'Settlement');
-    const group = (groupExpenses || []).filter(e => e.category !== 'Settlement');
-
-    if (scope === "ALL") base = [...personal, ...group];
-    else if (scope === "PERSONAL") base = personal;
-    else if (scope === "GROUP") base = group;
-
     const months = [];
     for (let i = 5; i >= 0; i--) {
       const date = subMonths(new Date(), i);
@@ -146,7 +147,7 @@ export default function AnalyticsPage() {
       });
     }
 
-    base.forEach(exp => {
+    filteredExpenses.forEach(exp => {
       const expDate = new Date(exp.date);
       const amount = exp.type === 'GROUP' ? (exp.splitBetween?.find((s: any) => s.userId === user?.uid)?.amount || 0) : exp.amount;
       months.forEach(month => {
@@ -157,7 +158,7 @@ export default function AnalyticsPage() {
     });
 
     return months.map(m => ({ name: m.name, amount: parseFloat(m.amount.toFixed(2)) }));
-  }, [personalExpenses, groupExpenses, scope, user?.uid]);
+  }, [filteredExpenses, user?.uid]);
 
   const handleExport = async () => {
     if (filteredExpenses.length === 0) return;
@@ -190,60 +191,106 @@ export default function AnalyticsPage() {
         <motion.header 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"
+          className="mb-8 flex flex-col gap-6"
         >
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <h2 className="text-3xl md:text-5xl font-black text-glow uppercase tracking-tighter">DEEP METRICS</h2>
-              <Button 
-                onClick={handleExport}
-                disabled={isExporting || filteredExpenses.length === 0}
-                variant="outline" 
-                size="sm" 
-                className="h-10 px-4 rounded-xl font-black uppercase tracking-widest text-[10px] border-primary/20 hover:bg-primary/5 glow-primary gap-2"
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <h2 className="text-3xl md:text-5xl font-black text-glow uppercase tracking-tighter">DEEP METRICS</h2>
+                <Button 
+                  onClick={handleExport}
+                  disabled={isExporting || filteredExpenses.length === 0}
+                  variant="outline" 
+                  size="sm" 
+                  className="h-10 px-4 rounded-xl font-black uppercase tracking-widest text-[10px] border-primary/20 hover:bg-primary/5 glow-primary gap-2"
+                >
+                  {isExporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
+                  Export Ledger
+                </Button>
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Neural Pathing / {timeFilter} Analysis</p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
+                {(['ALL', 'PERSONAL', 'GROUP'] as const).map((s) => (
+                  <Button 
+                    key={s}
+                    variant={scope === s ? "secondary" : "ghost"} 
+                    size="sm" 
+                    className={cn(
+                      "rounded-lg h-8 text-[9px] uppercase font-black tracking-widest px-3",
+                      scope === s && "bg-primary text-primary-foreground glow-primary"
+                    )}
+                    onClick={() => {
+                      setScope(s);
+                      if (s !== 'GROUP') setSelectedGroupId('ALL_GROUPS');
+                    }}
+                  >
+                    {s === 'ALL' ? 'Total' : s === 'PERSONAL' ? 'Private' : 'Shared'}
+                  </Button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
+                {(['ALL', 'MONTH', 'TODAY'] as TimeFilter[]).map((f) => (
+                  <Button 
+                    key={f}
+                    variant={timeFilter === f ? "secondary" : "ghost"} 
+                    size="sm" 
+                    className={cn(
+                      "rounded-lg h-8 text-[9px] uppercase font-black tracking-widest px-3",
+                      timeFilter === f && "bg-accent text-accent-foreground glow-accent"
+                    )}
+                    onClick={() => setTimeFilter(f)}
+                  >
+                    {f === 'ALL' ? 'History' : f === 'MONTH' ? 'Cycle' : 'Today'}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <AnimatePresence>
+            {scope === 'GROUP' && userGroups && userGroups.length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
               >
-                {isExporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
-                Export Ledger
-              </Button>
-            </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Neural Pathing / {timeFilter} Analysis</p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
-              {(['ALL', 'PERSONAL', 'GROUP'] as const).map((s) => (
-                <Button 
-                  key={s}
-                  variant={scope === s ? "secondary" : "ghost"} 
-                  size="sm" 
-                  className={cn(
-                    "rounded-lg h-8 text-[9px] uppercase font-black tracking-widest px-3",
-                    scope === s && "bg-primary text-primary-foreground glow-primary"
-                  )}
-                  onClick={() => setScope(s)}
-                >
-                  {s === 'ALL' ? 'Total' : s === 'PERSONAL' ? 'Private' : 'Shared'}
-                </Button>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
-              {(['ALL', 'MONTH', 'TODAY'] as TimeFilter[]).map((f) => (
-                <Button 
-                  key={f}
-                  variant={timeFilter === f ? "secondary" : "ghost"} 
-                  size="sm" 
-                  className={cn(
-                    "rounded-lg h-8 text-[9px] uppercase font-black tracking-widest px-3",
-                    timeFilter === f && "bg-accent text-accent-foreground glow-accent"
-                  )}
-                  onClick={() => setTimeFilter(f)}
-                >
-                  {f === 'ALL' ? 'History' : f === 'MONTH' ? 'Cycle' : 'Today'}
-                </Button>
-              ))}
-            </div>
-          </div>
+                <div className="flex flex-wrap gap-2 p-1 bg-white/5 rounded-2xl border border-white/5">
+                  <Button 
+                    variant={selectedGroupId === "ALL_GROUPS" ? "secondary" : "ghost"} 
+                    size="sm"
+                    className={cn(
+                      "h-8 rounded-xl text-[9px] font-black uppercase tracking-widest gap-2",
+                      selectedGroupId === "ALL_GROUPS" && "bg-white/10 text-white"
+                    )}
+                    onClick={() => setSelectedGroupId("ALL_GROUPS")}
+                  >
+                    <LayoutGrid className="h-3 w-3" />
+                    All Sectors
+                  </Button>
+                  {userGroups.map((g) => (
+                    <Button 
+                      key={g.id}
+                      variant={selectedGroupId === g.id ? "secondary" : "ghost"} 
+                      size="sm"
+                      className={cn(
+                        "h-8 rounded-xl text-[9px] font-black uppercase tracking-widest gap-2",
+                        selectedGroupId === g.id && "bg-accent text-accent-foreground glow-accent"
+                      )}
+                      onClick={() => setSelectedGroupId(g.id)}
+                    >
+                      <Users className="h-3 w-3" />
+                      {g.name}
+                    </Button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.header>
 
         {isLoading ? (
@@ -310,7 +357,7 @@ export default function AnalyticsPage() {
                    <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
                    Spending Velocity
                 </CardTitle>
-                <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-1">Trajectory / 6-Cycle Context</CardDescription>
+                <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-1">Trajectory / Contextual Stream</CardDescription>
               </CardHeader>
               <CardContent className="h-[450px]">
                 <ResponsiveContainer width="100%" height="100%">

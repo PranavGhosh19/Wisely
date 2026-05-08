@@ -260,7 +260,7 @@ export default function Dashboard() {
                     <p className="text-xl font-black tracking-tight uppercase">
                       {categoryData.length > 0 ? (
                         <>
-                          Highest activity in <span className="text-primary text-glow">"{categoryData[0]?.name}"</span>. 
+                          Highest activity in <span className="text-primary text-glow">{`"${categoryData[0]?.name}"`}</span>. 
                           Protocol Impact: {((categoryData[0]?.value / (totalOverallMonthlySpent || 1)) * 100).toFixed(1)}%.
                         </>
                       ) : (
