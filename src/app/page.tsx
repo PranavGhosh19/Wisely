@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { LoadingScreen } from "@/components/layout/loading-screen";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export default function LandingPage() {
   const { user, isLoading } = useStore();
