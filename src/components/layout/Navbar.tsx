@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { 
@@ -15,16 +16,12 @@ import {
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState, Suspense } from "react";
 import { useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
 } from "@/components/ui/tooltip";
 
 function NavbarContent() {
@@ -52,8 +49,6 @@ function NavbarContent() {
   const isClubPage = pathname === "/wisely-club";
   const isHiddenPage = pathname === "/" || pathname === "/auth" || isClubPage;
   if (isHiddenPage || !user) return null;
-
-  const hideFab = pathname.includes("analytics") || pathname.includes("profile");
 
   const handleSignOut = async () => {
     if (auth) await signOut(auth);
@@ -159,7 +154,7 @@ function NavbarContent() {
       </motion.nav>
 
       <nav 
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md h-20 glass-card rounded-[2.5rem] md:hidden px-2 safe-area-bottom shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-[448px] h-[80px] glass-card rounded-[40px] md:hidden px-2 safe-area-bottom shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
       >
         <div className="relative flex h-full items-center justify-between">
           {[
@@ -188,9 +183,9 @@ function NavbarContent() {
           <div className="flex-1 flex justify-center items-center">
             <Link
               href={addExpenseUrl}
-              className="h-14 w-14 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-[0_0_20px_rgba(var(--primary),0.3)] glow-primary transition-all active:scale-90"
+              className="h-[56px] w-[56px] rounded-[16px] bg-primary flex items-center justify-center text-primary-foreground shadow-[0_0_20px_rgba(var(--primary),0.3)] glow-primary transition-all active:scale-90"
             >
-              <Plus className="h-7 w-7" />
+              <Plus className="h-[28px] w-[28px]" />
             </Link>
           </div>
 
