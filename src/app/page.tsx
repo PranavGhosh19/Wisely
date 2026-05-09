@@ -71,7 +71,7 @@ export default function LandingPage() {
             >
               <h1 className="text-5xl sm:text-7xl md:text-8xl font-black font-headline text-primary tracking-tighter leading-[0.85] text-glow uppercase">
                 COMMAND YOUR <br />
-                <span className="text-accent glow-accent">CAPITAL.</span>
+                <span className="text-accent text-glow-accent">CAPITAL.</span>
               </h1>
               <p className="text-lg md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-bold uppercase tracking-tight opacity-60">
                 The high-performance unified ledger for your personal vault and shared network sectors.
@@ -102,8 +102,9 @@ export default function LandingPage() {
       </section>
 
       {/* Features Preview */}
-      <section className="py-24 bg-white/5 border-y border-white/5">
-        <div className="container mx-auto px-4">
+      <section className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-primary/5 opacity-30 border-y border-white/5" />
+        <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-20 space-y-2">
             <h2 className="text-4xl md:text-5xl font-black font-headline text-glow uppercase tracking-tighter">System Standards</h2>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Hardened Infrastructure / Zero Latency</p>
@@ -180,7 +181,7 @@ export default function LandingPage() {
                  </div>
                </div>
                <div className="flex-1 w-full max-w-md hidden lg:block">
-                 <div className="bg-black/20 backdrop-blur-3xl rounded-[2.5rem] p-10 border border-white/10 space-y-8 shadow-inner">
+                 <div className="glass backdrop-blur-3xl rounded-[2.5rem] p-10 border border-white/10 space-y-8 shadow-inner">
                    <div className="flex items-center justify-between pb-4 border-b border-white/10">
                      <div className="flex items-center gap-3">
                         <Activity className="h-4 w-4 text-accent" />

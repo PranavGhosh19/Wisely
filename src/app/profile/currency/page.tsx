@@ -137,7 +137,7 @@ const CURRENCIES = [
   { code: "SBD", label: "Solomon Islands Dollar ($)" },
   { code: "SCR", label: "Seychellois Rupee (₨)" },
   { code: "SDG", label: "Sudanese Pound (£)" },
-  { code: "SEK", label: "Swedish Krona (kr)" },
+  { code: "SEK", label: "Swedish Krone (kr)" },
   { code: "SGD", label: "Singapore Dollar (S$)" },
   { code: "SHP", label: "St. Helena Pound (£)" },
   { code: "SLL", label: "Sierra Leonean Leone (Le)" },
